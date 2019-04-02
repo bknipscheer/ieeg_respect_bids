@@ -295,9 +295,9 @@ if ~isempty(edesc_json)
     else
         existing = [];
     end
-    %     write_json(filename, mergeconfig(existing, edesc_json))
-    json_options.indent = ' ';
-    jsonwrite(filename, mergeconfig(existing, edesc_json), json_options)
+        write_json(filename, mergeconfig(existing, edesc_json))
+%     json_options.indent = ' ';
+%     jsonwrite(filename, mergeconfig(existing, edesc_json), json_options)
 end
 
 %% function for json and tsv ieeg following fieldtrip style
@@ -511,9 +511,9 @@ if ~isempty(ieeg_json)
     else
         existing = [];
     end
-    %   write_json(filename, mergeconfig(existing, ieeg_json))
-    json_options.indent = ' ';
-    jsonwrite(filename, mergeconfig(existing, ieeg_json), json_options)
+      write_json(filename, mergeconfig(existing, ieeg_json))
+%     json_options.indent = ' ';
+%     jsonwrite(filename, mergeconfig(existing, ieeg_json), json_options)
 end
 
 if ~isempty(channels_tsv)
@@ -572,9 +572,9 @@ if ~isempty(coordsystem_json)
     else
         existing = [];
     end
-    %     write_json(filename, mergeconfig(existing, coordsystem_json))
-    json_options.indent = ' ';
-    jsonwrite(filename, mergeconfig(existing, coordsystem_json), json_options)
+        write_json(filename, mergeconfig(existing, coordsystem_json))
+%     json_options.indent = ' ';
+%     jsonwrite(filename, mergeconfig(existing, coordsystem_json), json_options)
     
 end
 
