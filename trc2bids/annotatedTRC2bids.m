@@ -95,20 +95,22 @@ try
         %               sub-<label>_ses-<label>_photo.jpg
         
         task_label    = strcat('task-',replace(deblank(metadata.task_name),' ',''));
-        if strfind(task_label,'SPES')~=0
+        if strfind(lower(task_label),'spes')~=0
             task_desc = 'No task, electrical stimulation is performed. Patient is resting with eyes open/closed. The latter is not always specified.';
-        elseif strfind(task_label,'rest') ~=0
+        elseif strfind(lower(task_label),'rest') ~=0
             task_desc = 'Patient is resting with eyes open/closed. The latter is not always specified.';
-        elseif strfind(task_label,'sleep') ~=0
+        elseif strfind(lower(task_label),'sleep') ~=0
             task_desc = 'Patient is sleeping.';
-        elseif strfind(task_label,'slaw_trans') ~=0
+        elseif strfind(lower(task_label),'slawtrans') ~=0
             task_desc = 'Patient is trying to fall asleep or is waking up.';
-        elseif strfind(task_label,'motor') ~=0
+        elseif strfind(lower(task_label),'motor') ~=0
             task_desc = 'Patient is doing a motor task.';
-        elseif strfind(task_label,'ESM') ~=0
+        elseif strfind(lower(task_label),'esm') ~=0
             task_desc = 'Electrical stimulation mapping is performed to delineate functional areas.';
-        elseif strfind(task_label,'sens') ~=0
+        elseif strfind(lower(task_label),'sens') ~=0
             task_desc = 'Patient is doing a sensing task.';
+        elseif strfind(lower(task_label),'Language') ~= 0
+            task_desc = 'Patient is doing a language task.';
         else
             task_desc = 'Not specified'
         end
@@ -919,6 +921,49 @@ if(~isempty(motortask))
     end
 end
 
+%% motortask
+langtask = metadata.langtask;
+
+if(~isempty(langtask))
+    for i=1:numel(langtask)
+        
+        type{cc}    = 'languagetask'                           ;
+        sub_type{cc} = 'n/a' ;
+        s_start{cc} = round(langtask{i}.pos(1)/fs,1); % time in seconds (1 decimal)
+        samp_start{cc} = num2str(langtask{i}.pos(1))          ;
+        s_end{cc}   = round(langtask{i}.pos(end)/fs,1); % time in seconds (1 decimal)
+        samp_end{cc} = num2str(langtask{i}.pos(end))          ;
+        
+        if(isempty(langtask{i}.ch_names))
+           ch_name_on{cc} = 'all';%metadata.ch_label{metadata.ch2use_included} ;
+           % error('artefact channel name wrong')
+           ch_name_off{cc} = ch_name_on{cc} ;
+        else
+            ch_name_on{cc} = langtask{i}.ch_names{1}              ;
+            ch_name_off{cc} = ch_name_on{cc} ;
+        end
+        
+         if (isempty(langtask{i}.type))
+            sub_type{cc} = 'unknown' ;
+        else
+            sub_type{cc} = langtask{i}.type ;
+        end
+        
+        annots_new([annots_new{:,1}]==langtask{i}.pos(1),:)=[];
+        annots_new([annots_new{:,1}]==langtask{i}.pos(end),:)=[];
+        duration{cc} = round(s_end{cc} - s_start{cc},3);
+        stim_type{cc} = 'n/a';
+        site_name{cc} = 'n/a';
+        site_channum{cc} = 'n/a';
+        stim_cur{cc} = 'n/a';
+        notes{cc} = 'n/a';
+
+
+        cc          = cc + 1                               ;
+        
+    end
+end
+
 %% sensing task
 senstask = metadata.senstask;
 
@@ -1072,11 +1117,19 @@ end
 [~,Cncols] = cellfun(@size, ch_label);
 maxsz_label = max(Cncols(ch2use_included));
 
+% notification that stimcurr is unknown
+if ~isempty(metadata.stimcurr)
+    note_desc = sprintf('Stimulation intensity is suggested to be %i mA but may differ when applied in eloquent tissue',stimcurdefault);
+    
+else
+    note_desc = 'n/a';
+end
+
 if ~isempty(trigger)
     idx_start = find(trigger.val >1000); % with cortical stimulation, triggers are added automatically with a number >1000
     for i=1:numel(idx_start)
         type{cc} = 'electrical_stimulation';
-        subtype{cc} = 'SPES';
+        sub_type{cc} = 'SPES';
         stim_type{cc} = 'monophasic';
         samp_start{cc} = trigger.pos(idx_start(i));
         s_start{cc} = round(trigger.pos(idx_start(i))/fs,1); % time in seconds (1 decimal)
@@ -1093,14 +1146,19 @@ if ~isempty(trigger)
         negannot = regexp(lower(annots_new{numannots,2}),'neg');
         currannot = regexp(lower(annots_new{numannots,2}),'ma');
         biannot = regexp(lower(annots_new{numannots,2}),'bi');
-        low_expect = regexp(lower(annots_new{numannots,2}),'expected');
+        low_expect = regexp(lower(annots_new{numannots,2}),'requested');
         
         % if any of the earlier mentioned variables is not empty, it is
         % part of the stimulation annotations
         if ~isempty(digannot) || ~isempty(negannot) || ~isempty(currannot) || ~isempty(biannot) || ~isempty(low_expect)
         else
-            numannots = numannots -1; % dit doe ik nu maar 1x omdat ik max 1 extra annotatie verwacht voordat stimannotatie wordt geschreven
-            % does this have a digit in the string? --> no comment like 'schokje'/'toilet'/'aanval' etc.
+            n=1;
+            while isempty(digannot)
+                digannot = regexp(lower(annots_new{numannots-n,2}),'\d*');
+                n = n+1;
+            end
+            numannots = numannots-n+1;
+            
             digannot = regexp(lower(annots_new{numannots,2}),'\d*');
             
             % does this have 'ma'/'neg'/'bi'/'current is lower than expected' in the string? (respectively
@@ -1138,7 +1196,15 @@ if ~isempty(trigger)
                 end                
             end
         elseif ~isempty(negannot) %there is no stimpair mentioned if it is a negative monophasic stimulus
-            annotsplit = strsplit(annots_new{numannots-1,2},'_'); % finds info before '_'
+            
+            n=1;
+            while isempty(digannot)
+                digannot = regexp(lower(annots_new{numannots-n,2}),'\d*');
+                n = n+1;
+            end
+            
+            annotsplit = strsplit(annots_new{numannots-n+1,2},'_'); % finds info before '_'
+                  
             stimchans = regexp(lower(annotsplit{1}),'[a-z]*','match'); %finds electrode-letter(s)
             stimnums = regexp(lower(annotsplit{1}),'\d*','match'); % finds electrode-number
             
@@ -1176,8 +1242,10 @@ if ~isempty(trigger)
         
         if ~isempty(low_expect)
             note = annots_new{numannots,2};
+        elseif contains(annots_new{numannots+1,2},'requested') % in newer patients, the sentence "Current is lower than requested" is added at the end of the stimulation
+            note = annots_new{numannots+1,2};
         else
-            note = 'n/a';
+            note = note_desc;
         end
         
         %         if any(strfind(annotssplit{1},' ') ~=0) % when there is a 'space' in the text, than it is the message: is lower than expected
@@ -1362,7 +1430,19 @@ try
     str2parse=annots{task_idx,2};
     C=strsplit(str2parse,';');
     metadata.task_name=C{2};
+        
+    % Stimcurr unknown (in SPES)
+    stimcur_idx=cellfun(@(x) contains(x,{'Stimcurr'}),annots(:,2));
     
+    if(sum(stimcur_idx)~=1)
+        metadata.stimcurr = [];
+    else
+        str2parse=annots{stimcur_idx,2};
+        %metadata.ses_name=strsplit(str2parse,'n');
+        C=strsplit(str2parse,';');
+        metadata.stimcurr=C{2};
+    end
+
     % useful channels
     included_idx=cellfun(@(x) contains(x,{'Included'}),annots(:,2));
     metadata.ch2use_included= false(size(ch));
@@ -1399,6 +1479,9 @@ try
     %     end
     %
     
+
+    
+    
     %% Look for bad channels
     metadata.ch2use_bad=single_annotation(annots,'Bad',ch);
     
@@ -1410,6 +1493,13 @@ try
     %         metadata.ch2use_cavity=single_annotation(annots,'Cavity',ch);
     %     end
     
+    %% Look for bad channels in high frequency band
+    badhf_idx = cellfun(@(x) contains(x,{'Bad_HF'}),annots(:,2));
+    metadata.ch2use_badhf= false(size(ch));
+    if(sum(badhf_idx))
+        metadata.ch2use_badhf=single_annotation(annots,'Bad_HF',ch);
+    end
+
     %% Look for silicon
     silicon_idx=cellfun(@(x) contains(x,{'Silicon'}),annots(:,2));
     metadata.ch2use_silicon= false(size(ch));
@@ -1467,7 +1557,10 @@ try
    
     %% Look for period of sens task
     metadata.senstask=look_for_annotation_start_stop(annots,'Sens_on','Sens_off',ch);
-      
+    
+    %% Look for period of language task
+    metadata.langtask=look_for_annotation_start_stop(annots,'Language_on','Language_off',ch);
+
     %% Look for artefacts
     
     %metadata.artefacts_aECoG=look_for_annotation_start_stop(annots,'xxx','yyy',ch);
@@ -1688,7 +1781,7 @@ else
         if size(annotsplit,2) == 1
             if strcmp(str_start,'Eyes_open')
                 type = 'n/a';
-            else % if str_start is motor/sens
+            else % if str_start is motor/sens/language
                 type = 'unknown';
             end
         elseif size(annotsplit,2) == 2
@@ -1792,6 +1885,14 @@ if(any(metadata.ch2use_bad             | ...
         )}] = deal('bad'); % removed metadata.ch2use_cavity  | ...
 end
 
+% bad in high frequency band
+if(any(metadata.ch2use_badhf)) % removed metadata.ch2use_cavity  | ...
+    
+    [ch_status{(metadata.ch2use_bad    | ...
+        metadata.ch2use_silicon   ...
+        )}] = deal('bad_hf'); % removed metadata.ch2use_cavity  | ...
+end
+
 if (any(ch_open))
     [ch_status{ch_open}] = deal('bad');
 end
@@ -1803,6 +1904,10 @@ end
 
 if(any(metadata.ch2use_bad))
     [ch_status_desc{metadata.ch2use_bad}] = deal('noisy (visual assessment)');
+end
+
+if(any(metadata.ch2use_badhf))
+    [ch_status_desc{metadata.ch2use_badhf}] = deal('noisy in high frequency bands >80Hz&<500 Hz(visual assessment)');
 end
 
 % if(any(metadata.ch2use_cavity))

@@ -16,44 +16,54 @@ end
 fseek(fid,64,-1);
 header.surname=char(fread(fid,22,'char'))';
 header.name=char(fread(fid,20,'char'))';
+fseek(fid,106,-1);
+header.birthmonth = fread(fid,1,'uchar');
+header.birthday = fread(fid,1,'uchar');
+header.birthyear = str2double(num2str(fread(fid,1,'uchar')+1900));
 
 fseek(fid,128,-1);
-day=fread(fid,0,'uchar');
+day=fread(fid,1,'uchar');
 if length(num2str(day))<2
   day=['0' num2str(day)];
 else
   day=num2str(day);
 end
-month=fread(fid,1,'char');
-switch month
-  case 1
-    month='JAN';
-  case 2
-    month='FEB';
-  case 3
-    month='MAR';
-  case 4
-    month='APR';
-  case 5
-    month='MAY';
-  case 6
-    month='JUN';
-  case 7
-    month='JUL';
-  case 8
-    month='AUG';
-  case 9
-    month='SEP';
-  case 10
-    month='OCT';
-  case 11
-    month='NOV';
-  case 12
-    month='DEC';
-end
-header.day=day;
-header.month=month;
-header.year=num2str(fread(fid,1,'char')+1900);
+month=fread(fid,1,'uchar');
+% switch month
+%   case 1
+%     month='JAN';
+%   case 2
+%     month='FEB';
+%   case 3
+%     month='MAR';
+%   case 4
+%     month='APR';
+%   case 5
+%     month='MAY';
+%   case 6
+%     month='JUN';
+%   case 7
+%     month='JUL';
+%   case 8
+%     month='AUG';
+%   case 9
+%     month='SEP';
+%   case 10
+%     month='OCT';
+%   case 11
+%     month='NOV';
+%   case 12
+%     month='DEC';
+% end
+header.recday=str2double(day);
+header.recmonth=month;
+header.recyear=str2double(num2str(fread(fid,1,'uchar')+1900));
+
+recnumdate = datenum([num2str(header.recday),'/' num2str(header.recmonth),'/' num2str(header.recyear)],'DD/mm/YYYY');
+birthnumdate = datenum([num2str(header.birthday),'/' num2str(header.birthmonth),'/' num2str(header.birthyear)],'DD/mm/YYYY');
+age = datevec(recnumdate-birthnumdate);
+
+header.age = age(1);
 
 fseek(fid,131,-1);
 header.hour = fread(fid,1,'char');
