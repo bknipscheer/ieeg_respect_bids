@@ -921,7 +921,7 @@ if(~isempty(motortask))
     end
 end
 
-%% motortask
+%% language task
 langtask = metadata.langtask;
 
 if(~isempty(langtask))
@@ -1242,8 +1242,12 @@ if ~isempty(trigger)
         
         if ~isempty(low_expect)
             note = annots_new{numannots,2};
-        elseif contains(annots_new{numannots+1,2},'requested') % in newer patients, the sentence "Current is lower than requested" is added at the end of the stimulation
-            note = annots_new{numannots+1,2};
+        elseif numannots < size(annots_new,1)
+            if contains(annots_new{numannots+1,2},'requested') % in newer patients, the sentence "Current is lower than requested" is added at the end of the stimulation
+                note = annots_new{numannots+1,2};
+            else
+                note = note_desc;
+            end
         else
             note = note_desc;
         end
@@ -1325,7 +1329,7 @@ if ~isempty(trigger)
         end
         
         site_name{cc} = [stimchan{1} '-' stimchan{2}];
-        site_channum{cc} = [stimnum(1), stimnum(2)];
+        site_channum{cc} = num2str([stimnum(1), stimnum(2)]);
         duration{cc} = 1/1000;
         s_end{cc} = 'n/a';
         samp_end{cc} = 'n/a';
