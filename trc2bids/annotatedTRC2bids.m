@@ -1198,7 +1198,7 @@ if ~isempty(trigger)
         elseif ~isempty(negannot) %there is no stimpair mentioned if it is a negative monophasic stimulus
             
             n=1;
-            while isempty(digannot)
+            while isempty(digannot) || digannot(1)>4
                 digannot = regexp(lower(annots_new{numannots-n,2}),'\d*');
                 n = n+1;
             end
