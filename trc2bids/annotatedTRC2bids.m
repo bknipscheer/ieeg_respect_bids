@@ -2174,11 +2174,13 @@ if contains([files(:).name],'scans')
     
     name                    = scans_tsv.name;
     artefact                = scans_tsv.artefact;
-    sleep                   = scans_tsv.sleep;
+    sleep_total             = scans_tsv.sleep_total;
+    sleep_rem               = scans_tsv.sleep_rem;
+    sleep_nrem              = scans_tsv.sleep_nrem;    
     seizure                 = scans_tsv.seizure_total;
     seizuresubclin          = scans_tsv.seizure_subclinical;
     seizureclin             = scans_tsv.seizure_clinical;    
-    motor                   = scans_tsv.motor;
+    motor             = scans_tsv.motor;
     spes                    = scans_tsv.spes;
     esm                     = scans_tsv.esm;
     language                = scans_tsv.language;
@@ -2189,25 +2191,59 @@ else
     scansnum = 1;
 end
 
-name{scansnum}                  = f;
-sleep(scansnum)                 = sum(strcmp(annotation_tsv.trial_type,'sleep'));
-artefact(scansnum)              = sum(strcmp(annotation_tsv.trial_type,'artefact'));
-seizure(scansnum)               = sum(strcmp(annotation_tsv.trial_type,'seizure'));
-seizuresubclin(scansnum)        = sum(strcmp(annotation_tsv.sub_type,'subclin'));
-seizureclin(scansnum)           = sum(strcmp(annotation_tsv.sub_type,'clin'));
-motor(scansnum)                 = sum(strcmp(annotation_tsv.trial_type,'motor'));
-spes(scansnum)                  = sum(strcmp(annotation_tsv.sub_type,'SPES'));
-esm(scansnum)                   = sum(strcmp(annotation_tsv.trial_type,'esm'));
-language(scansnum)              = sum(strcmp(annotation_tsv.trial_type,'language'));
-sleepwaketransition(scansnum)   = sum(strcmp(annotation_tsv.trial_type,'sleep-wake transition'));
-if metadata.incl_exist == 1
-    format{scansnum}            = 'included';
-else
-    format{scansnum}            = 'not included';
+name{scansnum,1}                  = f;
+% sleep period
+id_sleep                          = strcmp(annotation_tsv.trial_type,'sleep');
+durationsl_total = 0;
+durationsl_rem = 0;
+durationsl_nrem = 0;
+
+for i=1:sum(id_sleep)
+    durationsl_total(i) = annotation_tsv.duration{id_sleep(i)};
+    if strcmp(annotation_tsv.sub_type{id_sleep(i)},'REM')
+        durationsl_rem(i) = annotation_tsv.duration{id_sleep(i)};
+    elseif strcmp(annotation_tsv.sub_type{id_sleep(i)},'nREM')
+        durationsl_nrem(i) = annotation_tsv.duration{id_sleep(i)};
+    end
 end
 
-scans_tsv  = table(name, format, artefact, sleep, sleepwaketransition, seizure, seizureclin, seizuresubclin, motor, spes, esm, language, ...
-    'VariableNames',{'name', 'format','artefact','sleep', 'sleepwaketransition','seizure_total','seizure_clinical', 'seizure_subclinical','motor','spes','esm','language'});
+sleep_total(scansnum,1)           = sum(durationsl_total);
+sleep_rem(scansnum,1)             = sum(durationsl_rem);
+sleep_nrem(scansnum,1)            = sum(durationsl_nrem);
+
+% motor period
+id_motor                          = strcmp(annotation_tsv.trial_type,'motor');
+durationmt_total = 0;
+
+for i=1:sum(id_motor)
+    durationmt_total(i) = annotation_tsv.duration{id_motor(i)};
+end
+motor_total(scansnum,1)           = sum(durationmt_total);
+
+% language period
+id_lang                          = strcmp(annotation_tsv.trial_type,'language');
+durationlang_total = 0;
+
+for i=1:sum(id_motor)
+    durationlang_total(i) = annotation_tsv.duration{id_lang(i)};
+end
+language_total(scansnum,1)           = sum(durationlang_total);
+
+artefact(scansnum,1)              = sum(strcmp(annotation_tsv.trial_type,'artefact'));
+seizure(scansnum,1)               = sum(strcmp(annotation_tsv.trial_type,'seizure'));
+seizuresubclin(scansnum,1)        = sum(strcmp(annotation_tsv.sub_type,'subclin'));
+seizureclin(scansnum,1)           = sum(strcmp(annotation_tsv.sub_type,'clin'));
+spes(scansnum,1)                  = sum(strcmp(annotation_tsv.sub_type,'SPES'));
+esm(scansnum,1)                   = sum(strcmp(annotation_tsv.trial_type,'esm'));
+sleepwaketransition(scansnum,1)   = sum(strcmp(annotation_tsv.trial_type,'sleep-wake transition'));
+if metadata.incl_exist == 1
+    format{scansnum,1}            = 'included';
+else
+    format{scansnum,1}            = 'not included';
+end
+
+scans_tsv  = table(name, format, artefact, sleep_total, sleep_rem, sleep_nrem, sleepwaketransition, seizure, seizureclin, seizuresubclin, motor_total, spes, esm, language_total, ...
+    'VariableNames',{'name', 'format','artefact','sleep_total', 'sleep_rem','sleep_nrem','sleepwaketransition','seizure_total','seizure_clinical', 'seizure_subclinical','motor','spes','esm','language'});
 
 if ~isempty(scans_tsv)
     write_tsv(filename, scans_tsv);
