@@ -610,35 +610,38 @@ if metadata.incl_exist == 1 % format and included were annotated in the file, fi
     [p] = fileparts(cfg.outputfile);
     %g = strsplit(f,'_ieeg');
     q = strsplit(p,'/');
-    filename_dataset = fullfile(p, [q{4} '_' q{5} '_electrodes.tsv']);
+    qsub = contains(q,'sub');
+    qses = contains(q,'ses');
+    filename_dataset = fullfile(p, [q{qsub} '_' q{qses} '_electrodes.tsv']);
     if ~isempty(cfg.outputfilesec)
            [p] = fileparts(cfg.outputfilesec{1});
             %g = strsplit(f,'_ieeg');
             q = strsplit(p,'/');
-            filename_cECoG = fullfile(p, [q{4} '_' q{5} '_electrodes.tsv']);
+             qsub = contains(q,'sub');
+             qses = contains(q,'ses');
+            filename_cECoG = fullfile(p, [q{qsub} '_' q{qses} '_electrodes.tsv']);
+    else 
+        filename_cECoG = [];
     end
     
-    if isfile(filename_cECoG)
-        cc_elec_old = readtable(filename_cECoG,'FileType','text','Delimiter','\t');
-        
-        struct1 = table2struct(cc_elec_old);
-        struct2 = table2struct(electrodes_tsv);
-        if ~isequal(struct1,struct2) % check whether older and current file are equal
-            fprintf('%s exists!\n',filename_cECoG)
-            n=1;
-            while isfile(filename_cECoG)
-                nameminelec = strsplit(filename_cECoG,'electrodes');
-                filename_cECoG = [nameminelec{1} 'electrodes_' num2str(n) '.tsv'];
-                n=n+1;
+    if ~isempty(filename_cECoG)
+        if isfile(filename_cECoG)
+            cc_elec_old = readtable(filename_cECoG,'FileType','text','Delimiter','\t');
+            
+            struct1 = table2struct(cc_elec_old);
+            struct2 = table2struct(electrodes_tsv);
+            if ~isequal(struct1,struct2) % check whether older and current file are equal
+                fprintf('%s exists!\n',filename_cECoG)
+                n=1;
+                while isfile(filename_cECoG)
+                    nameminelec = strsplit(filename_cECoG,'electrodes');
+                    filename_cECoG = [nameminelec{1} 'electrodes_' num2str(n) '.tsv'];
+                    n=n+1;
+                end
             end
         end
-%     else
-%         mydirMaker(fullfile(['/' q{2}],'chronic_ECoG',q{4}));
-%         mydirMaker(fullfile(['/' q{2}],'chronic_ECoG',q{4},q{5}));
-%         mydirMaker(fullfile(['/' q{2}],'chronic_ECoG',q{4},q{5},q{6}));
+        write_tsv(filename_cECoG, electrodes_tsv);
     end
-    write_tsv(filename_cECoG, electrodes_tsv);
-    
     if isfile(filename_dataset)
         
         cc_elec_old = readtable(filename_dataset,'FileType','text','Delimiter','\t');
