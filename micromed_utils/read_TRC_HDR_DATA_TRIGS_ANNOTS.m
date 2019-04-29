@@ -91,6 +91,14 @@ if ~isempty(annotations{1,1})
     end
 end
 
+% get rid of weird extra text added by micromed
+for i=1:size(annotations,1)
+   if ismember(0,double(annotations{i,2}))
+      temp = double(annotations{i,2});
+      split = find(temp==0);
+      annotations{i,2} = annotations{i,2}(1:split-1);
+   end
+end
 
 % ----------REDUCTIONS-----------------------------------------------------
 fseek(f,240+8,-1);

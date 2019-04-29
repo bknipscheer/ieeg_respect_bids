@@ -53,9 +53,18 @@ try
     check_input(cfg,'proj_diroutput');
     check_input(cfg,'filename');
     
-    proj_dirinput  = cfg.proj_dirinput;
-    proj_diroutput = cfg.proj_diroutput;
-    filename  = cfg.filename;
+    proj_dirinput = cell(1);
+    proj_diroutput = cell(1);
+    
+    for n=1:size(cfg,2)
+        if ~isempty(cfg(n).proj_dirinput)
+            proj_dirinput{n}  = cfg(n).proj_dirinput;
+        end
+        if ~isempty(cfg(n).proj_diroutput)
+            proj_diroutput{n} = cfg(n).proj_diroutput;
+        end
+    end
+    filename  = cfg(1).filename;
     
     [indir,fname,exte] = fileparts(filename);
     %create the subject level dir if not exist
@@ -125,24 +134,28 @@ try
         ieeg_file     = strcat(sub_label,'_',ses_label,'_',task_label,'_',run_label);
         %anat_dir      = fullfile(proj_diroutput,sub_label,ses_label,'anat');
         
-        mydirMaker(sub_dir);
-        mydirMaker(ses_dir);
-        mydirMaker(ieeg_dir);
+        for i=1:size(sub_dir,2)
+            mydirMaker(sub_dir{i});
+            mydirMaker(ses_dir{i});
+            mydirMaker(ieeg_dir{i});
+        end
         %mydirMaker(anat_dir);
         
         %check if it is empty
         %otherwise remove tsv,json,eeg,vhdr,trc,vmrk
-        ieeg_files = dir(ieeg_dir);
+        for i=1:size(ieeg_dir,2)
+            ieeg_files = dir(ieeg_dir{i});
         
-        if contains([ieeg_files(:).name],ieeg_file)
-            
-            delete(fullfile(ieeg_dir,[ieeg_file '*.tsv']))  ; % TO FIX: this should not be removed when electrode positions are inserted! Be careful with this!
-            delete(fullfile(ieeg_dir,[ieeg_file '*.json'])) ;
-            delete(fullfile(ieeg_dir,[ieeg_file,'*.eeg']))  ;
-            delete(fullfile(ieeg_dir,[ieeg_file,'*.vhdr'])) ;
-            delete(fullfile(ieeg_dir,[ieeg_file,'*.vmrk'])) ;
-            delete(fullfile(ieeg_dir,[ieeg_file,'*.TRC']))  ;
-            
+            if contains([ieeg_files(:).name],ieeg_file)
+                
+                delete(fullfile(ieeg_dir{i},[ieeg_file '*.tsv']))  ; % TO FIX: this should not be removed when electrode positions are inserted! Be careful with this!
+                delete(fullfile(ieeg_dir{i},[ieeg_file '*.json'])) ;
+                delete(fullfile(ieeg_dir{i},[ieeg_file,'*.eeg']))  ;
+                delete(fullfile(ieeg_dir{i},[ieeg_file,'*.vhdr'])) ;
+                delete(fullfile(ieeg_dir{i},[ieeg_file,'*.vmrk'])) ;
+                delete(fullfile(ieeg_dir{i},[ieeg_file,'*.TRC']))  ;
+                
+            end
         end
         
         fieeg_name = strcat(sub_label,'_',ses_label,'_',task_label,'_',run_label,'_','ieeg',exte);
@@ -155,9 +168,10 @@ try
         
         % file ieeg of the recording
         %copyfile(filename,fullfile(ieeg_dir,fieeg_name));
-        
-        fileTRC  = fullfile(ieeg_dir,fieeg_name);
-        fileVHDR = replace(fileTRC,'.TRC','.vhdr');
+        for i=1:size(ieeg_dir,2)
+            fileTRC{i}  = fullfile(ieeg_dir{i},fieeg_name);
+            fileVHDR{i} = replace(fileTRC{i},'.TRC','.vhdr');
+        end
         
         %% create Brainvision format from TRC
         
@@ -167,9 +181,14 @@ try
         data2write = ft_preprocessing(cfg);
         
         cfg = [];
-        cfg.outputfile                  = fileVHDR;
+        cfg.outputfile                  = fileVHDR{1};
+        if size(fileVHDR,2)>1
+            for i=2:size(fileVHDR,2)
+                cfg.outputfilesec{i-1}                  = fileVHDR{i};
+            end
+        end
         
-        cfg.anat.writesidecar       = 'no';
+        cfg.mri.writesidecar       = 'no';
         cfg.meg.writesidecar        = 'no';
         cfg.eeg.writesidecar        = 'no';
         cfg.ieeg.writesidecar       = 'no';
@@ -179,6 +198,7 @@ try
         data2bids(cfg, data2write)
         
         data2write;
+        
         %% create json sidecar for ieeg file
         cfg                             = [];
         cfg.ieeg                        = struct;
@@ -186,8 +206,13 @@ try
         cfg.electrodes                  = struct;
         cfg.coordsystem                 = struct;
         
-        cfg.outputfile                  = fileVHDR;
-        
+        cfg.outputfile                  = fileVHDR{1};
+        cfg.outputfilesec               = [];
+        if size(fileVHDR,2)>1
+            for i=2:size(fileVHDR,2)
+                cfg.outputfilesec{i-1}                  = fileVHDR{i};
+            end
+        end
         cfg.TaskName                    = task_label;
         cfg.TaskDescription             = task_desc;
         cfg.InstitutionName             = 'University Medical Center Utrecht';
@@ -236,14 +261,19 @@ try
         %% move photo with the proper naming into the /ieeg folder
         
         %% write annotations of the TRC
-        write_annotations_tsv(header,metadata,annots,cfg);
+        annotations_tsv = write_annotations_tsv(header,metadata,annots,cfg);
+
+        %% write scans-file
+        write_scans_tsv(cfg,metadata,annotations_tsv)
         
+        %% write participants-file
+        write_participants_tsv(cfg,header)
         
         %% write dataset descriptor
-        create_datasetDesc(proj_diroutput)
+        create_datasetDesc(proj_diroutput{1})
         
         %% write event descriptor
-        create_eventDesc(proj_diroutput)
+        create_eventDesc(proj_diroutput{1})
         
     else
         %% errors in parsing the data
@@ -387,9 +417,10 @@ cfg.electrodes.size             = ft_getopt(cfg.electrodes, 'size'              
 cfg.electrodes.group            = ft_getopt(cfg.electrodes, 'group'              , nan);
 cfg.electrodes.material         = ft_getopt(cfg.electrodes, 'material'           , nan);
 cfg.electrodes.manufacturer     = ft_getopt(cfg.electrodes, 'manufacturer'       , nan);
-
-
-
+cfg.electrodes.silicon          = ft_getopt(cfg.electrodes, 'silicon'            , nan);
+cfg.electrodes.soz              = ft_getopt(cfg.electrodes, 'soz'                , nan);
+cfg.electrodes.ra               = ft_getopt(cfg.electrodes, 'ra'                 , nan);
+cfg.electrodes.edge             = ft_getopt(cfg.electrodes, 'edge'               , nan);
 
 
 %% start with empty  descriptions
@@ -436,7 +467,6 @@ ieeg_json.iEEGElectrodeGroups          = metadata.format_info;
 if strfind(cfg.TaskName,'SPES') ~=0
     ieeg_json.ElectricalStimulation        = 'true';
 end
-
 
 fn = {'name' 'type' 'units' 'low_cutoff' 'high_cutoff' 'reference' 'group' 'sampling_frequency'...
     'description' 'notch' 'status' 'status_description'};
@@ -494,7 +524,7 @@ channels_tsv                        = table(name, type, units,  low_cutoff,    .
     notch, status, status_description                                                  );
 
 %% electrode table
-fn = {'name' 'x' 'y' 'z' 'size' 'group' 'material' 'manufacturer'};
+fn = {'name' 'x' 'y' 'z' 'size' 'group' 'material' 'manufacturer' 'silicon' 'soz' 'ra' 'edge'};
 for i=1:numel(fn)
     if numel(cfg.electrodes.(fn{i}))==1
         cfg.electrodes.(fn{i}) = repmat(cfg.electrodes.(fn{i}), header.Num_Chan, 1);
@@ -502,12 +532,16 @@ for i=1:numel(fn)
 end
 
 %name                                = mergevector({header.elec(:).Name}', cfg.electrodes.name)                                   ;
-x                                         = repmat({'0'},header.Num_Chan,1)                                                            ;
-y                                         = repmat({'0'},header.Num_Chan,1)                                                            ;
-z                                         = repmat({'0'},header.Num_Chan,1)                                                            ;
+x                                         = repmat({0},header.Num_Chan,1)                                                            ;
+y                                         = repmat({0},header.Num_Chan,1)                                                            ;
+z                                         = repmat({0},header.Num_Chan,1)                                                            ;
 e_size                                    = repmat({'n/a'},header.Num_Chan,1)                                                          ; %TODO ask
 material                                  = repmat({'n/a'},header.Num_Chan,1)                                                          ; %TODO ask
 manufacturer                              = repmat({'n/a'},header.Num_Chan,1)                                                          ; %TODO ask
+silicon                                   = repmat({'n/a'},header.Num_Chan,1)                                                          ; %TODO ask
+soz                                       = repmat({'n/a'},header.Num_Chan,1)                                                          ; %TODO ask
+resected                                  = repmat({'n/a'},header.Num_Chan,1)                                                          ; %TODO ask
+edge                                      = repmat({'n/a'},header.Num_Chan,1)                                                          ; %TODO ask
 
 if(any(metadata.ch2use_included))
     [e_size{metadata.ch2use_included}]        = deal('4.2')                                                                                ;
@@ -521,8 +555,28 @@ if(any(metadata.ch2use_included))
     [manufacturer{metadata.ch2use_included}]  = deal('AdTech')                                                                                ;
 end
 
-electrodes_tsv                            = table(name, x , y, z, e_size, group, material, manufacturer, ...
-    'VariableNames',{'name', 'x', 'y', 'z', 'size', 'group', 'material', 'manufacturer'})     ;
+if(any(metadata.ch2use_silicon))
+    [silicon{metadata.ch2use_silicon}]  = deal('yes')                                                                                ;
+end
+[silicon{~metadata.ch2use_silicon}]  = deal('no')                                                                                ;
+
+if(any(metadata.ch2use_soz))
+    [soz{metadata.ch2use_soz}]  = deal('yes')                                                                                ;
+end
+[soz{~metadata.ch2use_soz}]  = deal('no')                                                                                ;
+
+if(any(metadata.ch2use_resected))
+    [resected{metadata.ch2use_resected}]  = deal('yes')                                                                                ;
+end
+[resected{~metadata.ch2use_resected}]  = deal('no')                                                                                ;
+
+if(any(metadata.ch2use_edge))
+    [edge{metadata.ch2use_edge}]  = deal('yes')                                                                                ;
+end
+[edge{~metadata.ch2use_edge}]  = deal('no')                                                                                ;
+
+electrodes_tsv                            = table(name, x , y, z, e_size, group, material, manufacturer, silicon, soz, resected, edge ,...
+    'VariableNames',{'name', 'x', 'y', 'z', 'size', 'group', 'material', 'manufacturer', 'silicon' 'soz','resected','edge'})     ;
 
 if ~isempty(ieeg_json)
     [p, f, x] = fileparts(cfg.outputfile);
@@ -552,20 +606,56 @@ if ~isempty(channels_tsv)
     write_tsv(filename, channels_tsv);
 end
 
-if ~isempty(electrodes_tsv)
-    [p, f, x] = fileparts(cfg.outputfile);
-    g = strsplit(f,'_ieeg');
-    filename = fullfile(p, [g{1} '_electrodes.tsv']);
-    
-    if isfile(filename)
-        existing = read_tsv(filename);
-    else
-        existing = [];
-    end % try
-    if ~isempty(existing)
-        ft_error('existing file is not empty');
+if metadata.incl_exist == 1 % format and included were annotated in the file, file should be saved in /Fridge/chronic_ECoG and in current dataset
+    [p] = fileparts(cfg.outputfile);
+    %g = strsplit(f,'_ieeg');
+    q = strsplit(p,'/');
+    filename_dataset = fullfile(p, [q{4} '_' q{5} '_electrodes.tsv']);
+    if ~isempty(cfg.outputfilesec)
+           [p] = fileparts(cfg.outputfilesec{1});
+            %g = strsplit(f,'_ieeg');
+            q = strsplit(p,'/');
+            filename_cECoG = fullfile(p, [q{4} '_' q{5} '_electrodes.tsv']);
     end
-    write_tsv(filename, electrodes_tsv);
+    
+    if isfile(filename_cECoG)
+        cc_elec_old = readtable(filename_cECoG,'FileType','text','Delimiter','\t');
+        
+        struct1 = table2struct(cc_elec_old);
+        struct2 = table2struct(electrodes_tsv);
+        if ~isequal(struct1,struct2) % check whether older and current file are equal
+            fprintf('%s exists!\n',filename_cECoG)
+            n=1;
+            while isfile(filename_cECoG)
+                nameminelec = strsplit(filename_cECoG,'electrodes');
+                filename_cECoG = [nameminelec{1} 'electrodes_' num2str(n) '.tsv'];
+                n=n+1;
+            end
+        end
+%     else
+%         mydirMaker(fullfile(['/' q{2}],'chronic_ECoG',q{4}));
+%         mydirMaker(fullfile(['/' q{2}],'chronic_ECoG',q{4},q{5}));
+%         mydirMaker(fullfile(['/' q{2}],'chronic_ECoG',q{4},q{5},q{6}));
+    end
+    write_tsv(filename_cECoG, electrodes_tsv);
+    
+    if isfile(filename_dataset)
+        
+        cc_elec_old = readtable(filename_dataset,'FileType','text','Delimiter','\t');
+        
+        struct1 = table2struct(cc_elec_old);
+        struct2 = table2struct(electrodes_tsv);
+        if ~isequal(struct1,struct2)
+            fprintf('%s exists!\n',filename_dataset)
+            n=1;
+            while isfile(filename_dataset)
+                nameminelec = strsplit(filename_dataset,'electrodes');
+                filename_dataset = [nameminelec{1} 'electrodes_' num2str(n) '.tsv'];
+                n=n+1;
+            end
+        end
+    end
+    write_tsv(filename_dataset, electrodes_tsv);
 end
 
 
@@ -601,7 +691,7 @@ end
 
 
 %% write annotations to a tsv file _annotations
-function write_annotations_tsv(header,metadata,annots,cfg)
+function annotation_tsv = write_annotations_tsv(header,metadata,annots,cfg)
 
 %% type / sample start / sample end /  chname;
 ch_label  = metadata.ch_label;
@@ -1047,45 +1137,45 @@ if(~isempty(addnotes))
     end
 end
 
-%% resected channels
+ %% resected channels --> not in events but in electrodes.tsv
+% 
+% resected = metadata.ch2use_resected;
+% 
+% if(sum(resected))
+%     idx_res  = find(resected);
+%     
+%     for i=1:numel(idx_res)
+%         
+%         type{cc}    = 'resected'                            ;
+%         s_start{cc} = '1'                                   ;
+%         s_end{cc}   = 'Inf'                                 ;
+%         
+%         ch_name_on{cc} = ch_label(idx_res(i))                  ;
+%         ch_name_off{cc} = 'n/a' ;
+%         cc          = cc + 1                                ;
+%         
+%     end
+% end
 
-resected = metadata.ch2use_resected;
 
-if(sum(resected))
-    idx_res  = find(resected);
-    
-    for i=1:numel(idx_res)
-        
-        type{cc}    = 'resected'                            ;
-        s_start{cc} = '1'                                   ;
-        s_end{cc}   = 'Inf'                                 ;
-        
-        ch_name_on{cc} = ch_label(idx_res(i))                  ;
-        ch_name_off{cc} = 'n/a' ;
-        cc          = cc + 1                                ;
-        
-    end
-end
-
-
-%% resected channels
-
-edge = metadata.ch2use_edge;
-
-if(sum(edge))
-    idx_edge  = find(edge);
-    
-    for i=1:numel(idx_edge)
-        
-        type{cc}    = 'edge'                                ;
-        s_start{cc} = '1'                                   ;
-        s_end{cc}   = 'Inf'                                 ;
-        ch_name_on{cc} = ch_label(idx_edge(i))                 ;
-        ch_name_off{cc} = 'n/a' ;
-        cc          = cc + 1                                ;
-        
-    end
-end
+ %% resected channels --> not in events but in electrodes.tsv
+% 
+% edge = metadata.ch2use_edge;
+% 
+% if(sum(edge))
+%     idx_edge  = find(edge);
+%     
+%     for i=1:numel(idx_edge)
+%         
+%         type{cc}    = 'edge'                                ;
+%         s_start{cc} = '1'                                   ;
+%         s_end{cc}   = 'Inf'                                 ;
+%         ch_name_on{cc} = ch_label(idx_edge(i))                 ;
+%         ch_name_off{cc} = 'n/a' ;
+%         cc          = cc + 1                                ;
+%         
+%     end
+% end
 
 %% triggers for good epochs -- in cECoG we do not annotate good epochs
 % trigger = metadata.trigger;
@@ -1136,7 +1226,7 @@ if ~isempty(trigger)
         
         % stimulation site
         [~,numannots]=max(1./(repmat(trigger.pos(idx_start(i)),size(annots_new,1),1)-[annots_new{:,1}]')); %distance between triggerposition and nearbiest annotation (must be the stim channels then)
-        
+               
         % does this have a digit in the string? --> no comment like 'schokje'/'toilet'/'aanval' etc.
         digannot = regexp(lower(annots_new{numannots,2}),'\d*');
         
@@ -1341,9 +1431,26 @@ if ~isempty(trigger)
     end
 end
 
+if isempty(s_start)
+   s_start= 'n/a';
+   s_end = 'n/a';
+   duration = 'n/a';
+   type = 'n/a';
+   sub_type = 'n/a';
+   ch_name_on ='n/a';
+   ch_name_off = 'n/a';
+   samp_start ='n/a';
+   samp_end ='n/a';
+   stim_type ='n/a';
+   site_name='n/a';
+   site_channum='n/a';
+   stim_cur='n/a';
+   notes='n/a';
+end
 
 annotation_tsv  = table(s_start', s_end', duration', type', sub_type', ch_name_on', ch_name_off', samp_start', samp_end', stim_type', site_name', site_channum',stim_cur', notes',  ...
     'VariableNames',{'onset', 'offset','duration','trial_type', 'sub_type','electrodes_involved_onset','electrodes_involved_offset','sample_start','sample_end','electrical_stimulation_type','electrical_stimulation_site','electrical_stimulation_site_num','electrical_stimulation_current','notes' });
+
 if ~isempty(annotation_tsv)
     [p, f, x] = fileparts(cfg.outputfile);
     g = strsplit(f,'_ieeg');
@@ -1452,12 +1559,29 @@ try
     metadata.ch2use_included= false(size(ch));
     if(sum(included_idx))
         metadata.ch2use_included=single_annotation(annots,'Included',ch);
+        fprintf('File had Included-annotation, so no already existing electrodes.tsv is used\n')
+        metadata.incl_exist = 1;
     else % if "Included" is not annotated in the ECoG, there should be a previous ECoG with annoted "Included" 
-        files=dir(fullfile(cfg.proj_diroutput,patName,['ses-',metadata.ses_name],'ieeg','*channels.tsv'));
+        metadata.incl_exist = 0;
+        files_cECoG = dir(fullfile('/Fridge/chronic_ECoG',patName,['ses-',metadata.ses_name],'ieeg',[patName, '_ses-',metadata.ses_name,'_electrodes.tsv']));
+        files_dataset  = dir(fullfile(cfg.proj_diroutput,patName,['ses-',metadata.ses_name],'ieeg',[patName, '_ses-',metadata.ses_name,'_electrodes.tsv']));
+        if ~isempty(files_cECoG)
+            files = files_cECoG;
+            fprintf('/Fridge/chronic_ECoG/%s/ses-%s/ieeg/%s_ses-%s_electrodes.tsv is used.\n',patName,metadata.ses_name,patName,metadata.ses_name)
+        else
+            files = files_dataset;
+            fprintf('%s/%s/ses-%s/ieeg/%s_ses-%s_electrodes.tsv is used.\n',cfg.proj_diroutput,patName,metadata.ses_name,patName,metadata.ses_name)
+        end
         if ~isempty(files)
-            channels_tsv = tdfread([files(1).folder,'/', files(1).name]);
-            chan_cell = cellstr(channels_tsv.status_description);
-            metadata.ch2use_included=cellfun(@(x) contains(x,{'included'}),chan_cell);
+            elecName = fullfile(files(1).folder, '/',files(1).name);
+            cc_elecs = readtable(elecName,'FileType','text','Delimiter','\t');
+            % excluding electrodes other (so no grid, strip, depth)
+            elec_other = strcmp(cc_elecs.group,'other');
+            elec_parse = true(size(cc_elecs,1),1);
+            elec_incl = elec_parse - elec_other;
+    
+            metadata.ch2use_included=logical(elec_incl);
+            
         else
             error('There is no ECoG with annotated Included')
         end
@@ -1483,9 +1607,6 @@ try
     %     end
     %
     
-
-    
-    
     %% Look for bad channels
     metadata.ch2use_bad=single_annotation(annots,'Bad',ch);
     
@@ -1509,6 +1630,9 @@ try
     metadata.ch2use_silicon= false(size(ch));
     if(sum(silicon_idx))
         metadata.ch2use_silicon=single_annotation(annots,'Silicon',ch);
+    elseif metadata.incl_exist == 0
+        elec_silicon = strcmp(cc_elecs.silicon,'yes'); 
+        metadata.ch2use_silicon=logical(elec_silicon);        
     end
     
     %% look for resected channels
@@ -1516,6 +1640,9 @@ try
     metadata.ch2use_resected= false(size(ch));
     if(sum(resected_idx))
         metadata.ch2use_resected=single_annotation(annots,'RA',ch);
+    elseif metadata.incl_exist == 0
+        elec_resected= strcmp(cc_elecs.resected,'yes'); 
+        metadata.ch2use_resected=logical(elec_resected);
     end
     
     %% look for edge channels
@@ -1523,6 +1650,9 @@ try
     metadata.ch2use_edge= false(size(ch));
     if(sum(edge_idx))
         metadata.ch2use_edge=single_annotation(annots,'Edge',ch);
+    elseif metadata.incl_exist == 0
+        elec_edge= strcmp(cc_elecs.edge,'yes'); 
+        metadata.ch2use_edge=logical(elec_edge);
     end
     
     %% look for SOZ channels
@@ -1530,6 +1660,9 @@ try
     metadata.ch2use_soz= false(size(ch));
     if(sum(soz_idx))
         metadata.ch2use_soz=single_annotation(annots,'SOZ',ch);
+    elseif metadata.incl_exist == 0
+        elec_soz= strcmp(cc_elecs.soz,'yes');
+        metadata.ch2use_soz=logical(elec_soz);
     end
     
     %% Look for artefacts cECoG
@@ -1585,7 +1718,7 @@ try
         %         status=1;
         %         error('Missing Format annotation (example "Format;Gr[5x4];")')
         % load format from another ECoG --> json file
-        file = dir(fullfile(cfg.proj_diroutput,patName,['ses-',metadata.ses_name],'ieeg','*ieeg.json'));
+        file = dir(fullfile(cfg(1).proj_diroutput,patName,['ses-',metadata.ses_name],'ieeg','*ieeg.json'));
         if ~isempty(file)
            ieeg_json = jsondecode(fileread([file(1).folder '/' file(1).name]) );
            metadata.format_info = ieeg_json.iEEGElectrodeGroups;
@@ -1880,20 +2013,17 @@ ch_open                                                         = ~(metadata.ch2
 
 [ch_status{:}]                                                  = deal('good')                              ;
 
-if(any(metadata.ch2use_bad             | ...
-        metadata.ch2use_silicon ...
+if(any(metadata.ch2use_bad              ...
         )) % removed metadata.ch2use_cavity  | ...
     
-    [ch_status{(metadata.ch2use_bad    | ...
-        metadata.ch2use_silicon   ...
+    [ch_status{(metadata.ch2use_bad     ...
         )}] = deal('bad'); % removed metadata.ch2use_cavity  | ...
 end
 
 % bad in high frequency band
 if(any(metadata.ch2use_badhf)) % removed metadata.ch2use_cavity  | ...
     
-    [ch_status{(metadata.ch2use_bad    | ...
-        metadata.ch2use_silicon   ...
+    [ch_status{(metadata.ch2use_badhf     ...
         )}] = deal('bad_hf'); % removed metadata.ch2use_cavity  | ...
 end
 
@@ -1918,9 +2048,10 @@ end
 %     [ch_status_desc{metadata.ch2use_cavity}] = deal('cavity');
 % end
 %
-if(any(metadata.ch2use_silicon))
-    [ch_status_desc{metadata.ch2use_silicon}] = deal('silicon');
-end
+% silicon information not in channels.tsv but in electrodes.tsv
+% if(any(metadata.ch2use_silicon))
+%     [ch_status_desc{metadata.ch2use_silicon}] = deal('silicon');
+% end
 
 if(any(ch_open))
     [ch_status_desc{ch_open}] = deal('not recording');
@@ -2021,6 +2152,115 @@ if(any(~metadata.ch2use_included))
     [ch_group{ ~metadata.ch2use_included }] = deal('other')                        ;
 end
 
+function write_scans_tsv(cfg,metadata,annotation_tsv)
+[p,f] = fileparts(cfg(1).outputfile);
+g = strsplit(f,'_');
+filename = fullfile(p,[g{1},'_',g{2},'_scans.tsv']);
+
+files = dir(p);
+if contains([files(:).name],'scans')
+    
+    % read existing scans-file
+    scans_tsv = read_tsv(filename);
+    
+    if any(contains(scans_tsv.name,f))
+        scansnum = find(contains(scans_tsv.name,f) ==1);
+    else
+        scansnum = size(scans_tsv,1)+1;
+    end
+    
+    name                    = scans_tsv.name;
+    artefact                = scans_tsv.artefact;
+    sleep                   = scans_tsv.sleep;
+    seizure                 = scans_tsv.seizure_total;
+    seizuresubclin          = scans_tsv.seizure_subclinical;
+    seizureclin             = scans_tsv.seizure_clinical;    
+    motor                   = scans_tsv.motor;
+    spes                    = scans_tsv.spes;
+    esm                     = scans_tsv.esm;
+    language                = scans_tsv.language;
+    sleepwaketransition     = scans_tsv.sleepwaketransition;
+    format                  = scans_tsv.format;
+    
+else
+    scansnum = 1;
+end
+
+name{scansnum}                  = f;
+sleep(scansnum)                 = sum(strcmp(annotation_tsv.trial_type,'sleep'));
+artefact(scansnum)              = sum(strcmp(annotation_tsv.trial_type,'artefact'));
+seizure(scansnum)               = sum(strcmp(annotation_tsv.trial_type,'seizure'));
+seizuresubclin(scansnum)        = sum(strcmp(annotation_tsv.sub_type,'subclin'));
+seizureclin(scansnum)           = sum(strcmp(annotation_tsv.sub_type,'clin'));
+motor(scansnum)                 = sum(strcmp(annotation_tsv.trial_type,'motor'));
+spes(scansnum)                  = sum(strcmp(annotation_tsv.sub_type,'SPES'));
+esm(scansnum)                   = sum(strcmp(annotation_tsv.trial_type,'esm'));
+language(scansnum)              = sum(strcmp(annotation_tsv.trial_type,'language'));
+sleepwaketransition(scansnum)   = sum(strcmp(annotation_tsv.trial_type,'sleep-wake transition'));
+if metadata.incl_exist == 1
+    format{scansnum}            = 'included';
+else
+    format{scansnum}            = 'not included';
+end
+
+scans_tsv  = table(name, format, artefact, sleep, sleepwaketransition, seizure, seizureclin, seizuresubclin, motor, spes, esm, language, ...
+    'VariableNames',{'name', 'format','artefact','sleep', 'sleepwaketransition','seizure_total','seizure_clinical', 'seizure_subclinical','motor','spes','esm','language'});
+
+if ~isempty(scans_tsv)
+    write_tsv(filename, scans_tsv);
+end
+    
+function write_participants_tsv(cfg,header)
+[p,f] = fileparts(cfg(1).outputfile);
+q = strsplit(p,'/');
+
+filename = ['/', q{2},'/' q{3},'/','participants.tsv'];
+
+files = dir(['/',q{2},'/',q{3},'/']);
+pat_exist = [];
+if contains([files(:).name],'participants')
+     % read existing scans-file
+    participants_tsv = read_tsv(filename);
+    
+    if any(contains(participants_tsv.name,deblank(header.name)))
+        partnum = find(contains(participants_tsv.name,deblank(header.name)) ==1);
+        pat_exist = 1;
+    else
+        partnum = size(participants_tsv,1)+1;
+    end
+    
+    name = participants_tsv.name;
+    age = participants_tsv.age;
+else
+    partnum = 1;
+end
+
+name{partnum}   = deblank(header.name);
+if pat_exist == 1
+    if age(partnum) == header.age && age(partnum) ~= 0 % if age in participants.tsv is not equal to 0  and equal to header.age
+        age(partnum)    = header.age;
+    elseif age(partnum) ~= 0 && header.age == 0 % if age is not equal to 0 (assumed to be correct)
+        
+    elseif age(partnum) == 0 && header.age ~= 0 % if age is equal to 0 and header.age is not (latter is assumed to be correct)
+        age(partnum) = header.age;
+    elseif age(partnum) ~= 0 && header.age ~= 0 && age(partnum) ~= header.age % if both ages are not 0 and conflicting, keep current age
+        warning('ages between this file and other file are in conflict!')
+    elseif age(partnum) == 0 && header.age == 0
+        warning('age is 0 years... assumed to be incorrect!')
+    end
+else
+    if header.age == 0
+        warning('age is 0 years... assumed to be incorrect!')
+    end
+    age(partnum) = header.age;
+end
+
+participants_tsv  = table(name, age, ...
+    'VariableNames',{'name', 'age'});
+
+if ~isempty(participants_tsv)
+    write_tsv(filename, participants_tsv);
+end
 
 %% miscellaneous functions from data2bids.m of fieldtrip
 
