@@ -354,6 +354,15 @@ end
 %% function for json and tsv ieeg following fieldtrip style
 function json_sidecar_and_ch_and_ele_tsv(header,metadata,cfg)
 
+% in some patients in some files an extra headbox is included in a later
+% stadium because an EMG-recording was necessary (for example). 
+if size(metadata.ch2use_included,1) < size(metadata.ch_label,1)
+    ch2use_included = zeros(size(metadata.ch_label));
+    ch2use_included(1:size(metadata.ch2use_included,1)) =  metadata.ch2use_included;
+    ch2use_included = logical(ch2use_included);
+elseif size(metadata.ch2use_included,1) == size(metadata.ch_label,1)
+    ch2use_included = metadata.ch2use_included;
+end
 
 
 %% Generic fields for all data types
@@ -442,11 +451,11 @@ ch_label                                    = metadata.ch_label;
 
 %% IEEG inherited fields used
 if strcmpi(metadata.elec_info,'ecog')
-    ieeg_json.ECOGChannelCount             = sum(metadata.ch2use_included);
+    ieeg_json.ECOGChannelCount             = sum(ch2use_included);
     ieeg_json.SEEGChannelCount             = 0;
 elseif strcmpi(metadata.elec_info,'seeg')
     ieeg_json.ECOGChannelCount             = 0;
-    ieeg_json.SEEGChannelCount             = sum(metadata.ch2use_included);
+    ieeg_json.SEEGChannelCount             = sum(ch2use_included);
 end
 
 %ieeg_json.EEGChannelCount              =
@@ -483,16 +492,16 @@ end
 name                                = mergevector({header.elec(:).Name}', cfg.channels.name)                                   ;
 
 type                                = cell(size(name))                                                                         ;
-if(any(metadata.ch2use_included))
+if(any(ch2use_included))
     if strcmpi(metadata.elec_info,'ECoG')
-        [type{metadata.ch2use_included}]    = deal('ECOG');
+        [type{ch2use_included}]    = deal('ECOG');
     elseif strcmpi(metadata.elec_info,'SEEG')
-        [type{metadata.ch2use_included}]    = deal('SEEG');
+        [type{ch2use_included}]    = deal('SEEG');
     end
 end
 
-if(any(~metadata.ch2use_included))
-    [type{~metadata.ch2use_included}]   = deal('OTHER');
+if(any(~ch2use_included))
+    [type{~ch2use_included}]   = deal('OTHER');
 end
 idx_ecg                             = ~cellfun(@isempty,regexpi(ch_label,'ECG'))                                               ;
 idx_ecg                             = idx_ecg'                                                                                 ;
@@ -1199,6 +1208,48 @@ end
 %
 %     end
 % end
+
+%% electrical stimulation mapping
+esm = metadata.esm;
+
+if(~isempty(esm))
+    for i=1:numel(esm)
+        
+        type{cc}    = 'esm'                           ;
+        sub_type{cc} = 'n/a' ;
+        s_start{cc} = round(esm{i}.pos(1)/fs,1); % time in seconds (1 decimal)
+        samp_start{cc} = num2str(esm{i}.pos(1))          ;
+        s_end{cc}   = round(esm{i}.pos(end)/fs,1); % time in seconds (1 decimal)
+        samp_end{cc} = num2str(esm{i}.pos(end))          ;
+        
+        if(isempty(esm{i}.ch_names))
+           ch_name_on{cc} = 'all';%metadata.ch_label{metadata.ch2use_included} ;
+           % error('artefact channel name wrong')
+           ch_name_off{cc} = ch_name_on{cc} ;
+        else
+            ch_name_on{cc} = langtask{i}.ch_names{1}              ;
+            ch_name_off{cc} = ch_name_on{cc} ;
+        end
+        
+         if (isempty(esm{i}.type))
+            sub_type{cc} = 'n/a' ;
+        else
+            sub_type{cc} = esm{i}.type ;
+        end
+        
+        annots_new([annots_new{:,1}]==esm{i}.pos(1),:)=[];
+        annots_new([annots_new{:,1}]==esm{i}.pos(end),:)=[];
+        duration{cc} = round(s_end{cc} - s_start{cc},3);
+        stim_type{cc} = 'n/a';
+        site_name{cc} = 'n/a';
+        site_channum{cc} = 'n/a';
+        stim_cur{cc} = 'n/a';
+        notes{cc} = 'n/a';
+
+        cc          = cc + 1                               ;
+        
+    end
+end
 
 %% adding trigger data to events list
 trigger = metadata.trigger;
@@ -1997,18 +2048,32 @@ end
 function [ch_status,ch_status_desc]=status_and_description(metadata)
 
 ch_label                                                        = metadata.ch_label                         ;
-
-ch_status                                                       = cell(size(metadata.ch2use_included))      ;
-ch_status_desc                                                  = cell(size(metadata.ch2use_included))      ;
+% in some patients in some files an extra headbox is included in a later
+% stadium because an EMG-recording was necessary (for example). 
+if size(metadata.ch2use_included,1) < size(metadata.ch_label,1)
+    ch2use_included = zeros(size(ch_label));
+    ch2use_included(1:size(metadata.ch2use_included,1)) =  metadata.ch2use_included;
+    ch2use_included = logical(ch2use_included);
+    ch2use_silicon = zeros(size(ch_label));
+    ch2use_silicon(1:size(metadata.ch2use_silicon,1)) = metadata.ch2use_silicon;
+    ch2use_silicon = logical(ch2use_silicon);
+    
+elseif size(metadata.ch2use_included,1) == size(metadata.ch_label,1)
+    ch2use_included = metadata.ch2use_included;
+    ch2use_silicon = metadata.ch2use_silicon;
+end
+    
+ch_status                                                       = cell(size(ch2use_included))      ;
+ch_status_desc                                                  = cell(size(ch2use_included))      ;
 
 idx_ecg                                                         = ~cellfun(@isempty,regexpi(ch_label,'ECG'));
 idx_ecg                                                         = idx_ecg                                  ;
 idx_mkr                                                         = ~cellfun(@isempty,regexpi(ch_label,'MKR'));
 idx_mkr                                                         = idx_mkr                                  ;
 % channels which are open but not recording
-ch_open                                                         = ~(metadata.ch2use_included | ...
+ch_open                                                         = ~(ch2use_included | ...
     metadata.ch2use_bad      | ...
-    metadata.ch2use_silicon  | ...
+    ch2use_silicon  | ...
     idx_ecg                  | ...
     idx_mkr                    ...
     )                                       ;
@@ -2035,8 +2100,8 @@ if (any(ch_open))
 end
 
 %% status description
-if(any(metadata.ch2use_included))
-    [ch_status_desc{metadata.ch2use_included}] = deal('included');
+if(any(ch2use_included))
+    [ch_status_desc{ch2use_included}] = deal('included');
 end
 
 if(any(metadata.ch2use_bad))
@@ -2072,12 +2137,19 @@ end
 function ch_group = extract_group_info(metadata)
 
 ch_label                                    = metadata.ch_label                    ;
+% in some patients in some files an extra headbox is included in a later
+% stadium because an EMG-recording was necessary (for example). 
+if size(metadata.ch2use_included,1) < size(metadata.ch_label,1)
+    ch2use_included = zeros(size(ch_label));
+    ch2use_included(1:size(metadata.ch2use_included,1)) =  metadata.ch2use_included;
+elseif size(metadata.ch2use_included,1) == size(metadata.ch_label,1)
+    ch2use_included = metadata.ch2use_included;
+end
 
 if strcmpi(metadata.elec_info,'SEEG')
-    idx_depths = metadata.ch2use_included;
-    idx_strips = zeros(size(ch_label));
-    idx_grid = zeros(size(ch_label));
-    idx_grid = logical(idx_grid);
+    idx_depths = ch2use_included;
+    idx_strips = false(size(ch_label));
+    idx_grid = false(size(ch_label));
 elseif strcmpi(metadata.elec_info,'ECoG')
     C = strsplit(metadata.format_info,{';','['});
     
@@ -2135,13 +2207,13 @@ elseif strcmpi(metadata.elec_info,'ECoG')
             end
         end
     end
-    idx_grid = ~idx_depths & ~idx_strips & metadata.ch2use_included;
+    idx_grid = ~idx_depths & ~idx_strips & ch2use_included;
 end
 
 idx_depths = logical(idx_depths);
 idx_strips = logical(idx_strips);
 
-ch_group                                    = cell(size(metadata.ch2use_included)) ;
+ch_group                                    = cell(size(ch2use_included)) ;
 if(any(idx_grid))
     [ch_group{idx_grid}]                    = deal('grid')                         ;
 end
@@ -2151,8 +2223,8 @@ end
 if(any(idx_depths))
     [ch_group{idx_depths}]                   = deal('depth')                        ;
 end
-if(any(~metadata.ch2use_included))
-    [ch_group{ ~metadata.ch2use_included }] = deal('other')                        ;
+if(any(~ch2use_included))
+    [ch_group{ ~ch2use_included }] = deal('other')                        ;
 end
 
 function write_scans_tsv(cfg,metadata,annotation_tsv)
@@ -2180,12 +2252,13 @@ if contains([files(:).name],'scans')
     seizure                 = scans_tsv.seizure_total;
     seizuresubclin          = scans_tsv.seizure_subclinical;
     seizureclin             = scans_tsv.seizure_clinical;    
-    motor             = scans_tsv.motor;
+    motor                   = scans_tsv.motor;
     spes                    = scans_tsv.spes;
     esm                     = scans_tsv.esm;
     language                = scans_tsv.language;
     sleepwaketransition     = scans_tsv.sleepwaketransition;
     format                  = scans_tsv.format;
+    sens                    = scans_tsv.sens;
     
 else
     scansnum = 1;
@@ -2197,13 +2270,14 @@ id_sleep                          = strcmp(annotation_tsv.trial_type,'sleep');
 durationsl_total = 0;
 durationsl_rem = 0;
 durationsl_nrem = 0;
+annotsleep = find(id_sleep==1);
 
 for i=1:sum(id_sleep)
-    durationsl_total(i) = annotation_tsv.duration{id_sleep(i)};
-    if strcmp(annotation_tsv.sub_type{id_sleep(i)},'REM')
-        durationsl_rem(i) = annotation_tsv.duration{id_sleep(i)};
-    elseif strcmp(annotation_tsv.sub_type{id_sleep(i)},'nREM')
-        durationsl_nrem(i) = annotation_tsv.duration{id_sleep(i)};
+    durationsl_total(i) = annotation_tsv.duration{annotsleep(i)};
+    if strcmp(annotation_tsv.sub_type{annotsleep(i)},'REM')
+        durationsl_rem(i) = annotation_tsv.duration{annotsleep(i)};
+    elseif strcmp(annotation_tsv.sub_type{annotsleep(i)},'nREM')
+        durationsl_nrem(i) = annotation_tsv.duration{annotsleep(i)};
     end
 end
 
@@ -2212,22 +2286,35 @@ sleep_rem(scansnum,1)             = sum(durationsl_rem);
 sleep_nrem(scansnum,1)            = sum(durationsl_nrem);
 
 % motor period
-id_motor                          = strcmp(annotation_tsv.trial_type,'motor');
+id_motor                          = strcmp(annotation_tsv.trial_type,'motortask');
 durationmt_total = 0;
+annotmt = find(id_motor==1);
 
 for i=1:sum(id_motor)
-    durationmt_total(i) = annotation_tsv.duration{id_motor(i)};
+    durationmt_total(i) = annotation_tsv.duration{annotmt(i)};
 end
-motor_total(scansnum,1)           = sum(durationmt_total);
+motor(scansnum,1)           = sum(durationmt_total);
 
 % language period
-id_lang                          = strcmp(annotation_tsv.trial_type,'language');
+id_lang                          = strcmp(annotation_tsv.trial_type,'languagetask');
 durationlang_total = 0;
+annotlang = find(id_lang==1);
 
-for i=1:sum(id_motor)
-    durationlang_total(i) = annotation_tsv.duration{id_lang(i)};
+for i=1:sum(id_lang)
+    durationlang_total(i) = annotation_tsv.duration{annotlang(i)};
 end
-language_total(scansnum,1)           = sum(durationlang_total);
+language(scansnum,1)           = sum(durationlang_total);
+
+% sensing task period
+id_sens                          = strcmp(annotation_tsv.trial_type,'sensing task');
+durationsens_total = 0;
+annotsens = find(id_sens==1);
+
+for i=1:sum(id_lang)
+    durationsens_total(i) = annotation_tsv.duration{annotsens(i)};
+end
+sens(scansnum,1)           = sum(durationsens_total);
+
 
 artefact(scansnum,1)              = sum(strcmp(annotation_tsv.trial_type,'artefact'));
 seizure(scansnum,1)               = sum(strcmp(annotation_tsv.trial_type,'seizure'));
@@ -2242,8 +2329,8 @@ else
     format{scansnum,1}            = 'not included';
 end
 
-scans_tsv  = table(name, format, artefact, sleep_total, sleep_rem, sleep_nrem, sleepwaketransition, seizure, seizureclin, seizuresubclin, motor_total, spes, esm, language_total, ...
-    'VariableNames',{'name', 'format','artefact','sleep_total', 'sleep_rem','sleep_nrem','sleepwaketransition','seizure_total','seizure_clinical', 'seizure_subclinical','motor','spes','esm','language'});
+scans_tsv  = table(name, format, artefact, sleep_total, sleep_rem, sleep_nrem, sleepwaketransition, seizure, seizureclin, seizuresubclin, motor, spes, esm, language, sens, ...
+    'VariableNames',{'name', 'format','artefact','sleep_total', 'sleep_rem','sleep_nrem','sleepwaketransition','seizure_total','seizure_clinical', 'seizure_subclinical','motor','spes','esm','language','sens'});
 
 if ~isempty(scans_tsv)
     write_tsv(filename, scans_tsv);
@@ -2274,24 +2361,24 @@ else
     partnum = 1;
 end
 
-name{partnum}   = deblank(header.name);
+name{partnum,1}   = deblank(header.name);
 if pat_exist == 1
-    if age(partnum) == header.age && age(partnum) ~= 0 % if age in participants.tsv is not equal to 0  and equal to header.age
-        age(partnum)    = header.age;
-    elseif age(partnum) ~= 0 && header.age == 0 % if age is not equal to 0 (assumed to be correct)
+    if age(partnum,1) == header.age && age(partnum,1) ~= 0 % if age in participants.tsv is not equal to 0  and equal to header.age
+        age(partnum,1)    = header.age;
+    elseif age(partnum,1) ~= 0 && header.age == 0 % if age is not equal to 0 (assumed to be correct)
         
-    elseif age(partnum) == 0 && header.age ~= 0 % if age is equal to 0 and header.age is not (latter is assumed to be correct)
-        age(partnum) = header.age;
-    elseif age(partnum) ~= 0 && header.age ~= 0 && age(partnum) ~= header.age % if both ages are not 0 and conflicting, keep current age
+    elseif age(partnum,1) == 0 && header.age ~= 0 % if age is equal to 0 and header.age is not (latter is assumed to be correct)
+        age(partnum,1) = header.age;
+    elseif age(partnum,1) ~= 0 && header.age ~= 0 && age(partnum,1) ~= header.age % if both ages are not 0 and conflicting, keep current age
         warning('ages between this file and other file are in conflict!')
-    elseif age(partnum) == 0 && header.age == 0
+    elseif age(partnum,1) == 0 && header.age == 0
         warning('age is 0 years... assumed to be incorrect!')
     end
 else
     if header.age == 0
         warning('age is 0 years... assumed to be incorrect!')
     end
-    age(partnum) = header.age;
+    age(partnum,1) = header.age;
 end
 
 participants_tsv  = table(name, age, ...
