@@ -6,15 +6,15 @@
 %
 %  output structure with some information about the subject
 %  output.subjName - name of the subject
-% 
-% 
+%
+%
 
 
 % The following functions rely and take inspiration on fieltrip data2bids.m  function
 % (https://github.com/fieldtrip/fieldtrip.git)
-% 
+%
 % fieldtrip toolbox should be on the path (plus the fieldtrip_private folder)
-% (see http://www.fieldtriptoolbox.org/faq/matlab_does_not_see_the_functions_in_the_private_directory/) 
+% (see http://www.fieldtriptoolbox.org/faq/matlab_does_not_see_the_functions_in_the_private_directory/)
 %
 % jsonlab toolbox
 % https://github.com/fangq/jsonlab.git
@@ -24,21 +24,21 @@
 % copied in the external folder
 
 
-% 
-%  
+%
+%
 %     Copyright (C) 2019 Matteo Demuru
 %	  Copyright (C) 2019 Dorien van Blooijs
-% 
+%
 %     This program is free software: you can redistribute it and/or modify
 %     it under the terms of the GNU General Public License as published by
 %     the Free Software Foundation, either version 3 of the License, or
 %     (at your option) any later version.
-% 
+%
 %     This program is distributed in the hope that it will be useful,
 %     but WITHOUT ANY WARRANTY; without even the implied warranty of
 %     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 %     GNU General Public License for more details.
-% 
+%
 %     You should have received a copy of the GNU General Public License
 %     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
@@ -71,7 +71,7 @@ try
     
     [header,data,data_time,trigger,annots] = read_TRC_HDR_DATA_TRIGS_ANNOTS(filename);
     
-    if(isempty(header) || isempty(data) || isempty(data_time) || isempty(annots)) %|| isempty(trigger) 
+    if(isempty(header) || isempty(data) || isempty(data_time) || isempty(annots)) %|| isempty(trigger)
         error('TRC reading failed')  ;
     end
     ch_label = deblank({header.elec.Name}');
@@ -145,7 +145,7 @@ try
         %otherwise remove tsv,json,eeg,vhdr,trc,vmrk
         for i=1:size(ieeg_dir,2)
             ieeg_files = dir(ieeg_dir{i});
-        
+            
             if contains([ieeg_files(:).name],ieeg_file)
                 
                 delete(fullfile(ieeg_dir{i},[ieeg_file '*.tsv']))  ; % TO FIX: this should not be removed when electrode positions are inserted! Be careful with this!
@@ -262,7 +262,7 @@ try
         
         %% write annotations of the TRC
         annotations_tsv = write_annotations_tsv(header,metadata,annots,cfg);
-
+        
         %% write scans-file
         write_scans_tsv(cfg,metadata,annotations_tsv)
         
@@ -315,8 +315,8 @@ if ~isempty(ddesc_json)
         existing = [];
     end
     write_json(filename, mergeconfig(existing, ddesc_json))
-%     json_options.indent = ' ';
-%     jsonwrite(filename, mergeconfig(existing, ddesc_json), json_options)
+    %     json_options.indent = ' ';
+    %     jsonwrite(filename, mergeconfig(existing, ddesc_json), json_options)
 end
 
 %% create dataset descriptor
@@ -346,16 +346,16 @@ if ~isempty(edesc_json)
     else
         existing = [];
     end
-        write_json(filename, mergeconfig(existing, edesc_json))
-%     json_options.indent = ' ';
-%     jsonwrite(filename, mergeconfig(existing, edesc_json), json_options)
+    write_json(filename, mergeconfig(existing, edesc_json))
+    %     json_options.indent = ' ';
+    %     jsonwrite(filename, mergeconfig(existing, edesc_json), json_options)
 end
 
 %% function for json and tsv ieeg following fieldtrip style
 function json_sidecar_and_ch_and_ele_tsv(header,metadata,cfg)
 
 % in some patients in some files an extra headbox is included in a later
-% stadium because an EMG-recording was necessary (for example). 
+% stadium because an EMG-recording was necessary (for example).
 if size(metadata.ch2use_included,1) < size(metadata.ch_label,1)
     ch2use_included = zeros(size(metadata.ch_label));
     ch2use_included(1:size(metadata.ch2use_included,1)) =  metadata.ch2use_included;
@@ -595,9 +595,9 @@ if ~isempty(ieeg_json)
     else
         existing = [];
     end
-      write_json(filename, mergeconfig(existing, ieeg_json))
-%     json_options.indent = ' ';
-%     jsonwrite(filename, mergeconfig(existing, ieeg_json), json_options)
+    write_json(filename, mergeconfig(existing, ieeg_json))
+    %     json_options.indent = ' ';
+    %     jsonwrite(filename, mergeconfig(existing, ieeg_json), json_options)
 end
 
 if ~isempty(channels_tsv)
@@ -623,13 +623,13 @@ if metadata.incl_exist == 1 % format and included were annotated in the file, fi
     qses = contains(q,'ses');
     filename_dataset = fullfile(p, [q{qsub} '_' q{qses} '_electrodes.tsv']);
     if ~isempty(cfg.outputfilesec)
-           [p] = fileparts(cfg.outputfilesec{1});
-            %g = strsplit(f,'_ieeg');
-            q = strsplit(p,'/');
-             qsub = contains(q,'sub');
-             qses = contains(q,'ses');
-            filename_cECoG = fullfile(p, [q{qsub} '_' q{qses} '_electrodes.tsv']);
-    else 
+        [p] = fileparts(cfg.outputfilesec{1});
+        %g = strsplit(f,'_ieeg');
+        q = strsplit(p,'/');
+        qsub = contains(q,'sub');
+        qses = contains(q,'ses');
+        filename_cECoG = fullfile(p, [q{qsub} '_' q{qses} '_electrodes.tsv']);
+    else
         filename_cECoG = [];
     end
     
@@ -695,9 +695,9 @@ if ~isempty(coordsystem_json)
     else
         existing = [];
     end
-        write_json(filename, mergeconfig(existing, coordsystem_json))
-%     json_options.indent = ' ';
-%     jsonwrite(filename, mergeconfig(existing, coordsystem_json), json_options)
+    write_json(filename, mergeconfig(existing, coordsystem_json))
+    %     json_options.indent = ' ';
+    %     jsonwrite(filename, mergeconfig(existing, coordsystem_json), json_options)
     
 end
 
@@ -710,482 +710,505 @@ ch_label  = metadata.ch_label;
 ch2use_included = metadata.ch2use_included;
 fs = header.Rate_Min;
 
-metadata;
-
-type        = {};
-sub_type    = {};
-s_start     = {};
-s_end       = {};
+eventsannots.type        = {};
+eventsannots.sub_type    = {};
+eventsannots.s_start     = {};
+eventsannots.s_end       = {};
 % ch_name     = {};
-ch_name_on  = {};
-ch_name_off = {};
-cc        = 1;
+eventsannots.ch_name_on  = {};
+eventsannots.ch_name_off = {};
 
-%% artefacts
-artefact = metadata.artefacts;
 annots_new = annots;
 
-if(~isempty(artefact))
-    for i=1:numel(artefact)
-        
-        type{cc}    = 'artefact'                           ;
-        sub_type{cc} = 'n/a' ;
-        ch_name_on{cc} = 'n/a';
-        ch_name_off{cc} = 'n/a';
-        s_start{cc} = round(artefact{i}.pos(1)/fs,1); % time in seconds (1 decimal)
-        samp_start{cc} = num2str(artefact{i}.pos(1))          ;
-        s_end{cc}   = round(artefact{i}.pos(end)/fs,1); % time in seconds (1 decimal)
-        samp_end{cc} = num2str(artefact{i}.pos(end))          ;
-        
-        if(isempty(artefact{i}.ch_names))
-           name = 'all';%metadata.ch_label{metadata.ch2use_included} ;
-            % error('artefact channel name wrong')
-        else
-            if size(artefact{i}.ch_names,2) == 1 
-                name = artefact{i}.ch_names{1}              ;
-            else
-                for j=1
-                    name =[artefact{i}.ch_names{1}];
-                end
-                
-                for j=2:size(artefact{i}.ch_names,2)
-                    name = [name ,',', artefact{i}.ch_names{j}];
-                end
-            end
-        end
-        ch_name_on{cc} = name;
-        ch_name_off{cc} = ch_name_on{cc};
+%% artefacts
 
-        annots_new([annots_new{:,1}]==artefact{i}.pos(1),:)=[];
-        annots_new([annots_new{:,1}]==artefact{i}.pos(end),:)=[];
-        
-        duration{cc} = round(s_end{cc} - s_start{cc},3);
-        stim_type{cc} = 'n/a';
-        site_name{cc} = 'n/a';
-        site_channum{cc} = 'n/a';
-        stim_cur{cc} = 'n/a';
-        notes{cc} = 'n/a';
-        
-        cc          = cc + 1                               ;
-        
-    end
-end
+[annots_new, eventsannots ] = add_event2annotation(metadata.artefacts,'artefact',eventsannots, annots_new,header);
+
+% if(~isempty(artefact))
+%     for i=1:numel(artefact)
+%
+%         type{cc}    = 'artefact'                           ;
+%         sub_type{cc} = 'n/a' ;
+%         ch_name_on{cc} = 'n/a';
+%         ch_name_off{cc} = 'n/a';
+%         s_start{cc} = round(artefact{i}.pos(1)/fs,1); % time in seconds (1 decimal)
+%         samp_start{cc} = num2str(artefact{i}.pos(1))          ;
+%         s_end{cc}   = round(artefact{i}.pos(end)/fs,1); % time in seconds (1 decimal)
+%         samp_end{cc} = num2str(artefact{i}.pos(end))          ;
+%
+%         if(isempty(artefact{i}.ch_names))
+%            name = 'all';%metadata.ch_label{metadata.ch2use_included} ;
+%             % error('artefact channel name wrong')
+%         else
+%             if size(artefact{i}.ch_names,2) == 1
+%                 name = artefact{i}.ch_names{1}              ;
+%             else
+%                 for j=1
+%                     name =[artefact{i}.ch_names{1}];
+%                 end
+%
+%                 for j=2:size(artefact{i}.ch_names,2)
+%                     name = [name ,',', artefact{i}.ch_names{j}];
+%                 end
+%             end
+%         end
+%         ch_name_on{cc} = name;
+%         ch_name_off{cc} = ch_name_on{cc};
+%
+%         annots_new([annots_new{:,1}]==artefact{i}.pos(1),:)=[];
+%         annots_new([annots_new{:,1}]==artefact{i}.pos(end),:)=[];
+%
+%         duration{cc} = round(s_end{cc} - s_start{cc},3);
+%         stim_type{cc} = 'n/a';
+%         site_name{cc} = 'n/a';
+%         site_channum{cc} = 'n/a';
+%         stim_cur{cc} = 'n/a';
+%         notes{cc} = 'n/a';
+%
+%         cc          = cc + 1                               ;
+%
+%     end
+% end
 
 %% seizures
-seizure = metadata.seizure;
 
-if(~isempty(seizure))
-    for i=1:numel(seizure)
-        
-        type{cc}    = 'seizure'                           ;
-        sub_type{cc} = seizure{i}.type;
-        s_start{cc} = round(seizure{i}.pos(1)/fs,1); % time in seconds (1 decimal)
-        samp_start{cc} = num2str(seizure{i}.pos(1))          ;
-        s_end{cc}   = round(seizure{i}.pos(end)/fs,1); % time in seconds (1 decimal)
-        samp_end{cc} = num2str(seizure{i}.pos(end))          ;
-       ch_name_on{cc} = 'n/a';
-       ch_name_off{cc} = 'n/a';
-       
-        if size(seizure{i}.ch_names_on,2) ==1
-            name = seizure{i}.ch_names_on{1}              ;
-        else
-            for j=1
-                name =[seizure{i}.ch_names_on{1}];
-            end
-            
-            for j=2:size(seizure{i}.ch_names_on,2)
-                name = [name ,',', seizure{i}.ch_names_on{j}];
-            end
-            
-        end
-        ch_name_on{cc} = name;
-        
-        if size(seizure{i}.ch_names_off,2) ==1
-            name = seizure{i}.ch_names_off{1}              ;
-        else
-            for j=1
-                name =[seizure{i}.ch_names_off{1}];
-            end
-            
-            for j=2:size(seizure{i}.ch_names_off,2)
-                name = [name ,',', seizure{i}.ch_names_off{j}];
-            end
-        end
-        ch_name_off{cc} = name;
+[annots_new, eventsannots ] = add_event2annotation(metadata.seizure,'seizure',eventsannots, annots_new,header);
 
-        annots_new([annots_new{:,1}]==seizure{i}.pos(1),:)=[];
-        annots_new([annots_new{:,1}]==seizure{i}.pos(end),:)=[];
-        duration{cc} = round(s_end{cc} - s_start{cc},3);
-        stim_type{cc} = 'n/a';
-        site_name{cc} = 'n/a';
-        site_channum{cc} = 'n/a';
-        stim_cur{cc} = 'n/a';
-        notes{cc} = 'n/a';
-        
-        cc          = cc + 1                               ;
-        
-    end
-end
+
+% seizure = metadata.seizure;
+%
+% if(~isempty(seizure))
+%     for i=1:numel(seizure)
+%
+%         type{cc}    = 'seizure'                           ;
+%         sub_type{cc} = seizure{i}.type;
+%         s_start{cc} = round(seizure{i}.pos(1)/fs,1); % time in seconds (1 decimal)
+%         samp_start{cc} = num2str(seizure{i}.pos(1))          ;
+%         s_end{cc}   = round(seizure{i}.pos(end)/fs,1); % time in seconds (1 decimal)
+%         samp_end{cc} = num2str(seizure{i}.pos(end))          ;
+%        ch_name_on{cc} = 'n/a';
+%        ch_name_off{cc} = 'n/a';
+%
+%         if size(seizure{i}.ch_names_on,2) ==1
+%             name = seizure{i}.ch_names_on{1}              ;
+%         else
+%             for j=1
+%                 name =[seizure{i}.ch_names_on{1}];
+%             end
+%
+%             for j=2:size(seizure{i}.ch_names_on,2)
+%                 name = [name ,',', seizure{i}.ch_names_on{j}];
+%             end
+%
+%         end
+%         ch_name_on{cc} = name;
+%
+%         if size(seizure{i}.ch_names_off,2) ==1
+%             name = seizure{i}.ch_names_off{1}              ;
+%         else
+%             for j=1
+%                 name =[seizure{i}.ch_names_off{1}];
+%             end
+%
+%             for j=2:size(seizure{i}.ch_names_off,2)
+%                 name = [name ,',', seizure{i}.ch_names_off{j}];
+%             end
+%         end
+%         ch_name_off{cc} = name;
+%
+%         annots_new([annots_new{:,1}]==seizure{i}.pos(1),:)=[];
+%         annots_new([annots_new{:,1}]==seizure{i}.pos(end),:)=[];
+%         duration{cc} = round(s_end{cc} - s_start{cc},3);
+%         stim_type{cc} = 'n/a';
+%         site_name{cc} = 'n/a';
+%         site_channum{cc} = 'n/a';
+%         stim_cur{cc} = 'n/a';
+%         notes{cc} = 'n/a';
+%
+%         cc          = cc + 1                               ;
+%
+%     end
+% end
 
 %% stimulation
-stimulation = metadata.stimulation;
 
-if(~isempty(stimulation))
-    for i=1:numel(stimulation)
-        
-        type{cc}    = 'stimulation'                           ;
-        sub_type{cc} = 'n/a' ;
-        s_start{cc} = round(stimulation{i}.pos(1)/fs,1); % time in seconds (1 decimal)
-        samp_start{cc} = num2str(stimulation{i}.pos(1))          ;
-        s_end{cc}   = round(stimulation{i}.pos(end)/fs,1); % time in seconds (1 decimal)
-        samp_end{cc} = num2str(stimulation{i}.pos(end))          ;
-        
-        if(isempty(stimulation{i}.ch_names))
-           ch_name_on{cc} = 'all';%metadata.ch_label{metadata.ch2use_included} ;
-           ch_name_off{cc} = ch_name_on{cc}; % error('artefact channel name wrong')
-        else
-            ch_name_on{cc} = stimulation{i}.ch_names{1}              ;
-            ch_name_off{cc} = ch_name_on{cc};
-        end
-        
-        annots_new([annots_new{:,1}]==stimulation{i}.pos(1),:)=[];
-        annots_new([annots_new{:,1}]==stimulation{i}.pos(end),:)=[];
-        duration{cc} = round(s_end{cc} - s_start{cc},3);
-        stim_type{cc} = 'n/a';
-        site_name{cc} = 'n/a';
-        site_channum{cc} = 'n/a';
-        stim_cur{cc} = 'n/a';
-        notes{cc} = 'n/a';
+[annots_new, eventsannots ] = add_event2annotation(metadata.stimulation,'stimulation',eventsannots, annots_new,header);
 
-        cc          = cc + 1                               ;
-        
-    end
-end
+% stimulation = metadata.stimulation;
+%
+% if(~isempty(stimulation))
+%     for i=1:numel(stimulation)
+%
+%         type{cc}    = 'stimulation'                           ;
+%         sub_type{cc} = 'n/a' ;
+%         s_start{cc} = round(stimulation{i}.pos(1)/fs,1); % time in seconds (1 decimal)
+%         samp_start{cc} = num2str(stimulation{i}.pos(1))          ;
+%         s_end{cc}   = round(stimulation{i}.pos(end)/fs,1); % time in seconds (1 decimal)
+%         samp_end{cc} = num2str(stimulation{i}.pos(end))          ;
+%
+%         if(isempty(stimulation{i}.ch_names))
+%             ch_name_on{cc} = 'all';%metadata.ch_label{metadata.ch2use_included} ;
+%             ch_name_off{cc} = ch_name_on{cc}; % error('artefact channel name wrong')
+%         else
+%             ch_name_on{cc} = stimulation{i}.ch_names{1}              ;
+%             ch_name_off{cc} = ch_name_on{cc};
+%         end
+%
+%         annots_new([annots_new{:,1}]==stimulation{i}.pos(1),:)=[];
+%         annots_new([annots_new{:,1}]==stimulation{i}.pos(end),:)=[];
+%         duration{cc} = round(s_end{cc} - s_start{cc},3);
+%         stim_type{cc} = 'n/a';
+%         site_name{cc} = 'n/a';
+%         site_channum{cc} = 'n/a';
+%         stim_cur{cc} = 'n/a';
+%         notes{cc} = 'n/a';
+%
+%         cc          = cc + 1                               ;
+%
+%     end
+% end
 
-%% eyes open 
+%% eyes open
 
-eyes_open = metadata.eyes_open;
+[annots_new, eventsannots ] = add_event2annotation(metadata.eyes_open,'eyes open',eventsannots, annots_new,header);
 
-if(~isempty(eyes_open))
-    for i=1:numel(eyes_open)
-        
-        type{cc}    = 'eyes open'                           ;
-        sub_type{cc} = 'n/a' ;
-        s_start{cc} = round(eyes_open{i}.pos(1)/fs,1); % time in seconds (1 decimal)
-        samp_start{cc} = num2str(eyes_open{i}.pos(1))          ;
-        s_end{cc}   = round(eyes_open{i}.pos(end)/fs,1); % time in seconds (1 decimal)
-        samp_end{cc} = num2str(eyes_open{i}.pos(end))          ;
-        
-        if(isempty(eyes_open{i}.ch_names))
-            ch_name_on{cc} = 'all';%metadata.ch_label{metadata.ch2use_included} ;
-            % error('artefact channel name wrong')
-            ch_name_off{cc} = ch_name_on{cc} ;
-        else
-            ch_name_on{cc} = eyes_open{i}.ch_names{1}              ;
-            ch_name_off{cc} = ch_name_on{cc} ;
-        end
-        
-        annots_new([annots_new{:,1}]==eyes_open{i}.pos(1),:)=[];
-        annots_new([annots_new{:,1}]==eyes_open{i}.pos(end),:)=[];
-        duration{cc} = round(s_end{cc} - s_start{cc},3);
-        stim_type{cc} = 'n/a';
-        site_name{cc} = 'n/a';
-        site_channum{cc} = 'n/a';
-        stim_cur{cc} = 'n/a';
-        notes{cc} = 'n/a';
-
-        cc          = cc + 1                               ;
-        
-    end
-end
+% eyes_open = metadata.eyes_open;
+%
+% if(~isempty(eyes_open))
+%     for i=1:numel(eyes_open)
+%
+%         type{cc}    = 'eyes open'                           ;
+%         sub_type{cc} = 'n/a' ;
+%         s_start{cc} = round(eyes_open{i}.pos(1)/fs,1); % time in seconds (1 decimal)
+%         samp_start{cc} = num2str(eyes_open{i}.pos(1))          ;
+%         s_end{cc}   = round(eyes_open{i}.pos(end)/fs,1); % time in seconds (1 decimal)
+%         samp_end{cc} = num2str(eyes_open{i}.pos(end))          ;
+%
+%         if(isempty(eyes_open{i}.ch_names))
+%             ch_name_on{cc} = 'all';%metadata.ch_label{metadata.ch2use_included} ;
+%             error('artefact channel name wrong')
+%             ch_name_off{cc} = ch_name_on{cc} ;
+%         else
+%             ch_name_on{cc} = eyes_open{i}.ch_names{1}              ;
+%             ch_name_off{cc} = ch_name_on{cc} ;
+%         end
+%
+%         annots_new([annots_new{:,1}]==eyes_open{i}.pos(1),:)=[];
+%         annots_new([annots_new{:,1}]==eyes_open{i}.pos(end),:)=[];
+%         duration{cc} = round(s_end{cc} - s_start{cc},3);
+%         stim_type{cc} = 'n/a';
+%         site_name{cc} = 'n/a';
+%         site_channum{cc} = 'n/a';
+%         stim_cur{cc} = 'n/a';
+%         notes{cc} = 'n/a';
+%
+%         cc          = cc + 1                               ;
+%
+%     end
+% end
 
 
 
 
 %% sleep wake transition
-slaw_trans = metadata.slaw_trans;
 
-if(~isempty(slaw_trans))
-    for i=1:numel(slaw_trans)
-        
-        type{cc}    = 'sleep-wake transition'                           ;
-        sub_type{cc} = 'n/a' ;
-        s_start{cc} = round(slaw_trans{i}.pos(1)/fs,1); % time in seconds (1 decimal)
-        samp_start{cc} = num2str(slaw_trans{i}.pos(1))          ;
-        s_end{cc}   = round(slaw_trans{i}.pos(end)/fs,1); % time in seconds (1 decimal)
-        samp_end{cc} = num2str(slaw_trans{i}.pos(end))          ;
-        
-        if(isempty(slaw_trans{i}.ch_names))
-            ch_name_on{cc} = 'all';%metadata.ch_label{metadata.ch2use_included} ;
-            % error('artefact channel name wrong')
-            ch_name_off{cc} = ch_name_on{cc} ;
-        else
-            ch_name_on{cc} = slaw_trans{i}.ch_names{1}              ;
-            ch_name_off{cc} = ch_name_on{cc} ;
-        end
-        
-        annots_new([annots_new{:,1}]==slaw_trans{i}.pos(1),:)=[];
-        annots_new([annots_new{:,1}]==slaw_trans{i}.pos(end),:)=[];
-        duration{cc} = round(s_end{cc} - s_start{cc},3);
-        stim_type{cc} = 'n/a';
-        site_name{cc} = 'n/a';
-        site_channum{cc} = 'n/a';
-        stim_cur{cc} = 'n/a';
-        notes{cc} = 'n/a';
+[annots_new, eventsannots ] = add_event2annotation(metadata.slaw_trans,'sleep-wake transition',eventsannots, annots_new,header);
 
-        cc          = cc + 1                               ;
-        
-    end
-end
-
-
-%% sleep 
-sleep = metadata.sleep;
-
-if(~isempty(sleep))
-    for i=1:numel(sleep)
-        
-        type{cc}    = 'sleep'                           ;
-        s_start{cc} = round(sleep{i}.pos(1)/fs,1); % time in seconds (1 decimal)
-        samp_start{cc} = num2str(sleep{i}.pos(1))          ;
-        s_end{cc}   = round(sleep{i}.pos(end)/fs,1); % time in seconds (1 decimal)
-        samp_end{cc} = num2str(sleep{i}.pos(end))          ;
-        
-        if(isempty(sleep{i}.ch_names))
-            ch_name_on{cc} = 'all';%metadata.ch_label{metadata.ch2use_included} ;
-            % error('artefact channel name wrong')
-            ch_name_off{cc} = ch_name_on{cc} ;
-        else
-            ch_name_on{cc} = slaw_trans{i}.ch_names{1}              ;
-            ch_name_off{cc} = ch_name_on{cc} ;
-        end
-        
-        if (isempty(sleep{i}.type))
-            sub_type{cc} = 'unknown' ;
-        else
-            sub_type{cc} = sleep{i}.type ;
-        end
-                        
-        annots_new([annots_new{:,1}]==sleep{i}.pos(1),:)=[];
-        annots_new([annots_new{:,1}]==sleep{i}.pos(end),:)=[];
-        duration{cc} = round(s_end{cc} - s_start{cc},3);
-        stim_type{cc} = 'n/a';
-        site_name{cc} = 'n/a';
-        site_channum{cc} = 'n/a';
-        stim_cur{cc} = 'n/a';
-        notes{cc} = 'n/a';
-
-        cc          = cc + 1                               ;
-        
-    end
-end
-
-%% motortask
-motortask = metadata.motortask;
-
-if(~isempty(motortask))
-    for i=1:numel(motortask)
-        
-        type{cc}    = 'motortask'                           ;
-        sub_type{cc} = 'n/a' ;
-        s_start{cc} = round(motortask{i}.pos(1)/fs,1); % time in seconds (1 decimal)
-        samp_start{cc} = num2str(motortask{i}.pos(1))          ;
-        s_end{cc}   = round(motortask{i}.pos(end)/fs,1); % time in seconds (1 decimal)
-        samp_end{cc} = num2str(motortask{i}.pos(end))          ;
-        
-        if(isempty(motortask{i}.ch_names))
-           ch_name_on{cc} = 'all';%metadata.ch_label{metadata.ch2use_included} ;
-           % error('artefact channel name wrong')
-           ch_name_off{cc} = ch_name_on{cc} ;
-        else
-            ch_name_on{cc} = motortask{i}.ch_names{1}              ;
-            ch_name_off{cc} = ch_name_on{cc} ;
-        end
-        
-         if (isempty(motortask{i}.type))
-            sub_type{cc} = 'unknown' ;
-        else
-            sub_type{cc} = motortask{i}.type ;
-        end
-        
-        annots_new([annots_new{:,1}]==motortask{i}.pos(1),:)=[];
-        annots_new([annots_new{:,1}]==motortask{i}.pos(end),:)=[];
-        duration{cc} = round(s_end{cc} - s_start{cc},3);
-        stim_type{cc} = 'n/a';
-        site_name{cc} = 'n/a';
-        site_channum{cc} = 'n/a';
-        stim_cur{cc} = 'n/a';
-        notes{cc} = 'n/a';
-
-
-        cc          = cc + 1                               ;
-        
-    end
-end
-
-%% language task
-langtask = metadata.langtask;
-
-if(~isempty(langtask))
-    for i=1:numel(langtask)
-        
-        type{cc}    = 'languagetask'                           ;
-        sub_type{cc} = 'n/a' ;
-        s_start{cc} = round(langtask{i}.pos(1)/fs,1); % time in seconds (1 decimal)
-        samp_start{cc} = num2str(langtask{i}.pos(1))          ;
-        s_end{cc}   = round(langtask{i}.pos(end)/fs,1); % time in seconds (1 decimal)
-        samp_end{cc} = num2str(langtask{i}.pos(end))          ;
-        
-        if(isempty(langtask{i}.ch_names))
-           ch_name_on{cc} = 'all';%metadata.ch_label{metadata.ch2use_included} ;
-           % error('artefact channel name wrong')
-           ch_name_off{cc} = ch_name_on{cc} ;
-        else
-            ch_name_on{cc} = langtask{i}.ch_names{1}              ;
-            ch_name_off{cc} = ch_name_on{cc} ;
-        end
-        
-         if (isempty(langtask{i}.type))
-            sub_type{cc} = 'unknown' ;
-        else
-            sub_type{cc} = langtask{i}.type ;
-        end
-        
-        annots_new([annots_new{:,1}]==langtask{i}.pos(1),:)=[];
-        annots_new([annots_new{:,1}]==langtask{i}.pos(end),:)=[];
-        duration{cc} = round(s_end{cc} - s_start{cc},3);
-        stim_type{cc} = 'n/a';
-        site_name{cc} = 'n/a';
-        site_channum{cc} = 'n/a';
-        stim_cur{cc} = 'n/a';
-        notes{cc} = 'n/a';
-
-
-        cc          = cc + 1                               ;
-        
-    end
-end
-
-%% sensing task
-senstask = metadata.senstask;
-
-if(~isempty(senstask))
-    for i=1:numel(senstask)
-        
-        type{cc}    = 'sensing task'                           ;
-        sub_type{cc} = 'n/a' ;
-        s_start{cc} = round(senstask{i}.pos(1)/fs,1); % time in seconds (1 decimal)
-        samp_start{cc} = num2str(senstask{i}.pos(1))          ;
-        s_end{cc}   = round(senstask{i}.pos(end)/fs,1); % time in seconds (1 decimal)
-        samp_end{cc} = num2str(senstask{i}.pos(end))          ;
-        
-        if(isempty(senstask{i}.ch_names))
-           ch_name_on{cc} = 'all';%metadata.ch_label{metadata.ch2use_included} ;
-           % error('artefact channel name wrong')
-           ch_name_off{cc} = ch_name_on{cc} ;
-        else
-            ch_name_on{cc} = senstask{i}.ch_names{1}              ;
-            ch_name_off{cc} = ch_name_on{cc} ;
-        end
-        
-         if (isempty(senstask{i}.type))
-            sub_type{cc} = 'unknown' ;
-        else
-            sub_type{cc} = senstask{i}.type ;
-        end
-        
-        annots_new([annots_new{:,1}]==senstask{i}.pos(1),:)=[];
-        annots_new([annots_new{:,1}]==senstask{i}.pos(end),:)=[];
-        duration{cc} = round(s_end{cc} - s_start{cc},3);
-        stim_type{cc} = 'n/a';
-        site_name{cc} = 'n/a';
-        site_channum{cc} = 'n/a';
-        stim_cur{cc} = 'n/a';
-        notes{cc} = 'n/a';
-
-
-        cc          = cc + 1                               ;
-        
-    end
-end
-
-%% bsuppression
-bsuppression = metadata.bsuppression;
-
-if(~isempty(bsuppression))
-    for i=1:numel(bsuppression)
-        
-        type{cc}    = 'bsuppression'                       ;
-        sub_type{cc} = 'n/a' ;
-        s_start{cc} = num2str(bsuppression{i}.pos(1))      ;
-        s_end{cc}   = num2str(bsuppression{i}.pos(end))    ;
-        ch_name_on{cc} = 'all'                                ;
-        ch_name_off{cc} = 'all' ;
-                                
-        cc          = cc + 1                               ;
-        
-    end
-end
-
-%% addnotes
-addnotes = metadata.add_notes;
-
-if(~isempty(addnotes))
-    for i=1:numel(addnotes)
-        
-        type{cc}    = 'oddbehaviour'                       ;
-        sub_type{cc} = 'n/a' ;
-        s_start{cc} = num2str(addnotes{i}.pos(1))          ;
-        s_end{cc}   = num2str(addnotes{i}.pos(end))        ;
-        
-        if(isempty(addnotes{i}.ch_names))
-            error('artefact channel name wrong')
-        end
-        
-        ch_name_on{cc} = num2str(addnotes{i}.ch_names{1})     ;
-        ch_name_off{cc} = 'n/a' ;
-        cc          = cc + 1                               ;
-        
-    end
-end
-
- %% resected channels --> not in events but in electrodes.tsv
-% 
-% resected = metadata.ch2use_resected;
-% 
-% if(sum(resected))
-%     idx_res  = find(resected);
-%     
-%     for i=1:numel(idx_res)
-%         
-%         type{cc}    = 'resected'                            ;
-%         s_start{cc} = '1'                                   ;
-%         s_end{cc}   = 'Inf'                                 ;
-%         
-%         ch_name_on{cc} = ch_label(idx_res(i))                  ;
-%         ch_name_off{cc} = 'n/a' ;
-%         cc          = cc + 1                                ;
-%         
+% slaw_trans = metadata.slaw_trans;
+%
+% if(~isempty(slaw_trans))
+%     for i=1:numel(slaw_trans)
+%
+%         type{cc}    = 'sleep-wake transition'                           ;
+%         sub_type{cc} = 'n/a' ;
+%         s_start{cc} = round(slaw_trans{i}.pos(1)/fs,1); % time in seconds (1 decimal)
+%         samp_start{cc} = num2str(slaw_trans{i}.pos(1))          ;
+%         s_end{cc}   = round(slaw_trans{i}.pos(end)/fs,1); % time in seconds (1 decimal)
+%         samp_end{cc} = num2str(slaw_trans{i}.pos(end))          ;
+%
+%         if(isempty(slaw_trans{i}.ch_names))
+%             ch_name_on{cc} = 'all';%metadata.ch_label{metadata.ch2use_included} ;
+%             error('artefact channel name wrong')
+%             ch_name_off{cc} = ch_name_on{cc} ;
+%         else
+%             ch_name_on{cc} = slaw_trans{i}.ch_names{1}              ;
+%             ch_name_off{cc} = ch_name_on{cc} ;
+%         end
+%
+%         annots_new([annots_new{:,1}]==slaw_trans{i}.pos(1),:)=[];
+%         annots_new([annots_new{:,1}]==slaw_trans{i}.pos(end),:)=[];
+%         duration{cc} = round(s_end{cc} - s_start{cc},3);
+%         stim_type{cc} = 'n/a';
+%         site_name{cc} = 'n/a';
+%         site_channum{cc} = 'n/a';
+%         stim_cur{cc} = 'n/a';
+%         notes{cc} = 'n/a';
+%
+%         cc          = cc + 1                               ;
+%
 %     end
 % end
 
 
- %% resected channels --> not in events but in electrodes.tsv
-% 
+%% sleep
+
+[annots_new, eventsannots ] = add_event2annotation(metadata.sleep,'sleep',eventsannots, annots_new,header);
+
+% sleep = metadata.sleep;
+%
+% if(~isempty(sleep))
+%     for i=1:numel(sleep)
+%
+%         type{cc}    = 'sleep'                           ;
+%         s_start{cc} = round(sleep{i}.pos(1)/fs,1); % time in seconds (1 decimal)
+%         samp_start{cc} = num2str(sleep{i}.pos(1))          ;
+%         s_end{cc}   = round(sleep{i}.pos(end)/fs,1); % time in seconds (1 decimal)
+%         samp_end{cc} = num2str(sleep{i}.pos(end))          ;
+%
+%         if(isempty(sleep{i}.ch_names))
+%             ch_name_on{cc} = 'all';%metadata.ch_label{metadata.ch2use_included} ;
+%             % error('artefact channel name wrong')
+%             ch_name_off{cc} = ch_name_on{cc} ;
+%         else
+%             ch_name_on{cc} = slaw_trans{i}.ch_names{1}              ;
+%             ch_name_off{cc} = ch_name_on{cc} ;
+%         end
+%
+%         if (isempty(sleep{i}.type))
+%             sub_type{cc} = 'unknown' ;
+%         else
+%             sub_type{cc} = sleep{i}.type ;
+%         end
+%
+%         annots_new([annots_new{:,1}]==sleep{i}.pos(1),:)=[];
+%         annots_new([annots_new{:,1}]==sleep{i}.pos(end),:)=[];
+%         duration{cc} = round(s_end{cc} - s_start{cc},3);
+%         stim_type{cc} = 'n/a';
+%         site_name{cc} = 'n/a';
+%         site_channum{cc} = 'n/a';
+%         stim_cur{cc} = 'n/a';
+%         notes{cc} = 'n/a';
+%
+%         cc          = cc + 1                               ;
+%
+%     end
+% end
+
+%% motortask
+
+[annots_new, eventsannots ] = add_event2annotation(metadata.motortask,'motortask',eventsannots, annots_new,header);
+
+% motortask = metadata.motortask;
+%
+% if(~isempty(motortask))
+%     for i=1:numel(motortask)
+%
+%         type{cc}    = 'motortask'                           ;
+%         sub_type{cc} = 'n/a' ;
+%         s_start{cc} = round(motortask{i}.pos(1)/fs,1); % time in seconds (1 decimal)
+%         samp_start{cc} = num2str(motortask{i}.pos(1))          ;
+%         s_end{cc}   = round(motortask{i}.pos(end)/fs,1); % time in seconds (1 decimal)
+%         samp_end{cc} = num2str(motortask{i}.pos(end))          ;
+%
+%         if(isempty(motortask{i}.ch_names))
+%             ch_name_on{cc} = 'all';%metadata.ch_label{metadata.ch2use_included} ;
+%             % error('artefact channel name wrong')
+%             ch_name_off{cc} = ch_name_on{cc} ;
+%         else
+%             ch_name_on{cc} = motortask{i}.ch_names{1}              ;
+%             ch_name_off{cc} = ch_name_on{cc} ;
+%         end
+%
+%         if (isempty(motortask{i}.type))
+%             sub_type{cc} = 'unknown' ;
+%         else
+%             sub_type{cc} = motortask{i}.type ;
+%         end
+%
+%         annots_new([annots_new{:,1}]==motortask{i}.pos(1),:)=[];
+%         annots_new([annots_new{:,1}]==motortask{i}.pos(end),:)=[];
+%         duration{cc} = round(s_end{cc} - s_start{cc},3);
+%         stim_type{cc} = 'n/a';
+%         site_name{cc} = 'n/a';
+%         site_channum{cc} = 'n/a';
+%         stim_cur{cc} = 'n/a';
+%         notes{cc} = 'n/a';
+%
+%
+%         cc          = cc + 1                               ;
+%
+%     end
+% end
+
+%% language task
+
+[annots_new, eventsannots ] = add_event2annotation(metadata.langtask,'languagetask',eventsannots, annots_new,header);
+
+% langtask = metadata.langtask;
+%
+% if(~isempty(langtask))
+%     for i=1:numel(langtask)
+%
+%         type{cc}    = 'languagetask'                           ;
+%         sub_type{cc} = 'n/a' ;
+%         s_start{cc} = round(langtask{i}.pos(1)/fs,1); % time in seconds (1 decimal)
+%         samp_start{cc} = num2str(langtask{i}.pos(1))          ;
+%         s_end{cc}   = round(langtask{i}.pos(end)/fs,1); % time in seconds (1 decimal)
+%         samp_end{cc} = num2str(langtask{i}.pos(end))          ;
+%
+%         if(isempty(langtask{i}.ch_names))
+%             ch_name_on{cc} = 'all';%metadata.ch_label{metadata.ch2use_included} ;
+%             % error('artefact channel name wrong')
+%             ch_name_off{cc} = ch_name_on{cc} ;
+%         else
+%             ch_name_on{cc} = langtask{i}.ch_names{1}              ;
+%             ch_name_off{cc} = ch_name_on{cc} ;
+%         end
+%
+%         if (isempty(langtask{i}.type))
+%             sub_type{cc} = 'unknown' ;
+%         else
+%             sub_type{cc} = langtask{i}.type ;
+%         end
+%
+%         annots_new([annots_new{:,1}]==langtask{i}.pos(1),:)=[];
+%         annots_new([annots_new{:,1}]==langtask{i}.pos(end),:)=[];
+%         duration{cc} = round(s_end{cc} - s_start{cc},3);
+%         stim_type{cc} = 'n/a';
+%         site_name{cc} = 'n/a';
+%         site_channum{cc} = 'n/a';
+%         stim_cur{cc} = 'n/a';
+%         notes{cc} = 'n/a';
+%
+%
+%         cc          = cc + 1                               ;
+%
+%     end
+% end
+
+%% sensing task
+
+[annots_new, eventsannots ] = add_event2annotation(metadata.senstask,'sensingtask',eventsannots, annots_new,header);
+
+% senstask = metadata.senstask;
+%
+% if(~isempty(senstask))
+%     for i=1:numel(senstask)
+%
+%         type{cc}    = 'sensing task'                           ;
+%         sub_type{cc} = 'n/a' ;
+%         s_start{cc} = round(senstask{i}.pos(1)/fs,1); % time in seconds (1 decimal)
+%         samp_start{cc} = num2str(senstask{i}.pos(1))          ;
+%         s_end{cc}   = round(senstask{i}.pos(end)/fs,1); % time in seconds (1 decimal)
+%         samp_end{cc} = num2str(senstask{i}.pos(end))          ;
+%
+%         if(isempty(senstask{i}.ch_names))
+%             ch_name_on{cc} = 'all';%metadata.ch_label{metadata.ch2use_included} ;
+%             % error('artefact channel name wrong')
+%             ch_name_off{cc} = ch_name_on{cc} ;
+%         else
+%             ch_name_on{cc} = senstask{i}.ch_names{1}              ;
+%             ch_name_off{cc} = ch_name_on{cc} ;
+%         end
+%
+%         if (isempty(senstask{i}.type))
+%             sub_type{cc} = 'unknown' ;
+%         else
+%             sub_type{cc} = senstask{i}.type ;
+%         end
+%
+%         annots_new([annots_new{:,1}]==senstask{i}.pos(1),:)=[];
+%         annots_new([annots_new{:,1}]==senstask{i}.pos(end),:)=[];
+%         duration{cc} = round(s_end{cc} - s_start{cc},3);
+%         stim_type{cc} = 'n/a';
+%         site_name{cc} = 'n/a';
+%         site_channum{cc} = 'n/a';
+%         stim_cur{cc} = 'n/a';
+%         notes{cc} = 'n/a';
+%
+%
+%         cc          = cc + 1                               ;
+%
+%     end
+% end
+
+%% bsuppression
+% bsuppression = metadata.bsuppression;
+%
+% if(~isempty(bsuppression))
+%     for i=1:numel(bsuppression)
+%
+%         type{cc}    = 'bsuppression'                       ;
+%         sub_type{cc} = 'n/a' ;
+%         s_start{cc} = num2str(bsuppression{i}.pos(1))      ;
+%         s_end{cc}   = num2str(bsuppression{i}.pos(end))    ;
+%         ch_name_on{cc} = 'all'                                ;
+%         ch_name_off{cc} = 'all' ;
+%
+%         cc          = cc + 1                               ;
+%
+%     end
+% end
+
+%% addnotes
+% addnotes = metadata.add_notes;
+%
+% if(~isempty(addnotes))
+%     for i=1:numel(addnotes)
+%
+%         type{cc}    = 'oddbehaviour'                       ;
+%         sub_type{cc} = 'n/a' ;
+%         s_start{cc} = num2str(addnotes{i}.pos(1))          ;
+%         s_end{cc}   = num2str(addnotes{i}.pos(end))        ;
+%
+%         if(isempty(addnotes{i}.ch_names))
+%             error('artefact channel name wrong')
+%         end
+%
+%         ch_name_on{cc} = num2str(addnotes{i}.ch_names{1})     ;
+%         ch_name_off{cc} = 'n/a' ;
+%         cc          = cc + 1                               ;
+%
+%     end
+% end
+
+%% resected channels --> not in events but in electrodes.tsv
+%
+% resected = metadata.ch2use_resected;
+%
+% if(sum(resected))
+%     idx_res  = find(resected);
+%
+%     for i=1:numel(idx_res)
+%
+%         type{cc}    = 'resected'                            ;
+%         s_start{cc} = '1'                                   ;
+%         s_end{cc}   = 'Inf'                                 ;
+%
+%         ch_name_on{cc} = ch_label(idx_res(i))                  ;
+%         ch_name_off{cc} = 'n/a' ;
+%         cc          = cc + 1                                ;
+%
+%     end
+% end
+
+
+%% resected channels --> not in events but in electrodes.tsv
+%
 % edge = metadata.ch2use_edge;
-% 
+%
 % if(sum(edge))
 %     idx_edge  = find(edge);
-%     
+%
 %     for i=1:numel(idx_edge)
-%         
+%
 %         type{cc}    = 'edge'                                ;
 %         s_start{cc} = '1'                                   ;
 %         s_end{cc}   = 'Inf'                                 ;
 %         ch_name_on{cc} = ch_label(idx_edge(i))                 ;
 %         ch_name_off{cc} = 'n/a' ;
 %         cc          = cc + 1                                ;
-%         
+%
 %     end
 % end
 
@@ -1210,296 +1233,146 @@ end
 % end
 
 %% electrical stimulation mapping
-esm = metadata.esm;
+[annots_new, eventsannots ] = add_event2annotation(metadata.esm,'esm',eventsannots, annots_new,header);
 
-if(~isempty(esm))
-    for i=1:numel(esm)
-        
-        type{cc}    = 'esm'                           ;
-        sub_type{cc} = 'n/a' ;
-        s_start{cc} = round(esm{i}.pos(1)/fs,1); % time in seconds (1 decimal)
-        samp_start{cc} = num2str(esm{i}.pos(1))          ;
-        s_end{cc}   = round(esm{i}.pos(end)/fs,1); % time in seconds (1 decimal)
-        samp_end{cc} = num2str(esm{i}.pos(end))          ;
-        
-        if(isempty(esm{i}.ch_names))
-           ch_name_on{cc} = 'all';%metadata.ch_label{metadata.ch2use_included} ;
-           % error('artefact channel name wrong')
-           ch_name_off{cc} = ch_name_on{cc} ;
-        else
-            ch_name_on{cc} = langtask{i}.ch_names{1}              ;
-            ch_name_off{cc} = ch_name_on{cc} ;
-        end
-        
-         if (isempty(esm{i}.type))
-            sub_type{cc} = 'n/a' ;
-        else
-            sub_type{cc} = esm{i}.type ;
-        end
-        
-        annots_new([annots_new{:,1}]==esm{i}.pos(1),:)=[];
-        annots_new([annots_new{:,1}]==esm{i}.pos(end),:)=[];
-        duration{cc} = round(s_end{cc} - s_start{cc},3);
-        stim_type{cc} = 'n/a';
-        site_name{cc} = 'n/a';
-        site_channum{cc} = 'n/a';
-        stim_cur{cc} = 'n/a';
-        notes{cc} = 'n/a';
-
-        cc          = cc + 1                               ;
-        
-    end
-end
+% esm = metadata.esm;
+%
+% if(~isempty(esm))
+%     for i=1:numel(esm)
+%
+%         type{cc}    = 'esm'                           ;
+%         sub_type{cc} = 'n/a' ;
+%         s_start{cc} = round(esm{i}.pos(1)/fs,1); % time in seconds (1 decimal)
+%         samp_start{cc} = num2str(esm{i}.pos(1))          ;
+%         s_end{cc}   = round(esm{i}.pos(end)/fs,1); % time in seconds (1 decimal)
+%         samp_end{cc} = num2str(esm{i}.pos(end))          ;
+%
+%         if(isempty(esm{i}.ch_names))
+%             ch_name_on{cc} = 'all';%metadata.ch_label{metadata.ch2use_included} ;
+%             % error('artefact channel name wrong')
+%             ch_name_off{cc} = ch_name_on{cc} ;
+%         else
+%             ch_name_on{cc} = langtask{i}.ch_names{1}              ;
+%             ch_name_off{cc} = ch_name_on{cc} ;
+%         end
+%
+%         if (isempty(esm{i}.type))
+%             sub_type{cc} = 'n/a' ;
+%         else
+%             sub_type{cc} = esm{i}.type ;
+%         end
+%
+%         annots_new([annots_new{:,1}]==esm{i}.pos(1),:)=[];
+%         annots_new([annots_new{:,1}]==esm{i}.pos(end),:)=[];
+%         duration{cc} = round(s_end{cc} - s_start{cc},3);
+%         stim_type{cc} = 'n/a';
+%         site_name{cc} = 'n/a';
+%         site_channum{cc} = 'n/a';
+%         stim_cur{cc} = 'n/a';
+%         notes{cc} = 'n/a';
+%
+%         cc          = cc + 1                               ;
+%
+%     end
+% end
 
 %% adding trigger data to events list
 trigger = metadata.trigger;
-if strcmpi(metadata.elec_info,'SEEG')
-    stimcurdefault = 2;
-elseif strcmpi(metadata.elec_info,'ECoG')
-    stimcurdefault = 8;
-end
-[~,Cncols] = cellfun(@size, ch_label);
-maxsz_label = max(Cncols(ch2use_included));
-
-% notification that stimcurr is unknown
-if ~isempty(metadata.stimcurr)
-    note_desc = sprintf('Stimulation intensity is suggested to be %i mA but may differ when applied in eloquent tissue',stimcurdefault);
+% determine period of esm
+if any(cellfun(@(x) contains(x,{'esm'}),lower(eventsannots.sub_type)) & cellfun(@(x) ~contains(x,{'slow'}),lower(eventsannots.sub_type)))
+    esmfind =    cellfun(@(x) contains(x,{'esm'}),lower(eventsannots.sub_type))==1;
+    esmstart = str2double(eventsannots.samp_start{esmfind});
+    esmend = str2double(eventsannots.samp_end{esmfind});
     
+elseif any(cellfun(@(x) contains(x,{'esm'}),lower(eventsannots.type)) & cellfun(@(x) ~contains(x,{'slow'}),lower(eventsannots.type)))
+    esmfind =    cellfun(@(x) contains(x,{'esm'}),lower(eventsannots.type))==1;
+    esmstart = str2double(eventsannots.samp_start{esmfind});
+    esmend = str2double(eventsannots.samp_end{esmfind});
 else
-    note_desc = 'n/a';
+    esmstart = 0;
+    esmend = 0;
+end
+
+% determine period of spes
+if any(cellfun(@(x) contains(x,{'spes'}),lower(eventsannots.sub_type)))
+    spesfind =    cellfun(@(x) contains(x,{'spes'}),lower(eventsannots.sub_type))==1;
+    spesstart = str2double(eventsannots.samp_start{spesfind});
+    spesend = str2double(eventsannots.samp_end{spesfind});
+    
+elseif any(cellfun(@(x) contains(x,{'spes'}),lower(eventsannots.type)))
+    spesfind =    cellfun(@(x) contains(x,{'spes'}),lower(eventsannots.type))==1;
+    spesstart = str2double(eventsannots.samp_start{spesfind});
+    spesend = str2double(eventsannots.samp_end{spesfind});
+else
+    spesstart = 0;
+    spesend = 0;
+end
+
+% determine period of slowesm (1hz cortical stimulation)
+if any(cellfun(@(x) contains(x,{'esm'}),lower(eventsannots.sub_type)) & cellfun(@(x) contains(x,{'slow'}),lower(eventsannots.sub_type)))
+    slowesmfind =    cellfun(@(x) contains(x,{'esm'}),lower(eventsannots.sub_type))==1;
+    slowesmstart = str2double(eventsannots.samp_start{slowesmfind});
+    slowesmend = str2double(eventsannots.samp_end{slowesmfind});
+    
+elseif any(cellfun(@(x) contains(x,{'esm'}),lower(eventsannots.type)) & cellfun(@(x) contains(x,{'slow'}),lower(eventsannots.type)))
+    slowesmfind =    cellfun(@(x) contains(x,{'esm'}),lower(eventsannots.type))==1;
+    slowesmstart = str2double(eventsannots.samp_start{slowesmfind});
+    slowesmend = str2double(eventsannots.samp_end{slowesmfind});
+else
+    slowesmstart = 0;
+    slowesmend = 0;
 end
 
 if ~isempty(trigger)
     idx_start = find(trigger.val >1000); % with cortical stimulation, triggers are added automatically with a number >1000
     for i=1:numel(idx_start)
-        type{cc} = 'electrical_stimulation';
-        sub_type{cc} = 'SPES';
-        stim_type{cc} = 'monophasic';
-        samp_start{cc} = trigger.pos(idx_start(i));
-        s_start{cc} = round(trigger.pos(idx_start(i))/fs,1); % time in seconds (1 decimal)
         
-        % stimulation site
-        [~,numannots]=max(1./(repmat(trigger.pos(idx_start(i)),size(annots_new,1),1)-[annots_new{:,1}]')); %distance between triggerposition and nearbiest annotation (must be the stim channels then)
-               
-        % does this have a digit in the string? --> no comment like 'schokje'/'toilet'/'aanval' etc.
-        digannot = regexp(lower(annots_new{numannots,2}),'\d*');
-        
-        % does this have 'ma'/'neg'/'bi'/'current is lower than expected' in the string? (respectively
-        % negative current, lower pulse current, biphasic instead of
-        % monophasic)
-        negannot = regexp(lower(annots_new{numannots,2}),'neg');
-        currannot = regexp(lower(annots_new{numannots,2}),'ma');
-        biannot = regexp(lower(annots_new{numannots,2}),'bi');
-        low_expect = regexp(lower(annots_new{numannots,2}),'requested');
-        
-        % if any of the earlier mentioned variables is not empty, it is
-        % part of the stimulation annotations
-        if ~isempty(digannot) || ~isempty(negannot) || ~isempty(currannot) || ~isempty(biannot) || ~isempty(low_expect)
+        if trigger.pos(idx_start(i)) > spesstart && trigger.pos(idx_start(i)) < spesend % if trigger belongs to spes period
+            eventsannots = add_spestrigger2annotation(idx_start(i),'SPES',eventsannots,annots_new, header,metadata,trigger)  ;
+        elseif trigger.pos(idx_start(i)) > esmstart && trigger.pos(idx_start(i)) < esmend % if trigger belongs to esm period
+            eventsannots = add_esmtrigger2annotation(idx_start(i),eventsannots,annots_new, header,metadata,trigger);
+        elseif trigger.pos(idx_start(i)) > slowesmstart && trigger.pos(idx_start(i)) < slowesmend % if trigger belongs to slowesm period
+            eventsannots = add_spestrigger2annotation(idx_start(i),'slowESM',eventsannots,annots_new, header,metadata,trigger)  ;
         else
-            n=1;
-            while isempty(digannot)
-                digannot = regexp(lower(annots_new{numannots-n,2}),'\d*');
-                n = n+1;
-            end
-            numannots = numannots-n+1;
-            
-            digannot = regexp(lower(annots_new{numannots,2}),'\d*');
-            
-            % does this have 'ma'/'neg'/'bi'/'current is lower than expected' in the string? (respectively
-            % negative current, lower pulse current, biphasic instead of
-            % monophasic)
-            negannot = regexp(lower(annots_new{numannots,2}),'neg');
-            currannot = regexp(lower(annots_new{numannots,2}),'ma');
-            biannot = regexp(lower(annots_new{numannots,2}),'bi');
-            low_expect = regexp(lower(annots_new{numannots,2}),'expected');
-            
+            error('Trigger does not belong to SPES period or ESM period')
         end
         
-        % stimulus pair
-        if ~isempty(digannot) && digannot(1)<5
-            annotsplit = strsplit(annots_new{numannots,2},'_'); % finds info before '_'
-            stimchans = regexp(lower(annotsplit{1}),'[a-z]*','match'); %finds electrode-letter(s)
-            stimnums = regexp(lower(annotsplit{1}),'\d*','match'); % finds electrode-number
-            
-            for j=1:size(stimnums,2)
-                if str2double(stimnums{j})<10
-                    test1 = sprintf('%s%d',stimchans{j},str2double(stimnums{j}));
-                    test2 = sprintf('%s0%d',stimchans{j},str2double(stimnums{j}));
-                    if sum(strcmpi(test1,ch_label))>sum(strcmpi(test2,ch_label))
-                        stimchan{j} = ch_label{strcmpi(test1,ch_label)};
-                        stimnum(j) = find(strcmpi(test1,ch_label)==1);
-                    else
-                        stimchan{j} = ch_label{strcmpi(test2,ch_label)};
-                        stimnum(j) = find(strcmpi(test2,ch_label)==1);
-                    end
-                else
-                    test1 = sprintf('%s%d',stimchans{j},str2double(stimnums{j}));
-
-                    stimchan{j} = ch_label{strcmpi(test1,ch_label)};
-                    stimnum(j) = find(strcmpi(test1,ch_label)==1);
-                end                
-            end
-        elseif ~isempty(negannot) %there is no stimpair mentioned if it is a negative monophasic stimulus
-            
-            n=1;
-            while isempty(digannot) || digannot(1)>4
-                digannot = regexp(lower(annots_new{numannots-n,2}),'\d*');
-                n = n+1;
-            end
-            
-            annotsplit = strsplit(annots_new{numannots-n+1,2},'_'); % finds info before '_'
-                  
-            stimchans = regexp(lower(annotsplit{1}),'[a-z]*','match'); %finds electrode-letter(s)
-            stimnums = regexp(lower(annotsplit{1}),'\d*','match'); % finds electrode-number
-            
-            for j=1:size(stimnums,2)
-                if str2double(stimnums{j})<10
-                    test1 = sprintf('%s%d',stimchans{j},str2double(stimnums{j}));
-                    test2 = sprintf('%s0%d',stimchans{j},str2double(stimnums{j}));
-                    if sum(strcmpi(test1,ch_label))>sum(strcmpi(test2,ch_label))
-                        stimchan{j} = ch_label{strcmpi(test1,ch_label)};
-                        stimnum(j) = find(strcmpi(test1,ch_label)==1);
-                    else
-                        stimchan{j} = ch_label{strcmpi(test2,ch_label)};
-                        stimnum(j) = find(strcmpi(test2,ch_label)==1);
-                    end
-                else
-                    test1 = sprintf('%s%d',stimchans{j},str2double(stimnums{j}));
-
-                    stimchan{j} = ch_label{strcmpi(test1,ch_label)};
-                    stimnum(j) = find(strcmpi(test1,ch_label)==1);
-                end                   
-            end
-
-%         else % if no stimpair is mentioned, stim pair is as in previous triggers
-%             sitesplit = strsplit(site_name{cc-1},'-');
-%             stimchan{1} = sitesplit{1};
-%             stimchan{2} = sitesplit{2};
-%             stimnum(1) = site_channum{cc-1}(1);
-%             stimnum(2) = site_channum{cc-1}(2);
-        end
         
-        %         if ~isempty(strfind(annots_new{numannots,2},''))
-        %             annots_new{numannots,2} = annots_new{numannots,2}([1:strfind(annots_new{numannots,2},'')-1,strfind(annots_new{numannots,2},'')+1:end]);
-        %         end
-        %         annotssplit= strsplit(annots_new{numannots,2},'_');
-        
-        if ~isempty(low_expect)
-            note = annots_new{numannots,2};
-        elseif numannots < size(annots_new,1)
-            if contains(annots_new{numannots+1,2},'requested') % in newer patients, the sentence "Current is lower than requested" is added at the end of the stimulation
-                note = annots_new{numannots+1,2};
-            else
-                note = note_desc;
-            end
-        else
-            note = note_desc;
-        end
-        
-        %         if any(strfind(annotssplit{1},' ') ~=0) % when there is a 'space' in the text, than it is the message: is lower than expected
-        %             annotssplitspace = strsplit(annotssplit{1},' ');
-        %             stimchans = deblank(annotssplitspace{1});
-        %             note = annotssplit{1}(size(annotssplitspace{1},2)+2:end);
-        %         else
-        %             stimchans = annotssplit{1};
-        %             note = 'n/a';
-        %         end
-        
-        if ~isempty(currannot)
-            annotsplit = strsplit(lower(annots_new{numannots,2}),'_');
-            currsplit = strsplit(lower(annotsplit{2}),'ma');
-            stimcurrstr = currsplit{1};
-            stimcurr = str2double(stimcurrstr)/1000;
-        else
-            stimcurr = stimcurdefault/1000;
-        end
-        
-        % if size(annotssplit,2) >1
-        %     stimcurrsplit = strsplit(lower(annotssplit{2}),'ma');
-        %     stimcurrstr = stimcurrsplit{1};
-        %     stimcurr = str2double(stimcurrstr)/1000;
-        % else
-        %     stimcurr = stimcurdefault/1000;
-        % end
-        
-%         if size(stimchans,2) <= 2*maxsz_label
-%             stimchan1 = stimchans(1:size(stimchans,2)/2);
-%             stimnum1 = find(cellfun(@(x) strcmp(x,stimchan1),ch_label));
-%             
-%             if isempty(stimnum1)
-%                 % remove all 0 from stimchans
-%                 stimchan1 = replace(stimchans(1:size(stimchans,2)/2),'0','');
-%                 stimnum1 = find(cellfun(@(x) strcmp(x,stimchan1),ch_label));
-%             end
-%             if isempty(stimnum1)
-%                 % add one 0
-%                 stimchan1 = [stimchan1(regexp(stimchan1,'\D')) '0' num2str(str2double(stimchan1(regexp(stimchan1,'\d'))))];
-%                 stimnum1 = find(cellfun(@(x) strcmp(x,stimchan1),ch_label));
-%             end
-%             
-%             stimchan2 = stimchans(size(stimchans,2)/2+1:end);
-%             stimnum2 = find(cellfun(@(x) strcmp(x,stimchan2),ch_label));
-%             
-%             if isempty(stimnum2)
-%                 % remove all 0 from stimchans
-%                 stimchan2 = replace(stimchans(size(stimchans,2)/2+1:end),'0','');
-%                 stimnum2 = find(cellfun(@(x) strcmp(x,stimchan2),ch_label));
-%             end
-%             if isempty(stimnum2)
-%                 % add one 0
-%                 stimchan2 = [stimchan2(regexp(stimchan2,'\D')) '0' num2str(str2double(stimchan2(regexp(stimchan2,'\d'))))];
-%                 stimnum2 = find(cellfun(@(x) strcmp(x,stimchan2),ch_label));
-%             end
-%             
-%         else
-%             warning('Annotation is longer than expected')
-%             stimchans
-%             stimchan1 = [];
-%             stimchan2 = [];
-%             stimnum1 = [];
-%             stimnum2 = [];
-%         end
-        
-        if ~isempty(negannot)
-            stimchantemp = stimchan{1};
-            stimchan{1} = stimchan{2};
-            stimchan{2} = stimchantemp;
-            stimnumtemp = stimnum(1);
-            stimnum(1) = stimnum(2);
-            stimnum(2) = stimnumtemp;
-        end
-        if ~isempty(biannot)
-            stim_type{cc} = 'biphasic';
-        end
-        
-        site_name{cc} = [stimchan{1} '-' stimchan{2}];
-        site_channum{cc} = num2str([stimnum(1), stimnum(2)]);
-        duration{cc} = 1/1000;
-        s_end{cc} = 'n/a';
-        samp_end{cc} = 'n/a';
-        ch_name_on{cc} = 'n/a';
-        ch_name_off{cc} = 'n/a';
-        stim_cur{cc} = stimcurr;
-        notes{cc} = note;
-        cc=cc+1 ;
     end
 end
 
+s_start = eventsannots.s_start;
+s_end = eventsannots.s_end;
+duration = eventsannots.duration;
+type = eventsannots.type;
+sub_type = eventsannots.sub_type;
+ch_name_on = eventsannots.ch_name_on;
+ch_name_off = eventsannots.ch_name_off;
+samp_start = eventsannots.samp_start;
+samp_end = eventsannots.samp_end;
+stim_type = eventsannots.stim_type;
+site_name = eventsannots.site_name;
+site_channum = eventsannots.site_channum;
+stim_cur = eventsannots.stim_cur;
+notes= eventsannots.notes;
+
+
+
 if isempty(s_start)
-   s_start= 'n/a';
-   s_end = 'n/a';
-   duration = 'n/a';
-   type = 'n/a';
-   sub_type = 'n/a';
-   ch_name_on ='n/a';
-   ch_name_off = 'n/a';
-   samp_start ='n/a';
-   samp_end ='n/a';
-   stim_type ='n/a';
-   site_name='n/a';
-   site_channum='n/a';
-   stim_cur='n/a';
-   notes='n/a';
+    s_start= 'n/a';
+    s_end = 'n/a';
+    duration = 'n/a';
+    type = 'n/a';
+    sub_type = 'n/a';
+    ch_name_on ='n/a';
+    ch_name_off = 'n/a';
+    samp_start ='n/a';
+    samp_end ='n/a';
+    stim_type ='n/a';
+    site_name='n/a';
+    site_channum='n/a';
+    stim_cur='n/a';
+    notes='n/a';
 end
 
 annotation_tsv  = table(s_start', s_end', duration', type', sub_type', ch_name_on', ch_name_off', samp_start', samp_end', stim_type', site_name', site_channum',stim_cur', notes',  ...
@@ -1595,7 +1468,7 @@ try
     str2parse=annots{task_idx,2};
     C=strsplit(str2parse,';');
     metadata.task_name=C{2};
-        
+    
     % Stimcurr unknown (in SPES)
     stimcur_idx=cellfun(@(x) contains(x,{'Stimcurr'}),annots(:,2));
     
@@ -1607,7 +1480,7 @@ try
         C=strsplit(str2parse,';');
         metadata.stimcurr=C{2};
     end
-
+    
     % useful channels
     included_idx=cellfun(@(x) contains(x,{'Included'}),annots(:,2));
     metadata.ch2use_included= false(size(ch));
@@ -1615,7 +1488,7 @@ try
         metadata.ch2use_included=single_annotation(annots,'Included',ch);
         fprintf('File had Included-annotation, so no already existing electrodes.tsv is used\n')
         metadata.incl_exist = 1;
-    else % if "Included" is not annotated in the ECoG, there should be a previous ECoG with annoted "Included" 
+    else % if "Included" is not annotated in the ECoG, there should be a previous ECoG with annoted "Included"
         metadata.incl_exist = 0;
         files_cECoG = dir(fullfile('/Fridge/chronic_ECoG',patName,['ses-',metadata.ses_name],'ieeg',[patName, '_ses-',metadata.ses_name,'_electrodes.tsv']));
         files_dataset  = dir(fullfile(cfg.proj_diroutput,patName,['ses-',metadata.ses_name],'ieeg',[patName, '_ses-',metadata.ses_name,'_electrodes.tsv']));
@@ -1633,14 +1506,14 @@ try
             elec_other = strcmp(cc_elecs.group,'other');
             elec_parse = true(size(cc_elecs,1),1);
             elec_incl = elec_parse - elec_other;
-    
+            
             metadata.ch2use_included=logical(elec_incl);
             
         else
             error('There is no ECoG with annotated Included')
         end
     end
-        
+    
     % markers start and stop good segments
     %     begins=find(trig_v==BEG_GS);
     %     ends=find(trig_v==END_GS);
@@ -1678,15 +1551,15 @@ try
     if(sum(badhf_idx))
         metadata.ch2use_badhf=single_annotation(annots,'Bad_HF',ch);
     end
-
+    
     %% Look for silicon
     silicon_idx=cellfun(@(x) contains(x,{'Silicon'}),annots(:,2));
     metadata.ch2use_silicon= false(size(ch));
     if(sum(silicon_idx))
         metadata.ch2use_silicon=single_annotation(annots,'Silicon',ch);
     elseif metadata.incl_exist == 0
-        elec_silicon = strcmp(cc_elecs.silicon,'yes'); 
-        metadata.ch2use_silicon=logical(elec_silicon);        
+        elec_silicon = strcmp(cc_elecs.silicon,'yes');
+        metadata.ch2use_silicon=logical(elec_silicon);
     end
     
     %% look for resected channels
@@ -1695,7 +1568,7 @@ try
     if(sum(resected_idx))
         metadata.ch2use_resected=single_annotation(annots,'RA',ch);
     elseif metadata.incl_exist == 0
-        elec_resected= strcmp(cc_elecs.resected,'yes'); 
+        elec_resected= strcmp(cc_elecs.resected,'yes');
         metadata.ch2use_resected=logical(elec_resected);
     end
     
@@ -1705,7 +1578,7 @@ try
     if(sum(edge_idx))
         metadata.ch2use_edge=single_annotation(annots,'Edge',ch);
     elseif metadata.incl_exist == 0
-        elec_edge= strcmp(cc_elecs.edge,'yes'); 
+        elec_edge= strcmp(cc_elecs.edge,'yes');
         metadata.ch2use_edge=logical(elec_edge);
     end
     
@@ -1727,10 +1600,10 @@ try
     
     %% Look for data between rest and sleep
     metadata.slaw_trans = look_for_annotation_start_stop(annots,'Slawtrans_on','Slawtrans_off',ch);
-     
+    
     %% Look for data eyes opened
     metadata.eyes_open = look_for_annotation_start_stop(annots,'Eyes_open','Eyes_close',ch);
-   
+    
     %% Look for seizures
     metadata.seizure=look_for_annotation_start_stop(annots,'Sz_on','Sz_off',ch);
     
@@ -1738,20 +1611,20 @@ try
     metadata.stimulation=look_for_annotation_start_stop(annots,'Stim_on','Stim_off',ch);
     
     %% Look for period of SPES
-    metadata.spes=look_for_annotation_start_stop(annots,'SPES_on','SPES_off',ch); 
+    metadata.spes=look_for_annotation_start_stop(annots,'SPES_on','SPES_off',ch);
     
     %% Look for period of Electrical Stimulation Mapping(ESM)
-    metadata.esm=look_for_annotation_start_stop(annots,'ESM_on','ESM_off',ch);     
+    metadata.esm=look_for_annotation_start_stop(annots,'ESM_on','ESM_off',ch);
     
     %% Look for period of motor task
     metadata.motortask=look_for_annotation_start_stop(annots,'Motor_on','Motor_off',ch);
-   
+    
     %% Look for period of sens task
     metadata.senstask=look_for_annotation_start_stop(annots,'Sens_on','Sens_off',ch);
     
     %% Look for period of language task
     metadata.langtask=look_for_annotation_start_stop(annots,'Language_on','Language_off',ch);
-
+    
     %% Look for artefacts
     
     %metadata.artefacts_aECoG=look_for_annotation_start_stop(annots,'xxx','yyy',ch);
@@ -1774,9 +1647,9 @@ try
         % load format from another ECoG --> json file
         file = dir(fullfile(cfg(1).proj_diroutput,patName,['ses-',metadata.ses_name],'ieeg','*ieeg.json'));
         if ~isempty(file)
-           ieeg_json = jsondecode(fileread([file(1).folder '/' file(1).name]) );
-           metadata.format_info = ieeg_json.iEEGElectrodeGroups;
-        else 
+            ieeg_json = jsondecode(fileread([file(1).folder '/' file(1).name]) );
+            metadata.format_info = ieeg_json.iEEGElectrodeGroups;
+        else
             error('Missing Format annotation, and no other json from other ECoG with format annotation found')
         end
     else
@@ -1811,8 +1684,8 @@ try
         
         % strip
         if ~isempty(striploc)
-             stripformat = cell(1,size(striploc,2));
-           for i=1:size(striploc,2)
+            stripformat = cell(1,size(striploc,2));
+            for i=1:size(striploc,2)
                 stripformat{i} = annotsformatsplit(striploc(i)+1: locs_all(find(locs_all==striploc(i))+1)-1);
             end
             stripformatall = strcat([stripformat{:}],';');
@@ -1835,8 +1708,8 @@ try
         
         % seeg
         if ~isempty(seegloc)
-             seegformat = cell(1,size(seegloc,2));
-           for i=1:size(seegloc,2)
+            seegformat = cell(1,size(seegloc,2));
+            for i=1:size(seegloc,2)
                 seegformat{i} = annotsformatsplit(seegloc(i)+1: locs_all(find(locs_all==seegloc(i))+1)-1);
             end
             seegformatall = strcat([seegformat{:}],';');
@@ -1886,14 +1759,14 @@ if(length(start_art)~=length(end_art))
     error('starts and ends did not match')
 end
 
-if strcmp(str_start,'Art_on') 
+if strcmp(str_start,'Art_on')
     %this code works perfectly when an event is closed in which the same
     %electrodes are involved in 'on' and 'off', like artefact. This is not the situation
     %in case of a seizure. Different electrodes can be involved in the end
     %compared to the beginning. In case of a motortask/sleep, a subtype is
     %mentioned in '.._on' but not in '.._off'
     artefacts=cell(size(start_art));
-
+    
     for i=1:numel(start_art)
         art=struct;
         matched_end=find(contains(annots(:,2),replace(annots{start_art(i),2},str_start,str_stop)));
@@ -1905,10 +1778,17 @@ if strcmp(str_start,'Art_on')
             [val,idx_closest]=min(matched_end);
             matched_end=matched_end(idx_closest);%take the closest in time
         end
-        ch_art_idx=parse_annotation(annots{start_art(i),2},ch);       
+        ch_art_idx=parse_annotation(annots{start_art(i),2},ch);
         
-        art.ch_names={ch{logical(ch_art_idx)}};
+        if isempty({ch{logical(ch_art_idx)}})
+            art.ch_names_on={'all'};
+            art.ch_names_off={'all'};
+        else
+            art.ch_names_on={ch{logical(ch_art_idx)}};
+            art.ch_names_off={ch{logical(ch_art_idx)}};
+        end
         art.pos=[(annots{start_art(i),1}) annots{matched_end,1}];
+        art.type = 'n/a';
         artefacts{i}=art;
     end
 elseif  strcmp(str_start,'Sz_on') % in case of a seizure
@@ -1925,7 +1805,7 @@ elseif  strcmp(str_start,'Sz_on') % in case of a seizure
             ch_names_on = {ch{logical(ch_art_idx)}};
             
         else
-            if strcmp(annotsplit{2},'clin') || strcmp(annotsplit{2},'cluster') || strcmp(annotsplit{2},'subclin') 
+            if strcmp(annotsplit{2},'clin') || strcmp(annotsplit{2},'cluster') || strcmp(annotsplit{2},'subclin')
                 type = annotsplit{2};
                 ch_names_on = {'diffuse'};
             else
@@ -1952,19 +1832,19 @@ elseif  strcmp(str_start,'Sz_on') % in case of a seizure
     end
 else
     artefacts=cell(size(start_art));
-
+    
     for i=1:numel(start_art)
         art=struct;
         
         %matched_end=find(contains(annots(:,2),replace(annots{start_art(i),2},str_start,str_stop)));
-%         if(isempty(matched_end))
-%             error('start and stop %s does not match',annots{start_art(i),2});
-%         end
-%         if(length(matched_end)>1)
-%             matched_end=matched_end((matched_end-start_art(i))>0);
-%             [val,idx_closest]=min(matched_end);
-%             matched_end=matched_end(idx_closest);%take the closest in time
-%         end
+        %         if(isempty(matched_end))
+        %             error('start and stop %s does not match',annots{start_art(i),2});
+        %         end
+        %         if(length(matched_end)>1)
+        %             matched_end=matched_end((matched_end-start_art(i))>0);
+        %             [val,idx_closest]=min(matched_end);
+        %             matched_end=matched_end(idx_closest);%take the closest in time
+        %         end
         
         annotsplit = strsplit(annots{start_art(i),2},';');
         annotsplit = annotsplit(~cellfun(@isempty,annotsplit));
@@ -1982,11 +1862,83 @@ else
         ch_art_idx=parse_annotation(annots{start_art(i),2},ch);
         
         art.type = type;
-        art.ch_names={ch{logical(ch_art_idx)}};
+        if isempty({ch{logical(ch_art_idx)}})
+            art.ch_names_on={'all'};
+            art.ch_names_off={'all'};
+        else
+            art.ch_names_on={ch{logical(ch_art_idx)}};
+            art.ch_names_off={ch{logical(ch_art_idx)}};
+        end
         art.pos=[(annots{start_art(i),1}) annots{end_art(i),1}];
         artefacts{i}=art;
     end
 end
+
+function [annots_new, eventsannots ] = add_event2annotation(event,evname,eventsannots, annots_new, header)
+
+fs = header.Rate_Min;
+
+if size(eventsannots.type,2) == 0
+    cc = 1;
+else
+    cc = size(eventsannots.type,2)+1;
+end
+
+if(~isempty(event))
+    for i=1:numel(event)
+        
+        eventsannots.type{cc}    = evname                           ;
+        
+        %         if strcmp(evname,'artefact')
+        eventsannots.sub_type{cc} = event{i}.type;
+        eventsannots.s_start{cc} = round(event{i}.pos(1)/fs,1); % time in seconds (1 decimal)
+        eventsannots.samp_start{cc} = num2str(event{i}.pos(1))          ;
+        eventsannots.s_end{cc}   = round(event{i}.pos(end)/fs,1); % time in seconds (1 decimal)
+        eventsannots.samp_end{cc} = num2str(event{i}.pos(end))          ;
+        eventsannots.duration{cc} = round(eventsannots.s_end{cc} - eventsannots.s_start{cc},3);
+        eventsannots.stim_type{cc} = 'n/a';
+        eventsannots.site_name{cc} = 'n/a';
+        eventsannots.site_channum{cc} = 'n/a';
+        eventsannots.stim_cur{cc} = 'n/a';
+        eventsannots.notes{cc} = 'n/a';
+        
+        if size(event{i}.ch_names_on,2) == 1
+            name = event{i}.ch_names_on{1}              ;
+        else
+            for j=1
+                name =[event{i}.ch_names_on{1}];
+            end
+            
+            for j=2:size(event{i}.ch_names_on,2)
+                name = [name ,',', event{i}.ch_names_on{j}];
+            end
+        end
+        eventsannots.ch_name_on{cc} = name;
+        
+        if size(event{i}.ch_names_off,2) == 1
+            name = event{i}.ch_names_off{1}              ;
+        else
+            for j=1
+                name =[event{i}.ch_names_off{1}];
+            end
+            
+            for j=2:size(event{i}.ch_names_off,2)
+                name = [name ,',', event{i}.ch_names_off{j}];
+            end
+        end
+        
+        eventsannots.ch_name_off{cc} = name;
+        
+        annots_new([annots_new{:,1}]==event{i}.pos(1),:)=[];
+        annots_new([annots_new{:,1}]==event{i}.pos(end),:)=[];
+        
+        cc          = cc + 1                               ;
+        
+        %         end
+    end
+end
+
+
 
 function bsuppression=look_for_burst_suppression(annots)
 
@@ -2049,7 +2001,7 @@ function [ch_status,ch_status_desc]=status_and_description(metadata)
 
 ch_label                                                        = metadata.ch_label                         ;
 % in some patients in some files an extra headbox is included in a later
-% stadium because an EMG-recording was necessary (for example). 
+% stadium because an EMG-recording was necessary (for example).
 if size(metadata.ch2use_included,1) < size(metadata.ch_label,1)
     ch2use_included = zeros(size(ch_label));
     ch2use_included(1:size(metadata.ch2use_included,1)) =  metadata.ch2use_included;
@@ -2062,7 +2014,7 @@ elseif size(metadata.ch2use_included,1) == size(metadata.ch_label,1)
     ch2use_included = metadata.ch2use_included;
     ch2use_silicon = metadata.ch2use_silicon;
 end
-    
+
 ch_status                                                       = cell(size(ch2use_included))      ;
 ch_status_desc                                                  = cell(size(ch2use_included))      ;
 
@@ -2138,7 +2090,7 @@ function ch_group = extract_group_info(metadata)
 
 ch_label                                    = metadata.ch_label                    ;
 % in some patients in some files an extra headbox is included in a later
-% stadium because an EMG-recording was necessary (for example). 
+% stadium because an EMG-recording was necessary (for example).
 if size(metadata.ch2use_included,1) < size(metadata.ch_label,1)
     ch2use_included = zeros(size(ch_label));
     ch2use_included(1:size(metadata.ch2use_included,1)) =  metadata.ch2use_included;
@@ -2248,13 +2200,14 @@ if contains([files(:).name],'scans')
     artefact                = scans_tsv.artefact;
     sleep_total             = scans_tsv.sleep_total;
     sleep_rem               = scans_tsv.sleep_rem;
-    sleep_nrem              = scans_tsv.sleep_nrem;    
+    sleep_nrem              = scans_tsv.sleep_nrem;
     seizure                 = scans_tsv.seizure_total;
     seizuresubclin          = scans_tsv.seizure_subclinical;
-    seizureclin             = scans_tsv.seizure_clinical;    
+    seizureclin             = scans_tsv.seizure_clinical;
     motor                   = scans_tsv.motor;
     spes                    = scans_tsv.spes;
     esm                     = scans_tsv.esm;
+    slowesm                 = scans_tsv.slowesm;
     language                = scans_tsv.language;
     sleepwaketransition     = scans_tsv.sleepwaketransition;
     format                  = scans_tsv.format;
@@ -2320,8 +2273,9 @@ artefact(scansnum,1)              = sum(strcmp(annotation_tsv.trial_type,'artefa
 seizure(scansnum,1)               = sum(strcmp(annotation_tsv.trial_type,'seizure'));
 seizuresubclin(scansnum,1)        = sum(strcmp(annotation_tsv.sub_type,'subclin'));
 seizureclin(scansnum,1)           = sum(strcmp(annotation_tsv.sub_type,'clin'));
-spes(scansnum,1)                  = sum(strcmp(annotation_tsv.sub_type,'SPES'));
-esm(scansnum,1)                   = sum(strcmp(annotation_tsv.trial_type,'esm'));
+spes(scansnum,1)                  = sum(strcmpi(annotation_tsv.sub_type,'spes'));
+esm(scansnum,1)                   = sum(strcmpi(annotation_tsv.sub_type,'esm'));
+slowesm(scansnum,1)               = sum(strcmpi(annotation_tsv.sub_type,'slowesm'));
 sleepwaketransition(scansnum,1)   = sum(strcmp(annotation_tsv.trial_type,'sleep-wake transition'));
 if metadata.incl_exist == 1
     format{scansnum,1}            = 'included';
@@ -2329,13 +2283,13 @@ else
     format{scansnum,1}            = 'not included';
 end
 
-scans_tsv  = table(name, format, artefact, sleep_total, sleep_rem, sleep_nrem, sleepwaketransition, seizure, seizureclin, seizuresubclin, motor, spes, esm, language, sens, ...
-    'VariableNames',{'name', 'format','artefact','sleep_total', 'sleep_rem','sleep_nrem','sleepwaketransition','seizure_total','seizure_clinical', 'seizure_subclinical','motor','spes','esm','language','sens'});
+scans_tsv  = table(name, format, artefact, sleep_total, sleep_rem, sleep_nrem, sleepwaketransition, seizure, seizureclin, seizuresubclin, motor, spes, esm, slowesm, language, sens, ...
+    'VariableNames',{'name', 'format','artefact','sleep_total', 'sleep_rem','sleep_nrem','sleepwaketransition','seizure_total','seizure_clinical', 'seizure_subclinical','motor','spes','esm','slowesm', 'language','sens'});
 
 if ~isempty(scans_tsv)
     write_tsv(filename, scans_tsv);
 end
-    
+
 function write_participants_tsv(cfg,header)
 [p,f] = fileparts(cfg(1).outputfile);
 q = strsplit(p,'/');
@@ -2345,7 +2299,7 @@ filename = ['/', q{2},'/' q{3},'/','participants.tsv'];
 files = dir(['/',q{2},'/',q{3},'/']);
 pat_exist = [];
 if contains([files(:).name],'participants')
-     % read existing scans-file
+    % read existing scans-file
     participants_tsv = read_tsv(filename);
     
     if any(contains(participants_tsv.name,deblank(header.name)))
@@ -2387,6 +2341,294 @@ participants_tsv  = table(name, age, ...
 if ~isempty(participants_tsv)
     write_tsv(filename, participants_tsv);
 end
+
+
+function eventsannots = add_spestrigger2annotation(stim,evname, eventsannots,annots_new, header,metadata,trigger)
+fs = header.Rate_Min;
+% ch2use_included = metadata.ch2use_included;
+ch_label = metadata.ch_label;
+
+if strcmpi(metadata.elec_info,'SEEG')
+    stimcurdefault = 2;
+elseif strcmpi(metadata.elec_info,'ECoG')
+    stimcurdefault = 8;
+end
+% [~,Cncols] = cellfun(@size, ch_label);
+% maxsz_label = max(Cncols(ch2use_included));
+
+% notification that stimcurr is unknown
+if ~isempty(metadata.stimcurr)
+    note_desc = sprintf('Stimulation intensity is suggested to be %i mA but may differ when applied in eloquent tissue',stimcurdefault);
+else
+    note_desc = 'n/a';
+end
+
+if size(eventsannots.type,2) == 0
+    cc = 1;
+else
+    cc = size(eventsannots.type,2)+1;
+end
+
+eventsannots.type{cc} = 'electrical_stimulation';
+eventsannots.sub_type{cc} = evname;
+eventsannots.stim_type{cc} = 'monophasic';
+eventsannots.samp_start{cc} = trigger.pos(stim);
+eventsannots.s_start{cc} = round(trigger.pos(stim)/fs,1); % time in seconds (1 decimal)
+
+% stimulation site
+[~,numannots]=max(1./(repmat(trigger.pos(stim),size(annots_new,1),1)-[annots_new{:,1}]')); %distance between triggerposition and nearbiest annotation (must be the stim channels then)
+
+% does this have a digit in the string? --> no comment like 'schokje'/'toilet'/'aanval' etc.
+digannot = regexp(lower(annots_new{numannots,2}),'\d*');
+
+% does this have 'ma'/'neg'/'bi'/'current is lower than expected' in the string? (respectively
+% negative current, lower pulse current, biphasic instead of
+% monophasic)
+negannot = regexp(lower(annots_new{numannots,2}),'neg');
+currannot = regexp(lower(annots_new{numannots,2}),'ma');
+biannot = regexp(lower(annots_new{numannots,2}),'bi');
+low_expect = regexp(lower(annots_new{numannots,2}),'requested');
+
+% if any of the earlier mentioned variables is not empty, it is
+% part of the stimulation annotations
+if (~isempty(digannot) && digannot(1)<5) || ~isempty(negannot) || ~isempty(currannot) || ~isempty(biannot) || ~isempty(low_expect)
+else
+    n=1;
+    while isempty(digannot) || digannot(1)>5
+        digannot = regexp(lower(annots_new{numannots-n,2}),'\d*');
+        n = n+1;
+    end
+    numannots = numannots-n+1;
+    
+    digannot = regexp(lower(annots_new{numannots,2}),'\d*');
+    
+    % does this have 'ma'/'neg'/'bi'/'current is lower than expected' in the string? (respectively
+    % negative current, lower pulse current, biphasic instead of
+    % monophasic)
+    negannot = regexp(lower(annots_new{numannots,2}),'neg');
+    currannot = regexp(lower(annots_new{numannots,2}),'ma');
+    biannot = regexp(lower(annots_new{numannots,2}),'bi');
+    low_expect = regexp(lower(annots_new{numannots,2}),'expected');
+    
+end
+
+% stimulus pair
+if ~isempty(digannot) && digannot(1)<5
+    annotsplit = strsplit(annots_new{numannots,2},'_'); % finds info before '_'
+    stimchans = regexp(lower(annotsplit{1}),'[a-z]*','match'); %finds electrode-letter(s)
+    stimnums = regexp(lower(annotsplit{1}),'\d*','match'); % finds electrode-number
+    
+    for j=1:size(stimnums,2)
+        if str2double(stimnums{j})<10
+            test1 = sprintf('%s%d',stimchans{j},str2double(stimnums{j}));
+            test2 = sprintf('%s0%d',stimchans{j},str2double(stimnums{j}));
+            if sum(strcmpi(test1,ch_label))>sum(strcmpi(test2,ch_label))
+                stimchan{j} = ch_label{strcmpi(test1,ch_label)};
+                stimnum(j) = find(strcmpi(test1,ch_label)==1);
+            else
+                stimchan{j} = ch_label{strcmpi(test2,ch_label)};
+                stimnum(j) = find(strcmpi(test2,ch_label)==1);
+            end
+        else
+            test1 = sprintf('%s%d',stimchans{j},str2double(stimnums{j}));
+            
+            stimchan{j} = ch_label{strcmpi(test1,ch_label)};
+            stimnum(j) = find(strcmpi(test1,ch_label)==1);
+        end
+    end
+elseif ~isempty(negannot) %there is no stimpair mentioned if it is a negative monophasic stimulus
+    
+    n=1;
+    while isempty(digannot) || digannot(1)>4
+        digannot = regexp(lower(annots_new{numannots-n,2}),'\d*');
+        n = n+1;
+    end
+    
+    annotsplit = strsplit(annots_new{numannots-n+1,2},'_'); % finds info before '_'
+    
+    stimchans = regexp(lower(annotsplit{1}),'[a-z]*','match'); %finds electrode-letter(s)
+    stimnums = regexp(lower(annotsplit{1}),'\d*','match'); % finds electrode-number
+    
+    for j=1:size(stimnums,2)
+        if str2double(stimnums{j})<10
+            test1 = sprintf('%s%d',stimchans{j},str2double(stimnums{j}));
+            test2 = sprintf('%s0%d',stimchans{j},str2double(stimnums{j}));
+            if sum(strcmpi(test1,ch_label))>sum(strcmpi(test2,ch_label))
+                stimchan{j} = ch_label{strcmpi(test1,ch_label)};
+                stimnum(j) = find(strcmpi(test1,ch_label)==1);
+            else
+                stimchan{j} = ch_label{strcmpi(test2,ch_label)};
+                stimnum(j) = find(strcmpi(test2,ch_label)==1);
+            end
+        else
+            test1 = sprintf('%s%d',stimchans{j},str2double(stimnums{j}));
+            
+            stimchan{j} = ch_label{strcmpi(test1,ch_label)};
+            stimnum(j) = find(strcmpi(test1,ch_label)==1);
+        end
+    end
+    
+    %         else % if no stimpair is mentioned, stim pair is as in previous triggers
+    %             sitesplit = strsplit(site_name{cc-1},'-');
+    %             stimchan{1} = sitesplit{1};
+    %             stimchan{2} = sitesplit{2};
+    %             stimnum(1) = site_channum{cc-1}(1);
+    %             stimnum(2) = site_channum{cc-1}(2);
+end
+
+%         if ~isempty(strfind(annots_new{numannots,2},''))
+%             annots_new{numannots,2} = annots_new{numannots,2}([1:strfind(annots_new{numannots,2},'')-1,strfind(annots_new{numannots,2},'')+1:end]);
+%         end
+%         annotssplit= strsplit(annots_new{numannots,2},'_');
+
+if ~isempty(low_expect)
+    note = annots_new{numannots,2};
+elseif numannots < size(annots_new,1)
+    if contains(annots_new{numannots+1,2},'requested') % in newer patients, the sentence "Current is lower than requested" is added at the end of the stimulation
+        note = annots_new{numannots+1,2};
+    else
+        note = note_desc;
+    end
+else
+    note = note_desc;
+end
+
+%         if any(strfind(annotssplit{1},' ') ~=0) % when there is a 'space' in the text, than it is the message: is lower than expected
+%             annotssplitspace = strsplit(annotssplit{1},' ');
+%             stimchans = deblank(annotssplitspace{1});
+%             note = annotssplit{1}(size(annotssplitspace{1},2)+2:end);
+%         else
+%             stimchans = annotssplit{1};
+%             note = 'n/a';
+%         end
+
+if ~isempty(currannot)
+    annotsplit = strsplit(lower(annots_new{numannots,2}),'_');
+    currsplit = strsplit(lower(annotsplit{2}),'ma');
+    stimcurrstr = currsplit{1};
+    stimcurr = str2double(stimcurrstr)/1000;
+else
+    stimcurr = stimcurdefault/1000;
+end
+
+% if size(annotssplit,2) >1
+%     stimcurrsplit = strsplit(lower(annotssplit{2}),'ma');
+%     stimcurrstr = stimcurrsplit{1};
+%     stimcurr = str2double(stimcurrstr)/1000;
+% else
+%     stimcurr = stimcurdefault/1000;
+% end
+
+%         if size(stimchans,2) <= 2*maxsz_label
+%             stimchan1 = stimchans(1:size(stimchans,2)/2);
+%             stimnum1 = find(cellfun(@(x) strcmp(x,stimchan1),ch_label));
+%
+%             if isempty(stimnum1)
+%                 % remove all 0 from stimchans
+%                 stimchan1 = replace(stimchans(1:size(stimchans,2)/2),'0','');
+%                 stimnum1 = find(cellfun(@(x) strcmp(x,stimchan1),ch_label));
+%             end
+%             if isempty(stimnum1)
+%                 % add one 0
+%                 stimchan1 = [stimchan1(regexp(stimchan1,'\D')) '0' num2str(str2double(stimchan1(regexp(stimchan1,'\d'))))];
+%                 stimnum1 = find(cellfun(@(x) strcmp(x,stimchan1),ch_label));
+%             end
+%
+%             stimchan2 = stimchans(size(stimchans,2)/2+1:end);
+%             stimnum2 = find(cellfun(@(x) strcmp(x,stimchan2),ch_label));
+%
+%             if isempty(stimnum2)
+%                 % remove all 0 from stimchans
+%                 stimchan2 = replace(stimchans(size(stimchans,2)/2+1:end),'0','');
+%                 stimnum2 = find(cellfun(@(x) strcmp(x,stimchan2),ch_label));
+%             end
+%             if isempty(stimnum2)
+%                 % add one 0
+%                 stimchan2 = [stimchan2(regexp(stimchan2,'\D')) '0' num2str(str2double(stimchan2(regexp(stimchan2,'\d'))))];
+%                 stimnum2 = find(cellfun(@(x) strcmp(x,stimchan2),ch_label));
+%             end
+%
+%         else
+%             warning('Annotation is longer than expected')
+%             stimchans
+%             stimchan1 = [];
+%             stimchan2 = [];
+%             stimnum1 = [];
+%             stimnum2 = [];
+%         end
+
+if ~isempty(negannot)
+    stimchantemp = stimchan{1};
+    stimchan{1} = stimchan{2};
+    stimchan{2} = stimchantemp;
+    stimnumtemp = stimnum(1);
+    stimnum(1) = stimnum(2);
+    stimnum(2) = stimnumtemp;
+end
+if ~isempty(biannot)
+    eventsannots.stim_type{cc} = 'biphasic';
+end
+
+eventsannots.site_name{cc} = [stimchan{1} '-' stimchan{2}];
+eventsannots.site_channum{cc} = num2str([stimnum(1), stimnum(2)]);
+eventsannots.duration{cc} = 1/1000;
+eventsannots.s_end{cc} = 'n/a';
+eventsannots.samp_end{cc} = 'n/a';
+eventsannots.ch_name_on{cc} = 'n/a';
+eventsannots.ch_name_off{cc} = 'n/a';
+eventsannots.stim_cur{cc} = stimcurr;
+eventsannots.notes{cc} = note;
+
+function eventsannots = add_esmtrigger2annotation(stim,eventsannots,annots_new, header,metadata,trigger)  
+fs = header.Rate_Min;
+ch_label = metadata.ch_label;
+
+if size(eventsannots.type,2) == 0
+    cc = 1;
+else
+    cc = size(eventsannots.type,2)+1;
+end
+
+eventsannots.type{cc} = 'electrical_stimulation';
+eventsannots.sub_type{cc} = 'ESM';
+eventsannots.stim_type{cc} = 'biphasic';
+eventsannots.samp_start{cc} = trigger.pos(stim);
+eventsannots.s_start{cc} = round(trigger.pos(stim)/fs,1); % time in seconds (1 decimal)
+
+% stimulation site
+[~,numannots]=max(1./(repmat(trigger.pos(stim),size(annots_new,1),1)-[annots_new{:,1}]')); %distance between triggerposition and nearbiest annotation (must be the stim channels then)
+
+annotsplit = strsplit(annots_new{numannots,2},char(32));
+stimchans = strsplit(annotsplit{1},'-');
+stimcur = cellfun(@(x) contains(x,{'ma'}),lower(annotsplit))==1;
+stimfreq = cellfun(@(x) contains(x,{'hz'}),lower(annotsplit))==1;
+stimwidth = cellfun(@(x) contains(x,{'sec'}),lower(annotsplit))==1;
+
+for j=1:size(stimchans,2)
+    stimnum(j) = find(strcmpi(stimchans{j},ch_label)==1);
+end
+
+eventsannots.site_name{cc} = annotsplit{1};
+eventsannots.site_channum{cc} = num2str([stimnum(1), stimnum(2)]);
+
+% current
+cur = str2double(strsplit(lower(annotsplit{stimcur}),'ma'));
+
+% duration
+if ismember(65533,double(annotsplit{stimwidth})) % there is a weird letter, translated from microseconds
+   dur = str2double(strsplit(annotsplit{stimwidth},char(65533)))/1000; % to change it to miliseconds
+end
+
+note = sprintf('Frequency is %s, width is %1.3f sec, but duration of total stimulus is unclear',annotsplit{stimfreq},dur(1)/1000);
+
+eventsannots.duration{cc} = dur(1)/1000;
+eventsannots.s_end{cc} = 'unknown';
+eventsannots.samp_end{cc} = 'unknown';
+eventsannots.ch_name_on{cc} = 'n/a';
+eventsannots.ch_name_off{cc} = 'n/a';
+eventsannots.stim_cur{cc} = cur(1)/1000;
+eventsannots.notes{cc} = note;
+
 
 %% miscellaneous functions from data2bids.m of fieldtrip
 
