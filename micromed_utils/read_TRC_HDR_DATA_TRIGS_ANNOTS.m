@@ -128,6 +128,8 @@ acquisition_eq=fread(f,1,'uint16');
 switch acquisition_eq
     case 17
         acquisition_eq = 'SD128';
+    case 19
+        acquisition_eq = 'SD64';        
     case 40
         acquisition_eq = 'LTM';
     case 48
