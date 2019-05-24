@@ -79,7 +79,7 @@ try
     
     output.subjName = sub_label;
     
-    [status,msg,metadata] = extract_metadata_from_annotations(annots,ch_label,trigger,sub_label,cfg);
+    [status,msg,metadata] = extract_metadata_from_annotations(header,annots,ch_label,trigger,sub_label,cfg);
     
     output.sitName = replace(strcat('ses-',deblank(metadata.ses_name)),' ','');
     output.runName = replace(strcat('run-',deblank(metadata.run_name),header.hour,header.min),' ','');
@@ -1553,7 +1553,7 @@ end
 % annots - annotations of the trc file
 % ch     - channel labels of all channels in the trc file
 
-function [status,msg,metadata]=extract_metadata_from_annotations(annots,ch,trigger,patName,cfg) % used on line 40
+function [status,msg,metadata]=extract_metadata_from_annotations(header,annots,ch,trigger,patName,cfg) % used on line 40
 try
     status=0;
     metadata=[];
@@ -1791,7 +1791,7 @@ try
     %% look for white matter channels - only in seeg
     wm_idx = cellfun(@(x) contains(x,{'WM'}),annots(:,2));
     metadata.ch2use_wm= false(size(ch));
-    if(sum(soz_idx))
+    if(sum(wm_idx))
         metadata.ch2use_wm=single_annotation(annots,'WM',ch);
     elseif metadata.incl_exist == 0
         if strcmp(fieldnames(cc_elecs),'wm')
@@ -1874,7 +1874,7 @@ try
     metadata.eyes_open = look_for_annotation_start_stop(annots,'Eyes_open','Eyes_close',ch);
     
     %% Look for seizures
-    metadata.seizure=look_for_annotation_start_stop(annots,'Sz_on','Sz_off',ch);
+    metadata.seizure=look_for_annotation_start_stop(annots,'Sz_on','Sz_off',ch,header.Rate_Min);
     
     %% Look for period of stimulation
     metadata.stimulation=look_for_annotation_start_stop(annots,'Stim_on','Stim_off',ch);
@@ -2019,10 +2019,56 @@ catch ME
     
 end
 
-function [artefacts]=look_for_annotation_start_stop(annots,str_start,str_stop,ch)
+function [artefacts]=look_for_annotation_start_stop(annots,str_start,str_stop,ch,fs)
 
 start_art=find(contains(annots(:,2),str_start));
 end_art=find(contains(annots(:,2),str_stop));
+
+% in a seizure, it is possible that the involved electrodes cannot be
+% described in one Sz_on or one Sz_off, this part deals with this
+if strcmp(str_start,'Sz_on')
+    if any(diff(end_art)) == 1 % if two Sz_ons are after each other
+        diffSzoffs = (diff(end_art));
+        sampSzOffs = diff([annots{end_art,1}]);
+        
+        for i=1:size(sampSzOffs,2)
+            if diffSzoffs(i) == 1 && sampSzOffs(i) < 1*fs % SzOffs belong to the same seizure
+                if strcmp(annots{end_art(i),2}(end),';')
+                    annot1 = annots{end_art(i),2};
+                else
+                    annot1 = [annots{end_art(i),2},';'];
+                end
+                annotsplit2 = strsplit(annots{end_art(i+1),2},'Sz_off;');
+                annots{end_art(i),2} = '';
+                annots{end_art(i+1),2} = [annot1, annotsplit2{2}];
+            elseif diffSzoffs(i) == 1 && sampSzOffs(i) > 1*fs % two Sz_offs do not belong to the same seizure
+                error('starts and ends did not match')
+            end
+        end
+        
+        end_art=find(contains(annots(:,2),str_stop));
+        
+    elseif any(diff(start_art)) == 1 % if two Sz_ons are after each other
+        diffSzons = (diff(start_art));
+        sampSzOns = diff([annots{start_art,1}]);
+        
+        for i=1:size(sampSzOns,2)
+            if diffSzons(i) == 1 && sampSzOns(i) < 1*fs % SzOffs belong to the same seizure
+                if strcmp(annots{start_art(i),2}(end),';')
+                    annot1 = annots{start_art(i),2};
+                else
+                    annot1 = [annots{start_art(i),2},';'];
+                end
+                annotsplit2 = strsplit(annots{start_art(i+1),2},'Sz_on;');
+                annots{start_art(i),2} = '';
+                annots{start_art(i+1),2} = [annot1, annotsplit2{2}];
+            elseif diffSzons(i) == 1 && sampSzOns(i) > 1*fs % two Sz_offs do not belong to the same seizure
+                error('starts and ends did not match')
+            end
+        end
+        start_art=find(contains(annots(:,2),str_start));
+    end
+end
 
 if(length(start_art)~=length(end_art))
     error('starts and ends did not match')
@@ -2069,7 +2115,7 @@ elseif  strcmp(str_start,'Sz_on') % in case of a seizure
         annotsplit = strsplit(annots{start_art(i),2},';');
         annotsplit = annotsplit(~cellfun(@isempty,annotsplit));
         if size(annotsplit,2) >2
-            if strcmp(annotsplit{2},'clin') || strcmp(annotsplit{2},'cluster') || strcmp(annotsplit{2},'subclin')
+            if strcmp(annotsplit{2},'clin') || strcmp(annotsplit{2},'cluster') || strcmp(annotsplit{2},'subclin') || strcmp(annotsplit{2},'aura')
                 type = annotsplit{2};
             else
                 type = 'unknown';
@@ -2078,7 +2124,7 @@ elseif  strcmp(str_start,'Sz_on') % in case of a seizure
             ch_names_on = {ch{logical(ch_art_idx)}};
             
         else
-            if strcmp(annotsplit{2},'clin') || strcmp(annotsplit{2},'cluster') || strcmp(annotsplit{2},'subclin')
+            if strcmp(annotsplit{2},'clin') || strcmp(annotsplit{2},'cluster') || strcmp(annotsplit{2},'subclin') || strcmp(annotsplit{2},'aura')
                 type = annotsplit{2};
                 ch_names_on = {'diffuse'};
             else
