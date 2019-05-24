@@ -226,13 +226,16 @@ try
         if strfind(cfg.ManufacturersModelName,'LTM') ~=0
             cfg.HardwareFilters.HighpassFilter.CutoffFrequency =             0.15;
             if header.Rate_Min/2.21 < 468
-                cfg.HardwareFilters.LowpassFilter.CutoffFrequency = header.Rate_Min/2.21;
+                cfg.HardwareFilters.LowpassFilter.CutoffFrequency = round(header.Rate_Min/2.21);
             else
                 cfg.HardwareFilters.LowpassFilter.CutoffFrequency  =             468;
             end
         elseif strcmp(cfg.ManufacturersModelName,'SD128')
             cfg.HardwareFilters.HighpassFilter.CutoffFrequency =             0.15;
-            cfg.HardwareFilters.LowpassFilter.CutoffFrequency  =             header.Rate_Min/3.81;
+            cfg.HardwareFilters.LowpassFilter.CutoffFrequency  =             round(header.Rate_Min/3.81);
+        elseif strcmp(cfg.ManufacturersModelName,'SD64')
+            cfg.HardwareFilters.HighpassFilter.CutoffFrequency =             0.15;
+            cfg.HardwareFilters.LowpassFilter.CutoffFrequency  =             round(header.Rate_Min/3.81);
         end
         
         %% create _channels.tsv
@@ -247,7 +250,7 @@ try
         
         
         %hdr=ft_read_header('/Users/matte/Desktop/RESPECT/converted/sub-RESP0636/ses-SITUATION1A/ieeg/sub-RESP0636_ses-SITUATION1A_task-acute_ieeg.vhdr');
-        json_sidecar_and_ch_and_ele_tsv(header,metadata,cfg)
+        json_sidecar_and_ch_and_ele_tsv(header,metadata,cfg);
         
         
         %% create coordsystem.json
@@ -353,16 +356,7 @@ end
 
 %% function for json and tsv ieeg following fieldtrip style
 function json_sidecar_and_ch_and_ele_tsv(header,metadata,cfg)
-
-% in some patients in some files an extra headbox is included in a later
-% stadium because an EMG-recording was necessary (for example).
-if size(metadata.ch2use_included,1) < size(metadata.ch_label,1)
-    ch2use_included = zeros(size(metadata.ch_label));
-    ch2use_included(1:size(metadata.ch2use_included,1)) =  metadata.ch2use_included;
-    ch2use_included = logical(ch2use_included);
-elseif size(metadata.ch2use_included,1) == size(metadata.ch_label,1)
-    ch2use_included = metadata.ch2use_included;
-end
+ch2use_included = metadata.ch2use_included;
 
 
 %% Generic fields for all data types
@@ -492,16 +486,16 @@ end
 name                                = mergevector({header.elec(:).Name}', cfg.channels.name)                                   ;
 
 type                                = cell(size(name))                                                                         ;
-if(any(ch2use_included))
+if(any(metadata.ch2use_included))
     if strcmpi(metadata.elec_info,'ECoG')
-        [type{ch2use_included}]    = deal('ECOG');
+        [type{metadata.ch2use_included}]    = deal('ECOG');
     elseif strcmpi(metadata.elec_info,'SEEG')
-        [type{ch2use_included}]    = deal('SEEG');
+        [type{metadata.ch2use_included}]    = deal('SEEG');
     end
 end
 
-if(any(~ch2use_included))
-    [type{~ch2use_included}]   = deal('OTHER');
+if(any(~metadata.ch2use_included))
+    [type{~metadata.ch2use_included}]   = deal('OTHER');
 end
 idx_ecg                             = ~cellfun(@isempty,regexpi(ch_label,'ECG'))                                               ;
 idx_ecg                             = idx_ecg'                                                                                 ;
@@ -547,10 +541,19 @@ z                                         = repmat({0},header.Num_Chan,1)       
 e_size                                    = repmat({'n/a'},header.Num_Chan,1)                                                          ; %TODO ask
 material                                  = repmat({'n/a'},header.Num_Chan,1)                                                          ; %TODO ask
 manufacturer                              = repmat({'n/a'},header.Num_Chan,1)                                                          ; %TODO ask
-silicon                                   = repmat({'n/a'},header.Num_Chan,1)                                                          ; %TODO ask
-soz                                       = repmat({'n/a'},header.Num_Chan,1)                                                          ; %TODO ask
-resected                                  = repmat({'n/a'},header.Num_Chan,1)                                                          ; %TODO ask
-edge                                      = repmat({'n/a'},header.Num_Chan,1)                                                          ; %TODO ask
+silicon                                   = repmat({'no'},header.Num_Chan,1)                                                          ; %TODO ask
+soz                                       = repmat({'no'},header.Num_Chan,1)                                                          ; %TODO ask
+resected                                  = repmat({'no'},header.Num_Chan,1)                                                          ; %TODO ask
+edge                                      = repmat({'no'},header.Num_Chan,1)                                                          ; %TODO ask
+if strcmpi(metadata.elec_info,'SEEG')
+    screw                                     = repmat({'no'},header.Num_Chan,1)                                                          ; %TODO ask
+    csf                                       = repmat({'no'},header.Num_Chan,1)                                                          ; %TODO ask
+    lesion                                    = repmat({'no'},header.Num_Chan,1)                                                          ; %TODO ask
+    gm                                        = repmat({'no'},header.Num_Chan,1)                                                          ; %TODO ask
+    wm                                        = repmat({'no'},header.Num_Chan,1)                                                          ; %TODO ask
+    hipp                                      = repmat({'no'},header.Num_Chan,1)                                                          ; %TODO ask
+    amyg                                      = repmat({'no'},header.Num_Chan,1)                                                          ; %TODO ask
+end
 
 if(any(metadata.ch2use_included))
     [e_size{metadata.ch2use_included}]        = deal('4.2')                                                                                ;
@@ -567,25 +570,58 @@ end
 if(any(metadata.ch2use_silicon))
     [silicon{metadata.ch2use_silicon}]  = deal('yes')                                                                                ;
 end
-[silicon{~metadata.ch2use_silicon}]  = deal('no')                                                                                ;
 
 if(any(metadata.ch2use_soz))
     [soz{metadata.ch2use_soz}]  = deal('yes')                                                                                ;
 end
-[soz{~metadata.ch2use_soz}]  = deal('no')                                                                                ;
 
 if(any(metadata.ch2use_resected))
     [resected{metadata.ch2use_resected}]  = deal('yes')                                                                                ;
 end
-[resected{~metadata.ch2use_resected}]  = deal('no')                                                                                ;
 
 if(any(metadata.ch2use_edge))
     [edge{metadata.ch2use_edge}]  = deal('yes')                                                                                ;
 end
-[edge{~metadata.ch2use_edge}]  = deal('no')                                                                                ;
 
-electrodes_tsv                            = table(name, x , y, z, e_size, group, material, manufacturer, silicon, soz, resected, edge ,...
+if strcmpi(metadata.elec_info,'SEEG')
+    if(any(metadata.ch2use_lesion))
+        [lesion{metadata.ch2use_lesion}]  = deal('yes')                                                                                ;
+    end
+    if(any(metadata.ch2use_lesion))
+        [lesion{metadata.ch2use_lesion}]  = deal('yes')                                                                                ;
+    end
+    if(any(metadata.ch2use_wm))
+        [wm{metadata.ch2use_wm}]  = deal('yes')                                                                                ;
+    end
+    if(any(metadata.ch2use_gm))
+        [gm{metadata.ch2use_gm}]  = deal('yes')                                                                                ;
+    end
+    if(any(metadata.ch2use_csf))
+        [csf{metadata.ch2use_csf}]  = deal('yes')                                                                                ;
+    end
+     if(any(metadata.ch2use_screw))
+        [screw{metadata.ch2use_screw}]  = deal('yes')                                                                                ;
+    end
+    if(any(metadata.ch2use_hipp))
+        [hipp{metadata.ch2use_hipp}]  = deal('yes')                                                                                ;
+    end
+ 
+    if(any(metadata.ch2use_amyg))
+        [amyg{metadata.ch2use_amyg}]  = deal('yes')                                                                                ;
+    end
+    
+    electrodes_tsv                            = table(name, x , y, z, e_size, ...
+        group, material, manufacturer, silicon, soz, resected, edge ,...
+        screw,csf,wm,gm,hipp,amyg,lesion,...
+    'VariableNames',{'name', 'x', 'y', 'z', 'size', ...
+    'group', 'material', 'manufacturer', 'silicon' 'soz','resected','edge',...
+    'screw','csf','whitematter','graymatter','hippocampus','amygdala','lesion'})     ;
+    
+else
+    electrodes_tsv                            = table(name, x , y, z, e_size, group, material, manufacturer, silicon, soz, resected, edge ,...
     'VariableNames',{'name', 'x', 'y', 'z', 'size', 'group', 'material', 'manufacturer', 'silicon' 'soz','resected','edge'})     ;
+end
+
 
 if ~isempty(ieeg_json)
     [p, f, x] = fileparts(cfg.outputfile);
@@ -1323,7 +1359,7 @@ else
     slowesmend = 0;
 end
 
-if ~isempty(trigger)
+if ~isempty(trigger.pos)
     idx_start = find(trigger.val >1000); % with cortical stimulation, triggers are added automatically with a number >1000
     for i=1:numel(idx_start)
         
@@ -1337,25 +1373,141 @@ if ~isempty(trigger)
             error('Trigger does not belong to SPES period or ESM period')
         end
         
-        
+    end
+end    
+if ~isempty(sum(cellfun(@(x) contains(x,{'No trigger'}),annots_new(:,2)))) % in older ECoGs, there are no triggers, but stimulation NEED TO BE FIXED
+    if strcmpi(metadata.elec_info,'SEEG')
+        stimcurdefault = 2;
+    elseif strcmpi(metadata.elec_info,'ECoG')
+        stimcurdefault = 8;
+    end
+
+    if contains(lower(metadata.stimcurr),'unknown')
+        note = sprintf('Stimulation intensity is suggested to be %i mA but may differ when applied in eloquent tissue, triggers were added automatically in Matlab',stimcurdefault);
+    else
+        note = 'Triggers were added automatically in Matlab';
+    end
+
+    % load ECoG
+    dataName = cfg.outputfile;
+    data_raw = ft_read_data(dataName,'dataformat','brainvision_eeg');
+    data = data_raw(ch2use_included,:);
+    ch_label = {ch_label{ch2use_included}};
+    %data(metadata.ch2use_bad,:) = NaN;
+    
+    % annotation sample
+    numnotrigger = find(cellfun(@(x) contains(x,{'No trigger'}),annots_new(:,2))==1);
+    for i=1:size(numnotrigger,1) % for each 'No trigger'-annotation
+        if annots_new{numnotrigger(i),1} > spesstart && annots_new{numnotrigger(i),1} < spesend % if 'No trigger' is within SPESperiod
+               if ~isempty(trigger.pos) % if triggers are present, then period ends with next trigger
+                   periodend = trigger.pos(find(annots_new{numnotrigger(i),1}<trigger.pos,1,'first'))-round(0.25*fs); %-0.25s takes care of an annotation prior to the next trigger
+                   sampend = periodend;
+               else %otherwise, period ends with end of SPESperiod
+                   periodend = spesend;
+                   sampend = [];
+               end
+               % annotations within the specified period
+               numannots = find([annots_new{:,1}]<periodend & [annots_new{:,1}] > annots_new{numnotrigger(i),1} ==1);
+               
+               for j=1:size(numannots,2)
+                   annotsplit = strsplit(annots_new{numannots(j),2},'_');
+                   stimnumber = regexp(lower(annotsplit{1}),'\d*','match');
+                   stimname = regexp(lower(annotsplit{1}),'[a-z]*','match');
+%                    currannot = regexp(lower(annots_new{numannots(j),2}),'ma', 'once');
+
+                   if size(annotsplit,2)>1
+                       currsplit = strsplit(lower(annotsplit{2}),'ma');
+                       stimcurrstr = currsplit{1};
+                       stimcurr = str2double(stimcurrstr)/1000;
+                   else
+                       stimcurr = stimcurdefault/1000;
+                   end
+                   
+                   if size(stimnumber,2) == 2 && size(stimname,2)==2 % when both have size=2, then it should be a stimulus pair
+                        
+                       [~,stimnum] = findstimpair(stimnums,stimnames,ch_label);
+
+                       sampstart = annots_new{numannots(j),1};
+                       if j==1 && isempty(sampend)
+                           sampend = annots_new{numannots(j+1),1};
+                       elseif j == size(numannots,2)
+                           sampend = spesend;
+                       else
+                           sampend = annots_new{numannots(j+1),1};                           
+                       end
+                       samplocs = findtrigger(data,stimnum,fs, sampstart, sampend)+annots_new{numannots(j),1};
+
+                       eventssize = size(eventsannots.type,2) ;
+                       for cc = eventssize+1:eventssize+size(samplocs,2)
+                           eventsannots.type{cc} = 'electrical_stimulation';
+                           eventsannots.sub_type{cc} = 'SPES';
+                           eventsannots.stim_type{cc} = 'monophasic';
+                           eventsannots.samp_start{cc} = samplocs(cc-eventssize);
+                           eventsannots.s_start{cc} = round(samplocs(cc-eventssize)/fs,1); % time in seconds (1 decimal)
+
+                           eventsannots.site_name{cc} = [ch_label{stimnum(1)}, '-', ch_label{stimnum(2)}];
+                           eventsannots.site_channum{cc} = num2str([stimnum(1), stimnum(2)]);
+                           eventsannots.duration{cc} = 1/1000;
+                           eventsannots.s_end{cc} = 'n/a';
+                           eventsannots.samp_end{cc} = 'n/a';
+                           eventsannots.ch_name_on{cc} = 'n/a';
+                           eventsannots.ch_name_off{cc} = 'n/a';
+                           eventsannots.stim_cur{cc} = stimcurr;
+                           eventsannots.notes{cc} = note;
+                           
+                       end
+
+                   end
+                   
+
+               end
+               
+        elseif annots_new{numnotrigger(i),1} > esmstart && annots_new{numnotrigger(i),1} < esmend
+            % FIX LATER
+        elseif annots_new{numnotrigger(i),1} > slowesmstart && annots_new{numnotrigger(i),1} < slowesmend
+            % FIX LATER
+        end
+%         if ~isempty(trigger)
+%             
+%         else
+%         end
     end
 end
 
-s_start = eventsannots.s_start;
-s_end = eventsannots.s_end;
-duration = eventsannots.duration;
-type = eventsannots.type;
-sub_type = eventsannots.sub_type;
-ch_name_on = eventsannots.ch_name_on;
-ch_name_off = eventsannots.ch_name_off;
-samp_start = eventsannots.samp_start;
-samp_end = eventsannots.samp_end;
-stim_type = eventsannots.stim_type;
-site_name = eventsannots.site_name;
-site_channum = eventsannots.site_channum;
-stim_cur = eventsannots.stim_cur;
-notes= eventsannots.notes;
+s_start         = eventsannots.s_start;
+s_end           = eventsannots.s_end;
+duration        = eventsannots.duration;
+type            = eventsannots.type;
+sub_type        = eventsannots.sub_type;
+ch_name_on      = eventsannots.ch_name_on;
+ch_name_off     = eventsannots.ch_name_off;
+samp_start      = eventsannots.samp_start;
+samp_end        = eventsannots.samp_end;
+stim_type       = eventsannots.stim_type;
+site_name       = eventsannots.site_name;
+site_channum    = eventsannots.site_channum;
+stim_cur        = eventsannots.stim_cur;
+notes           = eventsannots.notes;
 
+% sort to put the no-triggers in the right order of stimulation
+SPEStype        = strcmp(sub_type,'SPES');
+noSPEStype      = ~SPEStype;
+[~,I]           = sort([samp_start{SPEStype}]) ;
+I               = I + find(SPEStype==1,1,'first')-1;
+s_start         = {s_start{noSPEStype},s_start{I}};
+s_end           = {s_end{noSPEStype},s_end{I}};
+duration        = {duration{noSPEStype},duration{I}};
+type            = {type{noSPEStype},type{I}};
+sub_type        = {sub_type{noSPEStype},sub_type{I}};
+ch_name_on      = {ch_name_on{noSPEStype},ch_name_on{I}};
+ch_name_off     = {ch_name_off{noSPEStype},ch_name_off{I}};
+samp_start      = {samp_start{noSPEStype},samp_start{I}};
+samp_end        = {samp_end{noSPEStype},samp_end{I}};
+stim_type       = {stim_type{noSPEStype},stim_type{I}};
+site_name       = {site_name{noSPEStype},site_name{I}};
+site_channum    = {site_channum{noSPEStype},site_channum{I}};
+stim_cur        = {stim_cur{noSPEStype},stim_cur{I}};
+notes           = {notes{noSPEStype},notes{I}};
 
 
 if isempty(s_start)
@@ -1486,7 +1638,7 @@ try
     metadata.ch2use_included= false(size(ch));
     if(sum(included_idx))
         metadata.ch2use_included=single_annotation(annots,'Included',ch);
-        fprintf('File had Included-annotation, so no already existing electrodes.tsv is used\n')
+        fprintf('File had Included-annotation, so no electrodes.tsv is used\n')
         metadata.incl_exist = 1;
     else % if "Included" is not annotated in the ECoG, there should be a previous ECoG with annoted "Included"
         metadata.incl_exist = 0;
@@ -1502,10 +1654,46 @@ try
         if ~isempty(files)
             elecName = fullfile(files(1).folder, '/',files(1).name);
             cc_elecs = readtable(elecName,'FileType','text','Delimiter','\t');
+            elec_incl = false(size(ch));
+            elec_soz = false(size(ch));
+            elec_silicon = false(size(ch));
+            elec_resected = false(size(ch));
+            elec_edge = false(size(ch));
             % excluding electrodes other (so no grid, strip, depth)
-            elec_other = strcmp(cc_elecs.group,'other');
-            elec_parse = true(size(cc_elecs,1),1);
-            elec_incl = elec_parse - elec_other;
+            elec_name = cc_elecs.name;
+            for i=1:size(ch,1)
+                stimname = regexp(ch{i},'[a-z_A-Z]*','match');
+                stimnum = regexp(ch{i},'[0-9]*','match');
+                if ~isempty(stimname) && ~isempty(stimnum)
+                    test1 = sprintf('%s0%d',stimname{:}, str2double(stimnum{:}));
+                    test2 = sprintf('%s%d',stimname{:}, str2double(stimnum{:}));
+                else
+                    test1 = ch{i};
+                    test2 = ch{i};
+                end
+                
+                if sum(cellfun(@(x) strcmp(x,test1),elec_name)) == 1
+                    idx = cellfun(@(x) strcmp(x,test1),elec_name);
+                    elec_incl(i) = ~strcmp(cc_elecs.group{idx},'other');
+                    elec_soz(i) = strcmp(cc_elecs.soz{idx},'yes');
+                    elec_silicon(i) = strcmp(cc_elecs.silicon{idx},'yes');
+                    elec_resected(i) = strcmp(cc_elecs.resected{idx},'yes');                    
+                    elec_edge(i) = strcmp(cc_elecs.edge{idx},'yes');
+                elseif sum(cellfun(@(x) strcmp(x,test2),elec_name)) == 1
+                    idx = cellfun(@(x) strcmp(x,test2),elec_name);
+                    elec_incl(i) = ~strcmp(cc_elecs.group{idx},'other');                    
+                    elec_soz(i) = strcmp(cc_elecs.soz{idx},'yes');
+                    elec_silicon(i) = strcmp(cc_elecs.silicon{idx},'yes');
+                    elec_resected(i) = strcmp(cc_elecs.resected{idx},'yes');                    
+                    elec_edge(i) = strcmp(cc_elecs.edge{idx},'yes');
+                else
+                    elec_incl(i) = false;
+                    elec_soz(i) = false;
+                    elec_silicon(i) = false;
+                    elec_resected(i) = false;
+                    elec_edge(i) = false;
+                end
+            end
             
             metadata.ch2use_included=logical(elec_incl);
             
@@ -1535,7 +1723,7 @@ try
     %
     
     %% Look for bad channels
-    metadata.ch2use_bad=single_annotation(annots,'Bad',ch);
+    metadata.ch2use_bad=single_annotation(annots,'Bad;',ch);
     
     % cavity and silicon are not onmi present
     %     %% Look for cavity
@@ -1558,8 +1746,7 @@ try
     if(sum(silicon_idx))
         metadata.ch2use_silicon=single_annotation(annots,'Silicon',ch);
     elseif metadata.incl_exist == 0
-        elec_silicon = strcmp(cc_elecs.silicon,'yes');
-        metadata.ch2use_silicon=logical(elec_silicon);
+        metadata.ch2use_silicon=elec_silicon;
     end
     
     %% look for resected channels
@@ -1568,8 +1755,7 @@ try
     if(sum(resected_idx))
         metadata.ch2use_resected=single_annotation(annots,'RA',ch);
     elseif metadata.incl_exist == 0
-        elec_resected= strcmp(cc_elecs.resected,'yes');
-        metadata.ch2use_resected=logical(elec_resected);
+        metadata.ch2use_resected=elec_resected;
     end
     
     %% look for edge channels
@@ -1578,8 +1764,7 @@ try
     if(sum(edge_idx))
         metadata.ch2use_edge=single_annotation(annots,'Edge',ch);
     elseif metadata.incl_exist == 0
-        elec_edge= strcmp(cc_elecs.edge,'yes');
-        metadata.ch2use_edge=logical(elec_edge);
+        metadata.ch2use_edge=elec_edge;
     end
     
     %% look for SOZ channels
@@ -1588,10 +1773,94 @@ try
     if(sum(soz_idx))
         metadata.ch2use_soz=single_annotation(annots,'SOZ',ch);
     elseif metadata.incl_exist == 0
-        elec_soz= strcmp(cc_elecs.soz,'yes');
-        metadata.ch2use_soz=logical(elec_soz);
+        metadata.ch2use_soz=elec_soz;
     end
     
+    %% look for screw channels - only in seeg
+    screw_idx = cellfun(@(x) contains(x,{'Screw'}),annots(:,2));
+    metadata.ch2use_screw= false(size(ch));
+    if(sum(screw_idx))
+        metadata.ch2use_screw=single_annotation(annots,'Screw',ch);
+    elseif metadata.incl_exist == 0
+        if strcmp(fieldnames(cc_elecs),'screw')
+            elec_screw= strcmp(cc_elecs.screw,'yes');
+            metadata.ch2use_screw=logical(elec_screw);
+        end            
+    end
+
+    %% look for white matter channels - only in seeg
+    wm_idx = cellfun(@(x) contains(x,{'WM'}),annots(:,2));
+    metadata.ch2use_wm= false(size(ch));
+    if(sum(soz_idx))
+        metadata.ch2use_wm=single_annotation(annots,'WM',ch);
+    elseif metadata.incl_exist == 0
+        if strcmp(fieldnames(cc_elecs),'wm')
+            elec_wm= strcmp(cc_elecs.wm,'yes');
+            metadata.ch2use_wm=logical(elec_wm);
+        end
+    end
+    
+    %% look for gray matter channels - only in seeg
+    gm_idx = cellfun(@(x) contains(x,{'GM'}),annots(:,2));
+    metadata.ch2use_gm= false(size(ch));
+    if(sum(gm_idx))
+        metadata.ch2use_gm=single_annotation(annots,'GM',ch);
+    elseif metadata.incl_exist == 0
+        if strcmp(fieldnames(cc_elecs),'gm')
+            elec_gm= strcmp(cc_elecs.gm,'yes');
+            metadata.ch2use_gm=logical(elec_gm);
+        end
+    end
+    
+    %% look for CSF channels - only in seeg
+    csf_idx = cellfun(@(x) contains(x,{'CSF'}),annots(:,2));
+    metadata.ch2use_csf= false(size(ch));
+    if(sum(csf_idx))
+        metadata.ch2use_csf=single_annotation(annots,'CSF',ch);
+    elseif metadata.incl_exist == 0
+        if strcmp(fieldnames(cc_elecs),'csf')
+            elec_csf= strcmp(cc_elecs.csf,'yes');
+            metadata.ch2use_csf=logical(elec_csf);
+        end
+    end
+    
+    %% look for amygdala channels - only in seeg
+    amyg_idx = cellfun(@(x) contains(x,{'Amyg'}),annots(:,2));
+    metadata.ch2use_amyg= false(size(ch));
+    if(sum(amyg_idx))
+        metadata.ch2use_amyg=single_annotation(annots,'Amyg',ch);
+    elseif metadata.incl_exist == 0
+        if strcmp(fieldnames(cc_elecs),'amyg')
+            elec_amyg= strcmp(cc_elecs.amyg,'yes');
+            metadata.ch2use_amyg=logical(elec_amyg);
+        end
+    end
+    
+    %% look for hippocampal channels - only in seeg
+    hipp_idx = cellfun(@(x) contains(x,{'Hipp'}),annots(:,2));
+    metadata.ch2use_hipp= false(size(ch));
+    if(sum(hipp_idx))
+        metadata.ch2use_hipp=single_annotation(annots,'Hipp',ch);
+    elseif metadata.incl_exist == 0
+        if strcmp(fieldnames(cc_elecs),'hipp')
+            elec_hipp= strcmp(cc_elecs.hipp,'yes');
+            metadata.ch2use_hipp=logical(elec_hipp);
+        end
+    end
+    
+    %% look for lesion channels - only in seeg
+    lesion_idx = cellfun(@(x) contains(x,{'Lesion'}),annots(:,2));
+    metadata.ch2use_lesion= false(size(ch));
+    if(sum(lesion_idx))
+        metadata.ch2use_lesion=single_annotation(annots,'Lesion',ch);
+    elseif metadata.incl_exist == 0
+        if strcmp(fieldnames(cc_elecs),'lesion')
+            
+            elec_lesion= strcmp(cc_elecs.lesion,'yes');
+            metadata.ch2use_lesion=logical(elec_lesion);
+        end
+    end
+     
     %% Look for artefacts cECoG
     metadata.artefacts=look_for_annotation_start_stop(annots,'Art_on','Art_off',ch);
     
@@ -1668,7 +1937,7 @@ try
         depthloc = find(cellfun('length',regexp(lower(annotsformatsplit),'depth')) == 1);
         seegloc = find(cellfun('length',regexp(lower(annotsformatsplit),'seeg')) == 1);
         
-        locs_all = sort([ecogloc, striploc, depthloc,size(annotsformatsplit,2)+1]);
+        locs_all = sort([ecogloc, striploc, depthloc,seegloc,size(annotsformatsplit,2)+1]);
         
         % ECoG
         if ~isempty(ecogloc)
@@ -1800,7 +2069,11 @@ elseif  strcmp(str_start,'Sz_on') % in case of a seizure
         annotsplit = strsplit(annots{start_art(i),2},';');
         annotsplit = annotsplit(~cellfun(@isempty,annotsplit));
         if size(annotsplit,2) >2
-            type = annotsplit{2};
+            if strcmp(annotsplit{2},'clin') || strcmp(annotsplit{2},'cluster') || strcmp(annotsplit{2},'subclin')
+                type = annotsplit{2};
+            else
+                type = 'unknown';
+            end
             ch_art_idx = parse_annotation(annots{start_art(i),2},ch);
             ch_names_on = {ch{logical(ch_art_idx)}};
             
@@ -1810,6 +2083,7 @@ elseif  strcmp(str_start,'Sz_on') % in case of a seizure
                 ch_names_on = {'diffuse'};
             else
                 type = 'unknown';
+                ch_art_idx = parse_annotation(annots{start_art(i),2},ch);
                 ch_names_on = {ch{logical(ch_art_idx)}};
             end
         end
@@ -1873,6 +2147,8 @@ else
         artefacts{i}=art;
     end
 end
+
+
 
 function [annots_new, eventsannots ] = add_event2annotation(event,evname,eventsannots, annots_new, header)
 
@@ -1939,6 +2215,52 @@ if(~isempty(event))
 end
 
 
+function samplocs = findtrigger(data, stimnum,fs, sampstart,sampend)
+
+if median(data(stimnum(1),sampstart:sampend)) > median(data(stimnum(2),sampstart:sampend))
+    anode = stimnum(2);% with positive saturation right after stimulation
+    cathode = stimnum(1);% with negative saturation right after stimulation
+else
+    anode = stimnum(1);% with positive saturation right after stimulation
+    cathode = stimnum(2);% with negative saturation right after stimulation
+end
+
+dt_data(1,:) = diff(data(anode,sampstart:sampend));
+dt_data(2,:) = diff(data(cathode,sampstart:sampend));
+SD = std(dt_data,[],2);
+
+[~,locsdtpos] = findpeaks(dt_data(1,:),'MinPeakDistance',fs,'MinPeakHeight',10*SD(1));
+[~,locsdtneg] = findpeaks(-1*dt_data(1,:),'MinPeakDistance',fs,'MinPeakHeight',10*SD(1));
+ 
+[~,locsdt2pos] = findpeaks(dt_data(2,:),'MinPeakDistance',fs,'MinPeakHeight',10*SD(2));
+[~,locsdt2neg] = findpeaks(-1*dt_data(2,:),'MinPeakDistance',fs,'MinPeakHeight',10*SD(2));
+
+locsall = sort([locsdtpos locsdtneg, locsdt2pos, locsdt2neg]);
+distances = pdist2(locsall',locsall');
+
+within1 = distances < round(0.5*fs); % group all locs that are within 500ms
+numelements = numel(locsall);
+% use only lower triangle part
+t = logical(triu(ones(numelements,numelements),1)); 
+within1(t) = 0;
+[labeledGroups,numGroups ] = bwlabel(within1,4);
+
+for k = 1 : numGroups
+  [rows, columns] = find(labeledGroups == k);
+  indexes = unique([rows, columns]);
+  if k>1
+      if locsall(indexes(1))-samplocs(k-1) < round(6*fs) % WARNING: assumes that stimuli are applied maximally every 5s
+          samplocs(k) = min(locsall(indexes));
+      else
+          break
+      end
+  else
+      samplocs(k) = min(locsall(indexes));
+  end
+end
+
+
+
 
 function bsuppression=look_for_burst_suppression(annots)
 
@@ -1999,21 +2321,29 @@ end
 
 function [ch_status,ch_status_desc]=status_and_description(metadata)
 
-ch_label                                                        = metadata.ch_label                         ;
+ch_label = metadata.ch_label                         ;
+ch2use_included = metadata.ch2use_included; 
+ch2use_silicon = metadata.ch2use_silicon;
 % in some patients in some files an extra headbox is included in a later
 % stadium because an EMG-recording was necessary (for example).
-if size(metadata.ch2use_included,1) < size(metadata.ch_label,1)
-    ch2use_included = zeros(size(ch_label));
-    ch2use_included(1:size(metadata.ch2use_included,1)) =  metadata.ch2use_included;
-    ch2use_included = logical(ch2use_included);
-    ch2use_silicon = zeros(size(ch_label));
-    ch2use_silicon(1:size(metadata.ch2use_silicon,1)) = metadata.ch2use_silicon;
-    ch2use_silicon = logical(ch2use_silicon);
-    
-elseif size(metadata.ch2use_included,1) == size(metadata.ch_label,1)
-    ch2use_included = metadata.ch2use_included;
-    ch2use_silicon = metadata.ch2use_silicon;
-end
+% if size(metadata.ch2use_included,1) < size(metadata.ch_label,1)
+%     ch2use_included = zeros(size(ch_label));
+%     ch2use_included(1:size(metadata.ch2use_included,1)) =  metadata.ch2use_included;
+%     ch2use_included = logical(ch2use_included);
+%     ch2use_silicon = zeros(size(ch_label));
+%     ch2use_silicon(1:size(metadata.ch2use_silicon,1)) = metadata.ch2use_silicon;
+%     ch2use_silicon = logical(ch2use_silicon);
+%     
+% elseif size(metadata.ch2use_included,1) == size(metadata.ch_label,1)
+%     ch2use_included = metadata.ch2use_included;
+%     ch2use_silicon = metadata.ch2use_silicon;
+% elseif size(metadata.ch2use_included,1) > size(metadata.ch_label,1)
+%     ch2use_included =  metadata.ch2use_included(1:size(metadata.ch_label,1));
+%     ch2use_included = logical(ch2use_included);
+%     ch2use_silicon = metadata.ch2use_silicon(1:size(metadata.ch_label,1));
+%     ch2use_silicon = logical(ch2use_silicon);
+%     
+% end
 
 ch_status                                                       = cell(size(ch2use_included))      ;
 ch_status_desc                                                  = cell(size(ch2use_included))      ;
@@ -2089,14 +2419,7 @@ end
 function ch_group = extract_group_info(metadata)
 
 ch_label                                    = metadata.ch_label                    ;
-% in some patients in some files an extra headbox is included in a later
-% stadium because an EMG-recording was necessary (for example).
-if size(metadata.ch2use_included,1) < size(metadata.ch_label,1)
-    ch2use_included = zeros(size(ch_label));
-    ch2use_included(1:size(metadata.ch2use_included,1)) =  metadata.ch2use_included;
-elseif size(metadata.ch2use_included,1) == size(metadata.ch_label,1)
-    ch2use_included = metadata.ch2use_included;
-end
+ch2use_included = metadata.ch2use_included;
 
 if strcmpi(metadata.elec_info,'SEEG')
     idx_depths = ch2use_included;
@@ -2347,17 +2670,15 @@ function eventsannots = add_spestrigger2annotation(stim,evname, eventsannots,ann
 fs = header.Rate_Min;
 % ch2use_included = metadata.ch2use_included;
 ch_label = metadata.ch_label;
-
+maxchan = max(cellfun('length',ch_label(metadata.ch2use_included)));
 if strcmpi(metadata.elec_info,'SEEG')
     stimcurdefault = 2;
 elseif strcmpi(metadata.elec_info,'ECoG')
     stimcurdefault = 8;
 end
-% [~,Cncols] = cellfun(@size, ch_label);
-% maxsz_label = max(Cncols(ch2use_included));
 
 % notification that stimcurr is unknown
-if ~isempty(metadata.stimcurr)
+if contains(lower(metadata.stimcurr),'unknown')
     note_desc = sprintf('Stimulation intensity is suggested to be %i mA but may differ when applied in eloquent tissue',stimcurdefault);
 else
     note_desc = 'n/a';
@@ -2378,108 +2699,102 @@ eventsannots.s_start{cc} = round(trigger.pos(stim)/fs,1); % time in seconds (1 d
 % stimulation site
 [~,numannots]=max(1./(repmat(trigger.pos(stim),size(annots_new,1),1)-[annots_new{:,1}]')); %distance between triggerposition and nearbiest annotation (must be the stim channels then)
 
-% does this have a digit in the string? --> no comment like 'schokje'/'toilet'/'aanval' etc.
-digannot = regexp(lower(annots_new{numannots,2}),'\d*');
+% stimpair
+annotsplit = strsplit(annots_new{numannots,2},'_');
+stimnames = regexp(lower(annotsplit{1}),'[a-z]*','match');
+stimnums = regexp(lower(annotsplit{1}),'\d*','match');
 
 % does this have 'ma'/'neg'/'bi'/'current is lower than expected' in the string? (respectively
-% negative current, lower pulse current, biphasic instead of
-% monophasic)
+% negative current, lower pulse current, biphasic instead of monophasic)
 negannot = regexp(lower(annots_new{numannots,2}),'neg');
 currannot = regexp(lower(annots_new{numannots,2}),'ma');
+if ~isempty(currannot)
+    annotsplit = strsplit(lower(annots_new{numannots,2}),'_');
+    currsplit = strsplit(lower(annotsplit{2}),'ma');
+    stimcurrstr = currsplit{1};
+    stimcurr = str2double(stimcurrstr)/1000;
+else
+    stimcurr = stimcurdefault/1000;
+end
+
 biannot = regexp(lower(annots_new{numannots,2}),'bi');
 low_expect = regexp(lower(annots_new{numannots,2}),'requested');
 
-% if any of the earlier mentioned variables is not empty, it is
-% part of the stimulation annotations
-if (~isempty(digannot) && digannot(1)<5) || ~isempty(negannot) || ~isempty(currannot) || ~isempty(biannot) || ~isempty(low_expect)
-else
+if size(stimnums,2) ==2 && size(stimnames,2) == 2 % it is a stimulus pair
+    [stimchan,stimnum] = findstimpair(stimnums,stimnames,ch_label);
+    if find(stimnum == 0)
+        error('one stimulation channel has not been found')
+    end
+elseif ~isempty(negannot) || ~isempty(currannot) || ~isempty(biannot) || ~isempty(low_expect) %% it is part of stim annotations
     n=1;
-    while isempty(digannot) || digannot(1)>5
-        digannot = regexp(lower(annots_new{numannots-n,2}),'\d*');
+    while size(stimnums,2) <2 || size(stimnames,2) <2 
+        annotsplit = strsplit(annots_new{numannots-n,2},'_');
+        stimnames = regexp(lower(annotsplit{1}),'[a-z]*','match');
+        stimnums = regexp(lower(annotsplit{1}),'\d*','match');
         n = n+1;
     end
     numannots = numannots-n+1;
     
-    digannot = regexp(lower(annots_new{numannots,2}),'\d*');
+    annotsplit = strsplit(annots_new{numannots,2},'_');
+    stimnames = regexp(lower(annotsplit{1}),'[a-z]*','match');
+    stimnums = regexp(lower(annotsplit{1}),'\d*','match');
     
-    % does this have 'ma'/'neg'/'bi'/'current is lower than expected' in the string? (respectively
-    % negative current, lower pulse current, biphasic instead of
-    % monophasic)
-    negannot = regexp(lower(annots_new{numannots,2}),'neg');
-    currannot = regexp(lower(annots_new{numannots,2}),'ma');
-    biannot = regexp(lower(annots_new{numannots,2}),'bi');
-    low_expect = regexp(lower(annots_new{numannots,2}),'expected');
-    
-end
-
-% stimulus pair
-if ~isempty(digannot) && digannot(1)<5
-    annotsplit = strsplit(annots_new{numannots,2},'_'); % finds info before '_'
-    stimchans = regexp(lower(annotsplit{1}),'[a-z]*','match'); %finds electrode-letter(s)
-    stimnums = regexp(lower(annotsplit{1}),'\d*','match'); % finds electrode-number
-    
-    for j=1:size(stimnums,2)
-        if str2double(stimnums{j})<10
-            test1 = sprintf('%s%d',stimchans{j},str2double(stimnums{j}));
-            test2 = sprintf('%s0%d',stimchans{j},str2double(stimnums{j}));
-            if sum(strcmpi(test1,ch_label))>sum(strcmpi(test2,ch_label))
-                stimchan{j} = ch_label{strcmpi(test1,ch_label)};
-                stimnum(j) = find(strcmpi(test1,ch_label)==1);
-            else
-                stimchan{j} = ch_label{strcmpi(test2,ch_label)};
-                stimnum(j) = find(strcmpi(test2,ch_label)==1);
-            end
-        else
-            test1 = sprintf('%s%d',stimchans{j},str2double(stimnums{j}));
-            
-            stimchan{j} = ch_label{strcmpi(test1,ch_label)};
-            stimnum(j) = find(strcmpi(test1,ch_label)==1);
-        end
+    [stimchan,stimnum] = findstimpair(stimnums,stimnames,ch_label);
+    if find(stimnum == 0)
+        error('one stimulation channel has not been found')
     end
-elseif ~isempty(negannot) %there is no stimpair mentioned if it is a negative monophasic stimulus
-    
+
+else % if it is not part of stim annotations
     n=1;
-    while isempty(digannot) || digannot(1)>4
-        digannot = regexp(lower(annots_new{numannots-n,2}),'\d*');
+    while size(stimnums,2) <2 || size(stimnames,2) <2 || ~isempty(negannot) || ~isempty(currannot) || ~isempty(biannot) || ~isempty(low_expect) %% it is part of stim annotations
+        annotsplit = strsplit(annots_new{numannots-n,2},'_');
+        stimnames = regexp(lower(annotsplit{1}),'[a-z]*','match');
+        stimnums = regexp(lower(annotsplit{1}),'\d*','match');
         n = n+1;
     end
+    numannots = numannots-n+1;
     
-    annotsplit = strsplit(annots_new{numannots-n+1,2},'_'); % finds info before '_'
+    annotsplit = strsplit(annots_new{numannots,2},'_');
+    stimnames = regexp(lower(annotsplit{1}),'[a-z]*','match');
+    stimnums = regexp(lower(annotsplit{1}),'\d*','match');
+   
+    % does this have 'ma'/'neg'/'bi'/'current is lower than expected' in the string? (respectively
+    % negative current, lower pulse current, biphasic instead of monophasic)
+    negannot = regexp(lower(annots_new{numannots,2}),'neg');
+    currannot = regexp(lower(annots_new{numannots,2}),'ma', 'once');
+    if ~isempty(currannot)
+        annotsplit = strsplit(lower(annots_new{numannots,2}),'_');
+        currsplit = strsplit(lower(annotsplit{2}),'ma');
+        stimcurrstr = currsplit{1};
+        stimcurr = str2double(stimcurrstr)/1000;
+    else
+        stimcurr = stimcurdefault/1000;
+    end
+
+    biannot = regexp(lower(annots_new{numannots,2}),'bi');
+    low_expect = regexp(lower(annots_new{numannots,2}),'requested');
     
-    stimchans = regexp(lower(annotsplit{1}),'[a-z]*','match'); %finds electrode-letter(s)
-    stimnums = regexp(lower(annotsplit{1}),'\d*','match'); % finds electrode-number
-    
-    for j=1:size(stimnums,2)
-        if str2double(stimnums{j})<10
-            test1 = sprintf('%s%d',stimchans{j},str2double(stimnums{j}));
-            test2 = sprintf('%s0%d',stimchans{j},str2double(stimnums{j}));
-            if sum(strcmpi(test1,ch_label))>sum(strcmpi(test2,ch_label))
-                stimchan{j} = ch_label{strcmpi(test1,ch_label)};
-                stimnum(j) = find(strcmpi(test1,ch_label)==1);
-            else
-                stimchan{j} = ch_label{strcmpi(test2,ch_label)};
-                stimnum(j) = find(strcmpi(test2,ch_label)==1);
-            end
-        else
-            test1 = sprintf('%s%d',stimchans{j},str2double(stimnums{j}));
-            
-            stimchan{j} = ch_label{strcmpi(test1,ch_label)};
-            stimnum(j) = find(strcmpi(test1,ch_label)==1);
+    if size(stimnums,2) <2 || size(stimnames,2) <2 % if it is a stim annotation, but no stimpair
+        n=1;
+        while size(stimnums,2) <2 || size(stimnames,2) <2
+            annotsplit = strsplit(annots_new{numannots-n,2},'_');
+            stimnames = regexp(lower(annotsplit{1}),'[a-z]*','match');
+            stimnums = regexp(lower(annotsplit{1}),'\d*','match');
+            n = n+1;
         end
+        numannots = numannots-n+1;
+        
+        annotsplit = strsplit(annots_new{numannots,2},'_');
+        stimnames = regexp(lower(annotsplit{1}),'[a-z]*','match');
+        stimnums = regexp(lower(annotsplit{1}),'\d*','match');
     end
     
-    %         else % if no stimpair is mentioned, stim pair is as in previous triggers
-    %             sitesplit = strsplit(site_name{cc-1},'-');
-    %             stimchan{1} = sitesplit{1};
-    %             stimchan{2} = sitesplit{2};
-    %             stimnum(1) = site_channum{cc-1}(1);
-    %             stimnum(2) = site_channum{cc-1}(2);
-end
+    [stimchan,stimnum] = findstimpair(stimnums,stimnames,ch_label);
+    if find(stimnum == 0)
+        error('one stimulation channel has not been found')
+    end
 
-%         if ~isempty(strfind(annots_new{numannots,2},''))
-%             annots_new{numannots,2} = annots_new{numannots,2}([1:strfind(annots_new{numannots,2},'')-1,strfind(annots_new{numannots,2},'')+1:end]);
-%         end
-%         annotssplit= strsplit(annots_new{numannots,2},'_');
+end
 
 if ~isempty(low_expect)
     note = annots_new{numannots,2};
@@ -2493,70 +2808,6 @@ else
     note = note_desc;
 end
 
-%         if any(strfind(annotssplit{1},' ') ~=0) % when there is a 'space' in the text, than it is the message: is lower than expected
-%             annotssplitspace = strsplit(annotssplit{1},' ');
-%             stimchans = deblank(annotssplitspace{1});
-%             note = annotssplit{1}(size(annotssplitspace{1},2)+2:end);
-%         else
-%             stimchans = annotssplit{1};
-%             note = 'n/a';
-%         end
-
-if ~isempty(currannot)
-    annotsplit = strsplit(lower(annots_new{numannots,2}),'_');
-    currsplit = strsplit(lower(annotsplit{2}),'ma');
-    stimcurrstr = currsplit{1};
-    stimcurr = str2double(stimcurrstr)/1000;
-else
-    stimcurr = stimcurdefault/1000;
-end
-
-% if size(annotssplit,2) >1
-%     stimcurrsplit = strsplit(lower(annotssplit{2}),'ma');
-%     stimcurrstr = stimcurrsplit{1};
-%     stimcurr = str2double(stimcurrstr)/1000;
-% else
-%     stimcurr = stimcurdefault/1000;
-% end
-
-%         if size(stimchans,2) <= 2*maxsz_label
-%             stimchan1 = stimchans(1:size(stimchans,2)/2);
-%             stimnum1 = find(cellfun(@(x) strcmp(x,stimchan1),ch_label));
-%
-%             if isempty(stimnum1)
-%                 % remove all 0 from stimchans
-%                 stimchan1 = replace(stimchans(1:size(stimchans,2)/2),'0','');
-%                 stimnum1 = find(cellfun(@(x) strcmp(x,stimchan1),ch_label));
-%             end
-%             if isempty(stimnum1)
-%                 % add one 0
-%                 stimchan1 = [stimchan1(regexp(stimchan1,'\D')) '0' num2str(str2double(stimchan1(regexp(stimchan1,'\d'))))];
-%                 stimnum1 = find(cellfun(@(x) strcmp(x,stimchan1),ch_label));
-%             end
-%
-%             stimchan2 = stimchans(size(stimchans,2)/2+1:end);
-%             stimnum2 = find(cellfun(@(x) strcmp(x,stimchan2),ch_label));
-%
-%             if isempty(stimnum2)
-%                 % remove all 0 from stimchans
-%                 stimchan2 = replace(stimchans(size(stimchans,2)/2+1:end),'0','');
-%                 stimnum2 = find(cellfun(@(x) strcmp(x,stimchan2),ch_label));
-%             end
-%             if isempty(stimnum2)
-%                 % add one 0
-%                 stimchan2 = [stimchan2(regexp(stimchan2,'\D')) '0' num2str(str2double(stimchan2(regexp(stimchan2,'\d'))))];
-%                 stimnum2 = find(cellfun(@(x) strcmp(x,stimchan2),ch_label));
-%             end
-%
-%         else
-%             warning('Annotation is longer than expected')
-%             stimchans
-%             stimchan1 = [];
-%             stimchan2 = [];
-%             stimnum1 = [];
-%             stimnum2 = [];
-%         end
-
 if ~isempty(negannot)
     stimchantemp = stimchan{1};
     stimchan{1} = stimchan{2};
@@ -2565,6 +2816,7 @@ if ~isempty(negannot)
     stimnum(1) = stimnum(2);
     stimnum(2) = stimnumtemp;
 end
+
 if ~isempty(biannot)
     eventsannots.stim_type{cc} = 'biphasic';
 end
@@ -2604,12 +2856,22 @@ stimcur = cellfun(@(x) contains(x,{'ma'}),lower(annotsplit))==1;
 stimfreq = cellfun(@(x) contains(x,{'hz'}),lower(annotsplit))==1;
 stimwidth = cellfun(@(x) contains(x,{'sec'}),lower(annotsplit))==1;
 
-for j=1:size(stimchans,2)
-    stimnum(j) = find(strcmpi(stimchans{j},ch_label)==1);
+if size(stimchans,2) == 1
+    stimnumber = regexp(lower(stimchans{1}),'\d*','match');
+    stimname = regexp(lower(stimchans{1}),'[a-z]*','match');
+    for j=1:size(stimnumber,2)
+        stimnum(j) = find(strcmpi([stimname{j} stimnumber{j}],ch_label)==1);
+    end
+    eventsannots.site_name{cc} = [ch_label{stimnum(1)}, '-', ch_label{stimnum(2)}];
+    eventsannots.site_channum{cc} = num2str([stimnum(1), stimnum(2)]);
+elseif size(stimchans,2) == 2
+    for j=1:size(stimchans,2)
+        stimnum(j) = find(strcmpi(stimchans{j},ch_label)==1);
+    end
+    eventsannots.site_name{cc} = annotsplit{1};
+    eventsannots.site_channum{cc} = num2str([stimnum(1), stimnum(2)]);
 end
 
-eventsannots.site_name{cc} = annotsplit{1};
-eventsannots.site_channum{cc} = num2str([stimnum(1), stimnum(2)]);
 
 % current
 cur = str2double(strsplit(lower(annotsplit{stimcur}),'ma'));
@@ -2629,6 +2891,22 @@ eventsannots.ch_name_off{cc} = 'n/a';
 eventsannots.stim_cur{cc} = cur(1)/1000;
 eventsannots.notes{cc} = note;
 
+
+function [stimchan,stimnum] = findstimpair(stimnums,stimchans,ch_label)
+
+stimchan = cell(size(stimnums));
+stimnum = zeros(size(stimnums));
+for j=1:size(stimnums,2)
+    test1 = sprintf('%s%d',stimchans{j},str2double(stimnums{j}));
+    test2 = sprintf('%s0%d',stimchans{j},str2double(stimnums{j}));
+    if sum(strcmpi(test1,ch_label))==1
+        stimchan{j} = ch_label{strcmpi(test1,ch_label)};
+        stimnum(j) = find(strcmpi(test1,ch_label)==1);
+    elseif sum(strcmpi(test2,ch_label))==1
+        stimchan{j} = ch_label{strcmpi(test2,ch_label)};
+        stimnum(j) = find(strcmpi(test2,ch_label)==1);
+    end
+end
 
 %% miscellaneous functions from data2bids.m of fieldtrip
 
