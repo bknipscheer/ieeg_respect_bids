@@ -41,14 +41,18 @@ for i=2:numel(C)
     if(~isempty(curr_str))
         if(contains(curr_str,'[')) %it is a ChannelSubset
             ch_subset_str=parse_ch_subset(curr_str,chs);
-            ch2use(contains(chs,ch_subset_str,'IgnoreCase',true))=1;
+            ch2use_temp = zeros(size(chs));
+            for chan = 1:size(ch_subset_str,1)
+                ch2use_temp(:,chan) = strcmpi(chs,ch_subset_str{chan});
+            end
         else % ChannelName
-             ch2use(contains(chs,curr_str,'IgnoreCase',true))=1;
+             ch2use_temp = strcmpi(chs,curr_str);
         end
 
     else
         error('Wrong annotation format: %s',input_str)
     end
+    ch2use = ch2use + sum(ch2use_temp,2);
 end
 
 
