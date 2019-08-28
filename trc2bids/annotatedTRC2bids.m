@@ -2230,6 +2230,9 @@ elseif  strcmp(str_start,'Sz_on') % in case of a seizure
                 ch_art_idx = parse_annotation(annots{start_art(i),2},ch);
                 ch_names_on = {ch{logical(ch_art_idx)}};
             end
+        elseif  size(annotsplit,2) ==1 && strcmp(annotsplit{1},'Sz_cont') % for example with Sz_cont;, it is possible that only Sz_cont is mentioned
+            type = 'unknown';
+            ch_names_on = {'continuation of seizure'};
         end
         
         % seizure offset
