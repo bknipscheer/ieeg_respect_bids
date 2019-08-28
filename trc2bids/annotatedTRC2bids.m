@@ -28,6 +28,7 @@
 %
 %     Copyright (C) 2019 Matteo Demuru
 %	  Copyright (C) 2019 Dorien van Blooijs
+%     Copyright (C) 2019 Willemiek Zweiphenning
 %
 %     This program is free software: you can redistribute it and/or modify
 %     it under the terms of the GNU General Public License as published by
@@ -55,13 +56,18 @@ try
     
     proj_dirinput = cell(1);
     proj_diroutput = cell(1);
+    proj_diroutputcopy = cell(1);
     
     for n=1:size(cfg,2)
         if ~isempty(cfg(n).proj_dirinput)
             proj_dirinput{n}  = cfg(n).proj_dirinput;
         end
         if ~isempty(cfg(n).proj_diroutput)
-            proj_diroutput{n} = cfg(n).proj_diroutput;
+            if n==1
+                proj_diroutput{n} = cfg(n).proj_diroutput;
+            elseif n>1
+                proj_diroutputcopy{n-1} = cfg(n).proj_diroutput;
+            end
         end
     end
     filename  = cfg(1).filename;
@@ -126,29 +132,25 @@ try
         ses_label     = strcat('ses-',deblank(metadata.ses_name),' ','');
         run_label     = strcat('run-',deblank(metadata.run_name),header.hour,header.min,' ','');
         
-        %subject dir
-        sub_dir       = fullfile(proj_diroutput,sub_label);
-        ses_dir       = fullfile(proj_diroutput,sub_label,ses_label);
-        %run_dir       = fullfile(proj_diroutput,sub_label,ses_label,run_label);
-        ieeg_dir      = fullfile(proj_diroutput,sub_label,ses_label,'ieeg');
+        % make directories
+        sub_dir       = fullfile([proj_diroutput,proj_diroutputcopy],sub_label);
+        ses_dir       = fullfile([proj_diroutput,proj_diroutputcopy],sub_label,ses_label);
+        ieeg_dir      = fullfile([proj_diroutput,proj_diroutputcopy],sub_label,ses_label,'ieeg');
         ieeg_file     = strcat(sub_label,'_',ses_label,'_',task_label,'_',run_label);
-        %anat_dir      = fullfile(proj_diroutput,sub_label,ses_label,'anat');
         
         for i=1:size(sub_dir,2)
             mydirMaker(sub_dir{i});
             mydirMaker(ses_dir{i});
             mydirMaker(ieeg_dir{i});
         end
-        %mydirMaker(anat_dir);
         
-        %check if it is empty
-        %otherwise remove tsv,json,eeg,vhdr,trc,vmrk
+        %check if it is empty, otherwise remove tsv,json,eeg,vhdr,trc,vmrk
         for i=1:size(ieeg_dir,2)
             ieeg_files = dir(ieeg_dir{i});
             
             if contains([ieeg_files(:).name],ieeg_file)
                 
-                delete(fullfile(ieeg_dir{i},[ieeg_file '*.tsv']))  ; % TO FIX: this should not be removed when electrode positions are inserted! Be careful with this!
+                delete(fullfile(ieeg_dir{i},[ieeg_file '*.tsv']))  ; 
                 delete(fullfile(ieeg_dir{i},[ieeg_file '*.json'])) ;
                 delete(fullfile(ieeg_dir{i},[ieeg_file,'*.eeg']))  ;
                 delete(fullfile(ieeg_dir{i},[ieeg_file,'*.vhdr'])) ;
@@ -166,27 +168,29 @@ try
         fcoords_name = strcat(sub_label,'_',ses_label,'_','coordsystem','.json');
         fpic_name = strcat(sub_label,'_',ses_label,'_','photo','.jpg');
         
-        % file ieeg of the recording
-        %copyfile(filename,fullfile(ieeg_dir,fieeg_name));
+        % file ieeg of the recording to .vhdr extension
+        fileTRC = cell(1);
+        fileVHDR = cell(1);
+        fileVHDRcopy = cell(1);
+        
         for i=1:size(ieeg_dir,2)
             fileTRC{i}  = fullfile(ieeg_dir{i},fieeg_name);
-            fileVHDR{i} = replace(fileTRC{i},'.TRC','.vhdr');
+            if i==1
+                fileVHDR{i} = replace(fileTRC{i},'.TRC','.vhdr');
+            elseif i>1
+                fileVHDRcopy{i-1} = replace(fileTRC{i},'.TRC','.vhdr');
+            end
         end
         
         %% create Brainvision format from TRC
         
         cfg = [];
-        cfg.dataset                     = filename; %fileTRC; <-- zit niet meer in database want gaf foutmelding in bids validator
+        cfg.dataset                     = filename; 
         cfg.continuous = 'yes';
         data2write = ft_preprocessing(cfg);
         
         cfg = [];
         cfg.outputfile                  = fileVHDR{1};
-        if size(fileVHDR,2)>1
-            for i=2:size(fileVHDR,2)
-                cfg.outputfilesec{i-1}                  = fileVHDR{i};
-            end
-        end
         
         cfg.mri.writesidecar       = 'no';
         cfg.meg.writesidecar        = 'no';
@@ -195,9 +199,24 @@ try
         cfg.channels.writesidecar   = 'no';
         cfg.events.writesidecar     = 'no';
         
+        % write .vhdr, .eeg, .vmrk
         data2bids(cfg, data2write)
-        
-        data2write;
+                
+        % to each output-file in fileVHDRcopy, the data should be copied
+        if ~isempty(fileVHDRcopy{1})
+            for i=1:size(fileVHDRcopy,2)
+                copyfile(cfg.outputfile,fileVHDRcopy{i});
+                fprintf('Copy to %s\n', fileVHDRcopy{i})
+                file_eeginp = replace(cfg.outputfile,'.vhdr','.eeg');
+                file_eegoutp = replace(fileVHDRcopy{i},'.vhdr','.eeg');
+                copyfile(file_eeginp,file_eegoutp);
+                fprintf('Copy to %s\n',file_eegoutp)
+                file_vmrkinp = replace(cfg.outputfile,'.vhdr','.vmrk');
+                file_vmrkoutp = replace(fileVHDRcopy{i},'.vhdr','.vmrk');
+                copyfile(file_vmrkinp,file_vmrkoutp);
+                fprintf('Copy to %s\n',file_vmrkoutp)
+            end
+        end
         
         %% create json sidecar for ieeg file
         cfg                             = [];
@@ -207,12 +226,7 @@ try
         cfg.coordsystem                 = struct;
         
         cfg.outputfile                  = fileVHDR{1};
-        cfg.outputfilesec               = [];
-        if size(fileVHDR,2)>1
-            for i=2:size(fileVHDR,2)
-                cfg.outputfilesec{i-1}                  = fileVHDR{i};
-            end
-        end
+
         cfg.TaskName                    = task_label;
         cfg.TaskDescription             = task_desc;
         cfg.InstitutionName             = 'University Medical Center Utrecht';
@@ -239,21 +253,19 @@ try
         end
         
         %% create _channels.tsv
-        
-        % create _events.tsv
-        % we are going to use our annotations (i.e. artifacts, burst suppression,
-        % odd behaivour,) to fill the event-list.
-        
-        % create _electrodes.tsv
-        % we don't have a position of the electrodes, anyway we are keeping this
-        % file for BIDS compatibility
-        
-        
-        %hdr=ft_read_header('/Users/matte/Desktop/RESPECT/converted/sub-RESP0636/ses-SITUATION1A/ieeg/sub-RESP0636_ses-SITUATION1A_task-acute_ieeg.vhdr');
+        % run json, channels.tsv
         json_sidecar_and_ch_and_ele_tsv(header,metadata,cfg);
         
+        % to each output-file in fileVHDRcopy, the jsondata and channels.tsv should be copied
+        if ~isempty(fileVHDRcopy{1})
+            for i=1:size(fileVHDRcopy,2)
+                cfg.outputfile = fileVHDRcopy{i};
+                json_sidecar_and_ch_and_ele_tsv(header,metadata,cfg);
+            end
+        end
         
         %% create coordsystem.json
+        cfg.outputfile                  = fileVHDR{1};
         cfg.coordsystem.iEEGCoordinateSystem                = []  ;
         cfg.coordsystem.iEEGCoordinateUnits                 = []      ;
         cfg.coordsystem.iEEGCoordinateProcessingDescription = []    ;
@@ -261,22 +273,67 @@ try
         
         json_coordsystem(cfg)
         
-        %% move photo with the proper naming into the /ieeg folder
+         % to each output-file in fileVHDRcopy, the json coordsystem should be copied
+        if ~isempty(fileVHDRcopy{1})
+            for i=1:size(fileVHDRcopy,2)
+                cfg.outputfile = fileVHDRcopy{i};
+                json_coordsystem(cfg);
+            end
+        end
         
         %% write annotations of the TRC
+        cfg.outputfile                  = fileVHDR{1};
         annotations_tsv = write_annotations_tsv(header,metadata,annots,cfg);
         
+        % to each output-file in fileVHDRcopy, the events.tsv should be copied
+        if ~isempty(fileVHDRcopy{1})
+            for i=1:size(fileVHDRcopy,2)
+                file_eventsinp = replace(cfg.outputfile,'_ieeg.vhdr','_events.tsv');
+                file_eventsoutp = replace(fileVHDRcopy{i},'_ieeg.vhdr','_events.tsv');
+                copyfile(file_eventsinp,file_eventsoutp);
+                fprintf('copying to %s \n',file_eventsoutp)
+            end
+        end
+        
         %% write scans-file
+        cfg.outputfile                  = fileVHDR{1};
         write_scans_tsv(cfg,metadata,annotations_tsv)
         
+        % to each output-file in fileVHDRcopy, the scans.tsv should be adapted to the scans in that directory
+        if ~isempty(fileVHDRcopy{1})
+            for i=1:size(fileVHDRcopy,2)
+                cfg.outputfile = fileVHDRcopy{i};
+                write_scans_tsv(cfg,metadata,annotations_tsv)
+            end
+        end
+                
         %% write participants-file
+        cfg.outputfile                  = fileVHDR{1};
         write_participants_tsv(cfg,header)
+
+        % to each output-file in fileVHDRcopy, the participants.tsv should be adapted to the scans in that directory
+        if ~isempty(fileVHDRcopy{1})
+            for i=1:size(fileVHDRcopy,2)
+                cfg.outputfile = fileVHDRcopy{i};
+                write_participants_tsv(cfg,header)
+            end
+        end
         
         %% write dataset descriptor
         create_datasetDesc(proj_diroutput{1})
+        if ~isempty(proj_diroutputcopy{1})
+            for i=1:size(proj_diroutputcopy,2)
+                create_datasetDesc(proj_diroutputcopy{i})
+            end
+        end
         
         %% write event descriptor
         create_eventDesc(proj_diroutput{1})
+        if ~isempty(proj_diroutputcopy{1})
+            for i=1:size(proj_diroutputcopy,2)
+                create_eventDesc(proj_diroutputcopy{i})
+            end
+        end
         
     else
         %% errors in parsing the data
@@ -301,7 +358,7 @@ function create_datasetDesc(proj_dir)
 ddesc_json.Name               = 'RESPect' ;
 ddesc_json.BIDSVersion        = 'BEP010';
 ddesc_json.License            = 'Not licenced yet';
-ddesc_json.Authors            = {'van Blooijs D., Demuru M., Leijten F.S.S., Zijlmans M.'};
+ddesc_json.Authors            = {'van Blooijs D., Demuru M., Zweiphenning W.J.E.M, Leijten F.S.S., Zijlmans M.'};
 ddesc_json.Acknowledgements   = 'Huiskamp G.J.M.';
 ddesc_json.HowToAcknowledge   = 'possible paper to quote' ;
 ddesc_json.Funding            = 'Epi-Sign Project and Epilepsiefonds #17-07' ;
@@ -553,6 +610,7 @@ if strcmpi(metadata.elec_info,'SEEG')
     wm                                        = repmat({'no'},header.Num_Chan,1)                                                          ; %TODO ask
     hipp                                      = repmat({'no'},header.Num_Chan,1)                                                          ; %TODO ask
     amyg                                      = repmat({'no'},header.Num_Chan,1)                                                          ; %TODO ask
+    gliosis                                   = repmat({'no'},header.Num_Chan,1)                                                          ; %TODO ask
 end
 
 if(any(metadata.ch2use_included))
@@ -587,9 +645,6 @@ if strcmpi(metadata.elec_info,'SEEG')
     if(any(metadata.ch2use_lesion))
         [lesion{metadata.ch2use_lesion}]  = deal('yes')                                                                                ;
     end
-    if(any(metadata.ch2use_lesion))
-        [lesion{metadata.ch2use_lesion}]  = deal('yes')                                                                                ;
-    end
     if(any(metadata.ch2use_wm))
         [wm{metadata.ch2use_wm}]  = deal('yes')                                                                                ;
     end
@@ -609,13 +664,16 @@ if strcmpi(metadata.elec_info,'SEEG')
     if(any(metadata.ch2use_amyg))
         [amyg{metadata.ch2use_amyg}]  = deal('yes')                                                                                ;
     end
-    
+    if(any(metadata.ch2use_gliosis))
+        [gliosis{metadata.ch2use_gliosis}]  = deal('yes')                                                                                ;
+    end
+
     electrodes_tsv                            = table(name, x , y, z, e_size, ...
         group, material, manufacturer, silicon, soz, resected, edge ,...
-        screw,csf,wm,gm,hipp,amyg,lesion,...
+        screw,csf,wm,gm,hipp,amyg,lesion,gliosis,...
     'VariableNames',{'name', 'x', 'y', 'z', 'size', ...
     'group', 'material', 'manufacturer', 'silicon' 'soz','resected','edge',...
-    'screw','csf','whitematter','graymatter','hippocampus','amygdala','lesion'})     ;
+    'screw','csf','whitematter','graymatter','hippocampus','amygdala','lesion','gliosis'})     ;
     
 else
     electrodes_tsv                            = table(name, x , y, z, e_size, group, material, manufacturer, silicon, soz, resected, edge ,...
@@ -658,35 +716,7 @@ if metadata.incl_exist == 1 % format and included were annotated in the file, fi
     qsub = contains(q,'sub');
     qses = contains(q,'ses');
     filename_dataset = fullfile(p, [q{qsub} '_' q{qses} '_electrodes.tsv']);
-    if ~isempty(cfg.outputfilesec)
-        [p] = fileparts(cfg.outputfilesec{1});
-        %g = strsplit(f,'_ieeg');
-        q = strsplit(p,'/');
-        qsub = contains(q,'sub');
-        qses = contains(q,'ses');
-        filename_cECoG = fullfile(p, [q{qsub} '_' q{qses} '_electrodes.tsv']);
-    else
-        filename_cECoG = [];
-    end
     
-    if ~isempty(filename_cECoG)
-        if isfile(filename_cECoG)
-            cc_elec_old = readtable(filename_cECoG,'FileType','text','Delimiter','\t');
-            
-            struct1 = table2struct(cc_elec_old);
-            struct2 = table2struct(electrodes_tsv);
-            if ~isequal(struct1,struct2) % check whether older and current file are equal
-                fprintf('%s exists!\n',filename_cECoG)
-                n=1;
-                while isfile(filename_cECoG)
-                    nameminelec = strsplit(filename_cECoG,'electrodes');
-                    filename_cECoG = [nameminelec{1} 'electrodes_' num2str(n) '.tsv'];
-                    n=n+1;
-                end
-            end
-        end
-        write_tsv(filename_cECoG, electrodes_tsv);
-    end
     if isfile(filename_dataset)
         
         cc_elec_old = readtable(filename_dataset,'FileType','text','Delimiter','\t');
@@ -723,7 +753,7 @@ coordsystem_json.IntendedFor                             = cfg.coordsystem.Inten
 
 if ~isempty(coordsystem_json)
     [p, f, x] = fileparts(cfg.outputfile);
-    g = strsplit(f,'_ieeg');
+    g = strsplit(f,'_task');
     filename = fullfile(p, [g{1} '_coordsystem.json']);
     filename = replace(filename,'_task-acute','');
     if isfile(filename)
@@ -906,7 +936,7 @@ annots_new = annots;
 
 %% eyes open
 
-[annots_new, eventsannots ] = add_event2annotation(metadata.eyes_open,'eyes open',eventsannots, annots_new,header);
+[annots_new, eventsannots ] = add_event2annotation(metadata.eyes_open,'eyes',eventsannots, annots_new,header);
 
 % eyes_open = metadata.eyes_open;
 %
@@ -1312,202 +1342,222 @@ annots_new = annots;
 %     end
 % end
 
+%% visual selection data segments - slow wave sleep (or ar least late NREM stage) - aim: 10 consecutive minutes
+[annots_new, eventsannots ] = add_event2annotation(metadata.SWSselection,'sws selection',eventsannots, annots_new,header);
+
+%% visual selection data segments - rapid eye-movement sleep - aim: 10 consecutive minutes
+[annots_new, eventsannots ] = add_event2annotation(metadata.REMselection,'rem selection',eventsannots, annots_new,header);
+
+%% visual selection data segments - interictal awake - aim: 10 consecutive minutes
+[annots_new, eventsannots ] = add_event2annotation(metadata.IIAWselection,'iiaw selection',eventsannots, annots_new,header);
+
+%% visual selection data segments - Epileptogenicity index - about 5s before visual SOZ to 10s after, but sometimes different due to big artefacts/other signal characteristics
+[annots_new, eventsannots ] = add_event2annotation(metadata.EIselection,'EI selection',eventsannots, annots_new,header);
+
 %% adding trigger data to events list
-trigger = metadata.trigger;
-% determine period of esm
-if any(cellfun(@(x) contains(x,{'esm'}),lower(eventsannots.sub_type)) & cellfun(@(x) ~contains(x,{'slow'}),lower(eventsannots.sub_type)))
-    esmfind =    cellfun(@(x) contains(x,{'esm'}),lower(eventsannots.sub_type))==1;
-    esmstart = str2double(eventsannots.samp_start{esmfind});
-    esmend = str2double(eventsannots.samp_end{esmfind});
-    
-elseif any(cellfun(@(x) contains(x,{'esm'}),lower(eventsannots.type)) & cellfun(@(x) ~contains(x,{'slow'}),lower(eventsannots.type)))
-    esmfind =    cellfun(@(x) contains(x,{'esm'}),lower(eventsannots.type))==1;
-    esmstart = str2double(eventsannots.samp_start{esmfind});
-    esmend = str2double(eventsannots.samp_end{esmfind});
-else
-    esmstart = 0;
-    esmend = 0;
-end
-
-% determine period of spes
-if any(cellfun(@(x) contains(x,{'spes'}),lower(eventsannots.sub_type)))
-    spesfind =    cellfun(@(x) contains(x,{'spes'}),lower(eventsannots.sub_type))==1;
-    spesstart = str2double(eventsannots.samp_start{spesfind});
-    spesend = str2double(eventsannots.samp_end{spesfind});
-    
-elseif any(cellfun(@(x) contains(x,{'spes'}),lower(eventsannots.type)))
-    spesfind =    cellfun(@(x) contains(x,{'spes'}),lower(eventsannots.type))==1;
-    spesstart = str2double(eventsannots.samp_start{spesfind});
-    spesend = str2double(eventsannots.samp_end{spesfind});
-else
-    spesstart = 0;
-    spesend = 0;
-end
-
-% determine period of slowesm (1hz cortical stimulation)
-if any(cellfun(@(x) contains(x,{'esm'}),lower(eventsannots.sub_type)) & cellfun(@(x) contains(x,{'slow'}),lower(eventsannots.sub_type)))
-    slowesmfind =    cellfun(@(x) contains(x,{'esm'}),lower(eventsannots.sub_type))==1;
-    slowesmstart = str2double(eventsannots.samp_start{slowesmfind});
-    slowesmend = str2double(eventsannots.samp_end{slowesmfind});
-    
-elseif any(cellfun(@(x) contains(x,{'esm'}),lower(eventsannots.type)) & cellfun(@(x) contains(x,{'slow'}),lower(eventsannots.type)))
-    slowesmfind =    cellfun(@(x) contains(x,{'esm'}),lower(eventsannots.type))==1;
-    slowesmstart = str2double(eventsannots.samp_start{slowesmfind});
-    slowesmend = str2double(eventsannots.samp_end{slowesmfind});
-else
-    slowesmstart = 0;
-    slowesmend = 0;
-end
-
-if ~isempty(trigger.pos)
-    idx_start = find(trigger.val >1000); % with cortical stimulation, triggers are added automatically with a number >1000
-    for i=1:numel(idx_start)
+% skip following section if no spes/esm/stimulation has been annotated in
+% the file
+if ~isempty(metadata.spes) || ~isempty(metadata.esm) || ~isempty(metadata.stimulation)
+    trigger = metadata.trigger;
+    % determine period of esm
+    if any(cellfun(@(x) contains(x,{'esm'}),lower(eventsannots.sub_type)) & cellfun(@(x) ~contains(x,{'slow'}),lower(eventsannots.sub_type)))
+        esmfind =    cellfun(@(x) contains(x,{'esm'}),lower(eventsannots.sub_type))==1;
+        esmstart = str2double(eventsannots.samp_start{esmfind});
+        esmend = str2double(eventsannots.samp_end{esmfind});
         
-        if trigger.pos(idx_start(i)) > spesstart && trigger.pos(idx_start(i)) < spesend % if trigger belongs to spes period
-            eventsannots = add_spestrigger2annotation(idx_start(i),'SPES',eventsannots,annots_new, header,metadata,trigger)  ;
-        elseif trigger.pos(idx_start(i)) > esmstart && trigger.pos(idx_start(i)) < esmend % if trigger belongs to esm period
-            eventsannots = add_esmtrigger2annotation(idx_start(i),eventsannots,annots_new, header,metadata,trigger);
-        elseif trigger.pos(idx_start(i)) > slowesmstart && trigger.pos(idx_start(i)) < slowesmend % if trigger belongs to slowesm period
-            eventsannots = add_spestrigger2annotation(idx_start(i),'slowESM',eventsannots,annots_new, header,metadata,trigger)  ;
-        else
-            error('Trigger does not belong to SPES period or ESM period')
-        end
-        
-    end
-end    
-if ~isempty(sum(cellfun(@(x) contains(x,{'No trigger'}),annots_new(:,2)))) % in older ECoGs, there are no triggers, but stimulation NEED TO BE FIXED
-    if strcmpi(metadata.elec_info,'SEEG')
-        stimcurdefault = 2;
-    elseif strcmpi(metadata.elec_info,'ECoG')
-        stimcurdefault = 8;
-    end
-
-    if contains(lower(metadata.stimcurr),'unknown')
-        note = sprintf('Stimulation intensity is suggested to be %i mA but may differ when applied in eloquent tissue, triggers were added automatically in Matlab',stimcurdefault);
+    elseif any(cellfun(@(x) contains(x,{'esm'}),lower(eventsannots.type)) & cellfun(@(x) ~contains(x,{'slow'}),lower(eventsannots.type)))
+        esmfind =    cellfun(@(x) contains(x,{'esm'}),lower(eventsannots.type))==1;
+        esmstart = str2double(eventsannots.samp_start{esmfind});
+        esmend = str2double(eventsannots.samp_end{esmfind});
     else
-        note = 'Triggers were added automatically in Matlab';
+        esmstart = 0;
+        esmend = 0;
     end
-
-    % load ECoG
-    dataName = cfg.outputfile;
-    data_raw = ft_read_data(dataName,'dataformat','brainvision_eeg');
-    data = data_raw(ch2use_included,:);
-    ch_label = {ch_label{ch2use_included}};
-    %data(metadata.ch2use_bad,:) = NaN;
     
-    % annotation sample
-    numnotrigger = find(cellfun(@(x) contains(x,{'No trigger'}),annots_new(:,2))==1);
-    for i=1:size(numnotrigger,1) % for each 'No trigger'-annotation
-        if annots_new{numnotrigger(i),1} > spesstart && annots_new{numnotrigger(i),1} < spesend % if 'No trigger' is within SPESperiod
-               if ~isempty(trigger.pos) % if triggers are present, then period ends with next trigger
-                   periodend = trigger.pos(find(annots_new{numnotrigger(i),1}<trigger.pos,1,'first'))-round(0.25*fs); %-0.25s takes care of an annotation prior to the next trigger
-                   sampend = periodend;
-               else %otherwise, period ends with end of SPESperiod
-                   periodend = spesend;
-                   sampend = [];
-               end
-               % annotations within the specified period
-               numannots = find([annots_new{:,1}]<periodend & [annots_new{:,1}] > annots_new{numnotrigger(i),1} ==1);
-               
-               for j=1:size(numannots,2)
-                   annotsplit = strsplit(annots_new{numannots(j),2},'_');
-                   stimnumber = regexp(lower(annotsplit{1}),'\d*','match');
-                   stimname = regexp(lower(annotsplit{1}),'[a-z]*','match');
-%                    currannot = regexp(lower(annots_new{numannots(j),2}),'ma', 'once');
-
-                   if size(annotsplit,2)>1
-                       currsplit = strsplit(lower(annotsplit{2}),'ma');
-                       stimcurrstr = currsplit{1};
-                       stimcurr = str2double(stimcurrstr)/1000;
-                   else
-                       stimcurr = stimcurdefault/1000;
-                   end
-                   
-                   if size(stimnumber,2) == 2 && size(stimname,2)==2 % when both have size=2, then it should be a stimulus pair
-                        
-                       [~,stimnum] = findstimpair(stimnums,stimnames,ch_label);
-
-                       sampstart = annots_new{numannots(j),1};
-                       if j==1 && isempty(sampend)
-                           sampend = annots_new{numannots(j+1),1};
-                       elseif j == size(numannots,2)
-                           sampend = spesend;
-                       else
-                           sampend = annots_new{numannots(j+1),1};                           
-                       end
-                       samplocs = findtrigger(data,stimnum,fs, sampstart, sampend)+annots_new{numannots(j),1};
-
-                       eventssize = size(eventsannots.type,2) ;
-                       for cc = eventssize+1:eventssize+size(samplocs,2)
-                           eventsannots.type{cc} = 'electrical_stimulation';
-                           eventsannots.sub_type{cc} = 'SPES';
-                           eventsannots.stim_type{cc} = 'monophasic';
-                           eventsannots.samp_start{cc} = samplocs(cc-eventssize);
-                           eventsannots.s_start{cc} = round(samplocs(cc-eventssize)/fs,1); % time in seconds (1 decimal)
-
-                           eventsannots.site_name{cc} = [ch_label{stimnum(1)}, '-', ch_label{stimnum(2)}];
-                           eventsannots.site_channum{cc} = num2str([stimnum(1), stimnum(2)]);
-                           eventsannots.duration{cc} = 1/1000;
-                           eventsannots.s_end{cc} = 'n/a';
-                           eventsannots.samp_end{cc} = 'n/a';
-                           eventsannots.ch_name_on{cc} = 'n/a';
-                           eventsannots.ch_name_off{cc} = 'n/a';
-                           eventsannots.stim_cur{cc} = stimcurr;
-                           eventsannots.notes{cc} = note;
-                           
-                       end
-
-                   end
-                   
-
-               end
-               
-        elseif annots_new{numnotrigger(i),1} > esmstart && annots_new{numnotrigger(i),1} < esmend
-            % FIX LATER
-        elseif annots_new{numnotrigger(i),1} > slowesmstart && annots_new{numnotrigger(i),1} < slowesmend
-            % FIX LATER
-        end
-%         if ~isempty(trigger)
-%             
-%         else
-%         end
+    % determine period of spes
+    if any(cellfun(@(x) contains(x,{'spes'}),lower(eventsannots.sub_type)))
+        spesfind =    cellfun(@(x) contains(x,{'spes'}),lower(eventsannots.sub_type))==1;
+        spesstart = str2double(eventsannots.samp_start{spesfind});
+        spesend = str2double(eventsannots.samp_end{spesfind});
+        
+    elseif any(cellfun(@(x) contains(x,{'spes'}),lower(eventsannots.type)))
+        spesfind =    cellfun(@(x) contains(x,{'spes'}),lower(eventsannots.type))==1;
+        spesstart = str2double(eventsannots.samp_start{spesfind});
+        spesend = str2double(eventsannots.samp_end{spesfind});
+    else
+        spesstart = 0;
+        spesend = 0;
     end
+    
+    % determine period of slowesm (1hz cortical stimulation)
+    if any(cellfun(@(x) contains(x,{'esm'}),lower(eventsannots.sub_type)) & cellfun(@(x) contains(x,{'slow'}),lower(eventsannots.sub_type)))
+        slowesmfind =    cellfun(@(x) contains(x,{'esm'}),lower(eventsannots.sub_type))==1;
+        slowesmstart = str2double(eventsannots.samp_start{slowesmfind});
+        slowesmend = str2double(eventsannots.samp_end{slowesmfind});
+        
+    elseif any(cellfun(@(x) contains(x,{'esm'}),lower(eventsannots.type)) & cellfun(@(x) contains(x,{'slow'}),lower(eventsannots.type)))
+        slowesmfind =    cellfun(@(x) contains(x,{'esm'}),lower(eventsannots.type))==1;
+        slowesmstart = str2double(eventsannots.samp_start{slowesmfind});
+        slowesmend = str2double(eventsannots.samp_end{slowesmfind});
+    else
+        slowesmstart = 0;
+        slowesmend = 0;
+    end
+    
+    if ~isempty(trigger.pos)
+        idx_start = find(trigger.val >1000); % with cortical stimulation, triggers are added automatically with a number >1000
+        for i=1:numel(idx_start)
+            
+            if trigger.pos(idx_start(i)) > spesstart && trigger.pos(idx_start(i)) < spesend % if trigger belongs to spes period
+                eventsannots = add_spestrigger2annotation(idx_start(i),'SPES',eventsannots,annots_new, header,metadata,trigger)  ;
+            elseif trigger.pos(idx_start(i)) > esmstart && trigger.pos(idx_start(i)) < esmend % if trigger belongs to esm period
+                eventsannots = add_esmtrigger2annotation(idx_start(i),eventsannots,annots_new, header,metadata,trigger);
+            elseif trigger.pos(idx_start(i)) > slowesmstart && trigger.pos(idx_start(i)) < slowesmend % if trigger belongs to slowesm period
+                eventsannots = add_spestrigger2annotation(idx_start(i),'slowESM',eventsannots,annots_new, header,metadata,trigger)  ;
+            else
+                error('Trigger does not belong to SPES period or ESM period')
+            end
+            
+        end
+    end
+    % in older ECoGs, there are no triggers, but stimulation NEED TO BE FIXED
+    if ~isempty(sum(cellfun(@(x) contains(x,{'No trigger'}),annots_new(:,2)))) 
+        if strcmpi(metadata.elec_info,'SEEG')
+            stimcurdefault = 2;
+        elseif strcmpi(metadata.elec_info,'ECoG')
+            stimcurdefault = 8;
+        end
+        
+        if contains(lower(metadata.stimcurr),'unknown')
+            note = sprintf('Stimulation intensity is suggested to be %i mA but may differ when applied in eloquent tissue, triggers were added automatically in Matlab',stimcurdefault);
+        else
+            note = 'Triggers were added automatically in Matlab';
+        end
+        
+        % load ECoG
+        dataName = cfg.outputfile;
+        data_raw = ft_read_data(dataName,'dataformat','brainvision_eeg');
+        data = data_raw(ch2use_included,:);
+        ch_label = {ch_label{ch2use_included}};
+        %data(metadata.ch2use_bad,:) = NaN;
+        
+        % annotation sample
+        numnotrigger = find(cellfun(@(x) contains(x,{'No trigger'}),annots_new(:,2))==1);
+        for i=1:size(numnotrigger,1) % for each 'No trigger'-annotation
+            if annots_new{numnotrigger(i),1} > spesstart && annots_new{numnotrigger(i),1} < spesend % if 'No trigger' is within SPESperiod
+                if ~isempty(trigger.pos) % if triggers are present, then period ends with next trigger
+                    periodend = trigger.pos(find(annots_new{numnotrigger(i),1}<trigger.pos,1,'first'))-round(0.25*fs); %-0.25s takes care of an annotation prior to the next trigger
+                    sampend = periodend;
+                else %otherwise, period ends with end of SPESperiod
+                    periodend = spesend;
+                    sampend = [];
+                end
+                % annotations within the specified period
+                numannots = find([annots_new{:,1}]<periodend & [annots_new{:,1}] > annots_new{numnotrigger(i),1} ==1);
+                
+                for j=1:size(numannots,2)
+                    % find stimulation pair and other stimulus settings
+                    annotsplit = strsplit(annots_new{numannots(j),2},'_');
+                    stimnumber = regexp(lower(annotsplit{1}),'\d*','match');
+                    stimname = regexp(lower(annotsplit{1}),'[a-z]*','match');
+                    %                    currannot = regexp(lower(annots_new{numannots(j),2}),'ma', 'once');
+                    
+                    if size(annotsplit,2)>1
+                        currsplit = strsplit(lower(annotsplit{2}),'ma');
+                        stimcurrstr = currsplit{1};
+                        stimcurr = str2double(stimcurrstr)/1000;
+                    else
+                        stimcurr = stimcurdefault/1000;
+                    end
+                    
+                    if size(stimnumber,2) == 2 && size(stimname,2)==2 % when both have size=2, then it should be a stimulus pair
+                        
+                        [~,stimnum] = findstimpair(stimnumber,stimname,ch_label);
+                        
+                        % find stimulation samples for each annotation
+                        sampstart = annots_new{numannots(j),1};
+                        if j==1 && isempty(sampend) % if there are no triggers present
+                            sampend = annots_new{numannots(j)+1,1};
+                        elseif numannots(j) == size(annots_new,2) % if triggers are not present in the last stimulation pair
+                            sampend = spesend;
+                        else % if there are triggers present, than sampend is before the next trigger
+                            sampend = periodend;                    
+                        end
+                        
+                        samplocs = findtrigger(data,stimnum,fs, sampstart, sampend)+annots_new{numannots(j),1};
+                        
+                        eventssize = size(eventsannots.type,2) ;
+                        for cc = eventssize+1:eventssize+size(samplocs,2)
+                            eventsannots.type{cc} = 'electrical_stimulation';
+                            eventsannots.sub_type{cc} = 'SPES';
+                            eventsannots.stim_type{cc} = 'monophasic';
+                            eventsannots.samp_start{cc} = samplocs(cc-eventssize);
+                            eventsannots.s_start{cc} = round(samplocs(cc-eventssize)/fs,1); % time in seconds (1 decimal)
+                            
+                            eventsannots.site_name{cc} = [ch_label{stimnum(1)}, '-', ch_label{stimnum(2)}];
+                            eventsannots.site_channum{cc} = num2str([stimnum(1), stimnum(2)]);
+                            eventsannots.duration{cc} = 1/1000;
+                            eventsannots.s_end{cc} = 'n/a';
+                            eventsannots.samp_end{cc} = 'n/a';
+                            eventsannots.ch_name_on{cc} = 'n/a';
+                            eventsannots.ch_name_off{cc} = 'n/a';
+                            eventsannots.stim_cur{cc} = stimcurr;
+                            eventsannots.notes{cc} = note;
+                            
+                        end
+                        
+                    end
+                    
+                    
+                end
+                
+            elseif annots_new{numnotrigger(i),1} > esmstart && annots_new{numnotrigger(i),1} < esmend
+                % FIX LATER
+            elseif annots_new{numnotrigger(i),1} > slowesmstart && annots_new{numnotrigger(i),1} < slowesmend
+                % FIX LATER
+            end
+            %         if ~isempty(trigger)
+            %
+            %         else
+            %         end
+        end
+    end
+    
+    s_start         = eventsannots.s_start;
+    s_end           = eventsannots.s_end;
+    duration        = eventsannots.duration;
+    type            = eventsannots.type;
+    sub_type        = eventsannots.sub_type;
+    ch_name_on      = eventsannots.ch_name_on;
+    ch_name_off     = eventsannots.ch_name_off;
+    samp_start      = eventsannots.samp_start;
+    samp_end        = eventsannots.samp_end;
+    stim_type       = eventsannots.stim_type;
+    site_name       = eventsannots.site_name;
+    site_channum    = eventsannots.site_channum;
+    stim_cur        = eventsannots.stim_cur;
+    notes           = eventsannots.notes;
+    
+    % sort to put the no-triggers in the right order of stimulation
+    SPEStype        = strcmp(sub_type,'SPES');
+    noSPEStype      = ~SPEStype;
+    [~,I]           = sort([samp_start{SPEStype}]) ;
+    I               = I + find(SPEStype==1,1,'first')-1;
+    s_start         = {s_start{noSPEStype},s_start{I}};
+    s_end           = {s_end{noSPEStype},s_end{I}};
+    duration        = {duration{noSPEStype},duration{I}};
+    type            = {type{noSPEStype},type{I}};
+    sub_type        = {sub_type{noSPEStype},sub_type{I}};
+    ch_name_on      = {ch_name_on{noSPEStype},ch_name_on{I}};
+    ch_name_off     = {ch_name_off{noSPEStype},ch_name_off{I}};
+    samp_start      = {samp_start{noSPEStype},samp_start{I}};
+    samp_end        = {samp_end{noSPEStype},samp_end{I}};
+    stim_type       = {stim_type{noSPEStype},stim_type{I}};
+    site_name       = {site_name{noSPEStype},site_name{I}};
+    site_channum    = {site_channum{noSPEStype},site_channum{I}};
+    stim_cur        = {stim_cur{noSPEStype},stim_cur{I}};
+    notes           = {notes{noSPEStype},notes{I}};
 end
-
-s_start         = eventsannots.s_start;
-s_end           = eventsannots.s_end;
-duration        = eventsannots.duration;
-type            = eventsannots.type;
-sub_type        = eventsannots.sub_type;
-ch_name_on      = eventsannots.ch_name_on;
-ch_name_off     = eventsannots.ch_name_off;
-samp_start      = eventsannots.samp_start;
-samp_end        = eventsannots.samp_end;
-stim_type       = eventsannots.stim_type;
-site_name       = eventsannots.site_name;
-site_channum    = eventsannots.site_channum;
-stim_cur        = eventsannots.stim_cur;
-notes           = eventsannots.notes;
-
-% sort to put the no-triggers in the right order of stimulation
-SPEStype        = strcmp(sub_type,'SPES');
-noSPEStype      = ~SPEStype;
-[~,I]           = sort([samp_start{SPEStype}]) ;
-I               = I + find(SPEStype==1,1,'first')-1;
-s_start         = {s_start{noSPEStype},s_start{I}};
-s_end           = {s_end{noSPEStype},s_end{I}};
-duration        = {duration{noSPEStype},duration{I}};
-type            = {type{noSPEStype},type{I}};
-sub_type        = {sub_type{noSPEStype},sub_type{I}};
-ch_name_on      = {ch_name_on{noSPEStype},ch_name_on{I}};
-ch_name_off     = {ch_name_off{noSPEStype},ch_name_off{I}};
-samp_start      = {samp_start{noSPEStype},samp_start{I}};
-samp_end        = {samp_end{noSPEStype},samp_end{I}};
-stim_type       = {stim_type{noSPEStype},stim_type{I}};
-site_name       = {site_name{noSPEStype},site_name{I}};
-site_channum    = {site_channum{noSPEStype},site_channum{I}};
-stim_cur        = {stim_cur{noSPEStype},stim_cur{I}};
-notes           = {notes{noSPEStype},notes{I}};
 
 
 if isempty(s_start)
@@ -1642,14 +1692,10 @@ try
         metadata.incl_exist = 1;
     else % if "Included" is not annotated in the ECoG, there should be a previous ECoG with annoted "Included"
         metadata.incl_exist = 0;
-        files_cECoG = dir(fullfile('/Fridge/chronic_ECoG',patName,['ses-',metadata.ses_name],'ieeg',[patName, '_ses-',metadata.ses_name,'_electrodes.tsv']));
-        files_dataset  = dir(fullfile(cfg.proj_diroutput,patName,['ses-',metadata.ses_name],'ieeg',[patName, '_ses-',metadata.ses_name,'_electrodes.tsv']));
+        files_cECoG = dir(fullfile(cfg(2).proj_dirinput,patName,['ses-',metadata.ses_name],'ieeg',[patName, '_ses-',metadata.ses_name,'_electrodes.tsv']));
         if ~isempty(files_cECoG)
             files = files_cECoG;
-            fprintf('/Fridge/chronic_ECoG/%s/ses-%s/ieeg/%s_ses-%s_electrodes.tsv is used.\n',patName,metadata.ses_name,patName,metadata.ses_name)
-        else
-            files = files_dataset;
-            fprintf('%s/%s/ses-%s/ieeg/%s_ses-%s_electrodes.tsv is used.\n',cfg.proj_diroutput,patName,metadata.ses_name,patName,metadata.ses_name)
+            fprintf('%s/%s/ses-%s/ieeg/%s_ses-%s_electrodes.tsv is used.\n',cfg(2).proj_dirinput,patName,metadata.ses_name,patName,metadata.ses_name)
         end
         if ~isempty(files)
             elecName = fullfile(files(1).folder, '/',files(1).name);
@@ -1723,7 +1769,7 @@ try
     %
     
     %% Look for bad channels
-    metadata.ch2use_bad=single_annotation(annots,'Bad;',ch);
+    metadata.ch2use_bad=single_annotation(annots,'Bad;',ch); % without the semicolon, the bad_HF channels are also included in Bad
     
     % cavity and silicon are not onmi present
     %     %% Look for cavity
@@ -1738,6 +1784,9 @@ try
     metadata.ch2use_badhf= false(size(ch));
     if(sum(badhf_idx))
         metadata.ch2use_badhf=single_annotation(annots,'Bad_HF',ch);
+        if any(contains(annots(:,2),'NB BadHF annotated in avg'))
+            metadata.ch2use_badhf.note = 'NB BadHF annotated in avg';
+        end
     end
     
     %% Look for silicon
@@ -1861,46 +1910,71 @@ try
         end
     end
      
+    %% look for gliosis channels - only in seeg
+    gliosis_idx = cellfun(@(x) contains(x,{'Glio'}),annots(:,2));
+    metadata.ch2use_gliosis= false(size(ch));
+    if(sum(gliosis_idx))
+        metadata.ch2use_lesion=single_annotation(annots,'Glio',ch);
+    elseif metadata.incl_exist == 0
+        if strcmp(fieldnames(cc_elecs),'gliosis')
+            
+            elec_gliosis= strcmp(cc_elecs.gliosis,'yes');
+            metadata.ch2use_gliosis=logical(elec_gliosis);
+        end
+    end
+    
     %% Look for artefacts cECoG
-    metadata.artefacts=look_for_annotation_start_stop(annots,'Art_on','Art_off',ch);
+    metadata.artefacts=look_for_annotation_start_stop(annots,'Art_on','Art_off',ch,header);
     
     %% Look for sleep data
-    metadata.sleep=look_for_annotation_start_stop(annots,'Sl_on','Sl_off',ch);
+    metadata.sleep=look_for_annotation_start_stop(annots,'Sl_on','Sl_off',ch,header);
     
     %% Look for data between rest and sleep
-    metadata.slaw_trans = look_for_annotation_start_stop(annots,'Slawtrans_on','Slawtrans_off',ch);
+    metadata.slaw_trans = look_for_annotation_start_stop(annots,'Slawtrans_on','Slawtrans_off',ch,header);
     
     %% Look for data eyes opened
-    metadata.eyes_open = look_for_annotation_start_stop(annots,'Eyes_open','Eyes_close',ch);
+    metadata.eyes_open = look_for_annotation_start_stop(annots,'Eyes_open','Eyes_close',ch,header);
     
     %% Look for seizures
-    metadata.seizure=look_for_annotation_start_stop(annots,'Sz_on','Sz_off',ch,header.Rate_Min);
+    metadata.seizure=look_for_annotation_start_stop(annots,'Sz_on','Sz_off',ch,header);
     
     %% Look for period of stimulation
-    metadata.stimulation=look_for_annotation_start_stop(annots,'Stim_on','Stim_off',ch);
+    metadata.stimulation=look_for_annotation_start_stop(annots,'Stim_on','Stim_off',ch,header);
     
     %% Look for period of SPES
-    metadata.spes=look_for_annotation_start_stop(annots,'SPES_on','SPES_off',ch);
+    metadata.spes=look_for_annotation_start_stop(annots,'SPES_on','SPES_off',ch,header);
     
     %% Look for period of Electrical Stimulation Mapping(ESM)
-    metadata.esm=look_for_annotation_start_stop(annots,'ESM_on','ESM_off',ch);
+    metadata.esm=look_for_annotation_start_stop(annots,'ESM_on','ESM_off',ch,header);
     
     %% Look for period of motor task
-    metadata.motortask=look_for_annotation_start_stop(annots,'Motor_on','Motor_off',ch);
+    metadata.motortask=look_for_annotation_start_stop(annots,'Motor_on','Motor_off',ch,header);
     
     %% Look for period of sens task
-    metadata.senstask=look_for_annotation_start_stop(annots,'Sens_on','Sens_off',ch);
+    metadata.senstask=look_for_annotation_start_stop(annots,'Sens_on','Sens_off',ch,header);
     
     %% Look for period of language task
-    metadata.langtask=look_for_annotation_start_stop(annots,'Language_on','Language_off',ch);
+    metadata.langtask=look_for_annotation_start_stop(annots,'Language_on','Language_off',ch,header);
     
+     %% Look for SWS selection - slow wave sleep
+    metadata.SWSselection=look_for_annotation_start_stop(annots,'SWS10_on','SWS10_off',ch,header);
+   
+     %% Look for REM selection - rapid eye movement
+    metadata.REMselection=look_for_annotation_start_stop(annots,'REM10_on','REM10_off',ch,header);
+    
+     %% Look for IIAW selection - inter ictal awake
+    metadata.IIAWselection=look_for_annotation_start_stop(annots,'IIAW10_on','IIAW10_off',ch,header);
+    
+    %% Look for EI selection
+    metadata.EIselection=look_for_annotation_start_stop(annots,'EI_on','EI_off',ch,header);
+
     %% Look for artefacts
     
     %metadata.artefacts_aECoG=look_for_annotation_start_stop(annots,'xxx','yyy',ch);
     
     %% look for odd behaviour in the recordings additional notes
     
-    metadata.add_notes=look_for_annotation_start_stop(annots,'vvv','www',ch);
+    metadata.add_notes=look_for_annotation_start_stop(annots,'vvv','www',ch,header);
     
     %% look for burst suppression
     
@@ -1914,7 +1988,7 @@ try
         %         status=1;
         %         error('Missing Format annotation (example "Format;Gr[5x4];")')
         % load format from another ECoG --> json file
-        file = dir(fullfile(cfg(1).proj_diroutput,patName,['ses-',metadata.ses_name],'ieeg','*ieeg.json'));
+        file = dir(fullfile(cfg(2).proj_dirinput,patName,['ses-',metadata.ses_name],'ieeg','*ieeg.json'));
         if ~isempty(file)
             ieeg_json = jsondecode(fileread([file(1).folder '/' file(1).name]) );
             metadata.format_info = ieeg_json.iEEGElectrodeGroups;
@@ -2019,7 +2093,9 @@ catch ME
     
 end
 
-function [artefacts]=look_for_annotation_start_stop(annots,str_start,str_stop,ch,fs)
+function [artefacts]=look_for_annotation_start_stop(annots,str_start,str_stop,ch,header)
+
+fs = header.Rate_Min;
 
 start_art=find(contains(annots(:,2),str_start));
 end_art=find(contains(annots(:,2),str_stop));
@@ -2027,7 +2103,18 @@ end_art=find(contains(annots(:,2),str_stop));
 % in a seizure, it is possible that the involved electrodes cannot be
 % described in one Sz_on or one Sz_off, this part deals with this
 if strcmp(str_start,'Sz_on')
-    if any(diff(end_art)) == 1 % if two Sz_ons are after each other
+    
+    sz_cont = find(contains(annots(:,2),'Sz_cont'), 1);
+    if ~isempty(sz_cont)
+        if annots{sz_cont,1} < 10*fs % Sz_cont is annotated at beginning of file, sz_cont should be added in start_art
+                start_art = sort([start_art; sz_cont]);
+        else
+            end_art = sort([end_art; sz_cont]);
+        end
+    end
+        
+    
+    if any(diff(end_art) == 1) % if two Sz_offs are after each other
         diffSzoffs = (diff(end_art));
         sampSzOffs = diff([annots{end_art,1}]);
         
@@ -2047,8 +2134,9 @@ if strcmp(str_start,'Sz_on')
         end
         
         end_art=find(contains(annots(:,2),str_stop));
-        
-    elseif any(diff(start_art)) == 1 % if two Sz_ons are after each other
+    end
+    
+    if any(diff(start_art) == 1) % if two Sz_ons are after each other
         diffSzons = (diff(start_art));
         sampSzOns = diff([annots{start_art,1}]);
         
@@ -2070,7 +2158,7 @@ if strcmp(str_start,'Sz_on')
     end
 end
 
-if(length(start_art)~=length(end_art))
+if (length(start_art)~=length(end_art)) && ~strcmp(str_start,'Eyes_open')
     error('starts and ends did not match')
 end
 
@@ -2104,6 +2192,11 @@ if strcmp(str_start,'Art_on')
         end
         art.pos=[(annots{start_art(i),1}) annots{matched_end,1}];
         art.type = 'n/a';
+        if any(contains(annots(:,2),'NB artefacts annotated in avg'))
+            art.notes = 'Please note, artefacts annotated in avg!';
+        else
+            art.notes = 'n/a';
+        end
         artefacts{i}=art;
     end
 elseif  strcmp(str_start,'Sz_on') % in case of a seizure
@@ -2114,7 +2207,7 @@ elseif  strcmp(str_start,'Sz_on') % in case of a seizure
         % seizure onset
         annotsplit = strsplit(annots{start_art(i),2},';');
         annotsplit = annotsplit(~cellfun(@isempty,annotsplit));
-        if size(annotsplit,2) >2
+        if size(annotsplit,2) >2 % both subtype of seizure and channelnames are mentioned 
             if strcmp(annotsplit{2},'clin') || strcmp(annotsplit{2},'cluster') || strcmp(annotsplit{2},'subclin') || strcmp(annotsplit{2},'aura')
                 type = annotsplit{2};
             else
@@ -2123,10 +2216,15 @@ elseif  strcmp(str_start,'Sz_on') % in case of a seizure
             ch_art_idx = parse_annotation(annots{start_art(i),2},ch);
             ch_names_on = {ch{logical(ch_art_idx)}};
             
-        else
+        elseif size(annotsplit,2) == 2 % either subtype of seizure or channelnames are mentiond
             if strcmp(annotsplit{2},'clin') || strcmp(annotsplit{2},'cluster') || strcmp(annotsplit{2},'subclin') || strcmp(annotsplit{2},'aura')
                 type = annotsplit{2};
-                ch_names_on = {'diffuse'};
+                
+                if strcmp(annotsplit{1},'Sz_cont') % Sz_cont is annotated, so no channelnames
+                    ch_names_on = {'continuation of seizure'};
+                else
+                    ch_names_on = {'diffuse'};
+                end
             else
                 type = 'unknown';
                 ch_art_idx = parse_annotation(annots{start_art(i),2},ch);
@@ -2141,7 +2239,11 @@ elseif  strcmp(str_start,'Sz_on') % in case of a seizure
             ch_art_idx = parse_annotation(annots{end_art(i),2},ch);
             ch_names_off = {ch{logical(ch_art_idx)}};
         else
-            ch_names_off = {'diffuse'};
+            if strcmp(annotsplit{1},'Sz_cont')
+                ch_names_off = {'Seizure continues in next file'};
+            else
+                ch_names_off = {'diffuse'};
+            end
         end
         
         art.type = type;
@@ -2150,7 +2252,35 @@ elseif  strcmp(str_start,'Sz_on') % in case of a seizure
         art.pos = [(annots{start_art(i),1}) (annots{end_art(i),1})]; % each seizure is consecutive, so as long as a seizure's end has the correct annotation, this will work
         artefacts{i} = art;
     end
-else
+elseif  strcmp(str_start,'Eyes_open') % in case of eyes open
+    all_art = sort([start_art;end_art]);
+    artefacts=cell(size(all_art));
+    
+    for i=1:numel(all_art)
+        art=struct;
+       
+        annotsplit = strsplit(annots{all_art(i),2},';');
+        annotsplit = annotsplit(~cellfun(@isempty,annotsplit));
+        
+        if strcmp(annotsplit{1},'Eyes_open')
+            type = 'opened';
+        else % if annotsplit is Eyes_close
+            type = 'closed';
+        end        
+        art.type = type;
+        
+        art.ch_names_on={'all'};
+        art.ch_names_off={'all'};
+        
+        if i<numel(all_art)
+            art.pos=[(annots{all_art(i),1}) annots{all_art(i+1),1}];
+        elseif i==numel(all_art) % if last annotation is selected, this event takes till the end of the file
+            art.pos=[(annots{all_art(i),1}) header.Num_Samples];
+        end
+        artefacts{i}=art;
+    end
+    
+else 
     artefacts=cell(size(start_art));
     
     for i=1:numel(start_art)
@@ -2222,7 +2352,12 @@ if(~isempty(event))
         eventsannots.site_name{cc} = 'n/a';
         eventsannots.site_channum{cc} = 'n/a';
         eventsannots.stim_cur{cc} = 'n/a';
-        eventsannots.notes{cc} = 'n/a';
+       
+        if isfield(event{i},'notes') && ~isempty(event{i}.notes)
+            eventsannots.notes{cc} = event{i}.notes;
+        else
+            eventsannots.notes{cc} = 'n/a';
+        end
         
         if size(event{i}.ch_names_on,2) == 1
             name = event{i}.ch_names_on{1}              ;
@@ -2437,7 +2572,11 @@ if(any(metadata.ch2use_bad))
 end
 
 if(any(metadata.ch2use_badhf))
-    [ch_status_desc{metadata.ch2use_badhf}] = deal('noisy in high frequency bands >80Hz&<500 Hz(visual assessment)');
+    if strcmp(metadata.ch2use_badhf.note,'NB BadHF annotated in avg')
+        [ch_status_desc{metadata.ch2use_badhf}] = deal('noisy in high frequency bands >80Hz&<500 Hz(visual assessment). Please note, BadHF was annotated in avg!');
+    else
+        [ch_status_desc{metadata.ch2use_badhf}] = deal('noisy in high frequency bands >80Hz&<500 Hz(visual assessment)');
+    end
 end
 
 % if(any(metadata.ch2use_cavity))
@@ -2576,17 +2715,53 @@ if contains([files(:).name],'scans')
     motor                   = scans_tsv.motor;
     spes                    = scans_tsv.spes;
     esm                     = scans_tsv.esm;
-    slowesm                 = scans_tsv.slowesm;
     language                = scans_tsv.language;
     sleepwaketransition     = scans_tsv.sleepwaketransition;
     format                  = scans_tsv.format;
-    sens                    = scans_tsv.sens;
+ 
+    if any(contains(scans_tsv.Properties.VariableNames,'sens')) % this was added later, so not allf iles have this
+        sens                    = scans_tsv.sens;
+    else
+        sens = zeros(size(name,1),1);
+    end
+    
+    if any(contains(scans_tsv.Properties.VariableNames,'slowesm')) % this was added later, so not allf iles have this
+        slowesm = scans_tsv.slowesm;
+    else
+        slowesm = zeros(size(name,1),1);
+    end
+    
+    if any(contains(scans_tsv.Properties.VariableNames,'sws_sel')) % this was added later, so not allf iles have this
+        sws_sel = scans_tsv.sws_sel;
+    else
+        sws_sel = zeros(size(name,1),1);
+    end
+    
+    if any(contains(scans_tsv.Properties.VariableNames,'rem_sel')) % this was added later, so not allf iles have this
+        rem_sel = scans_tsv.rem_sel;
+    else
+        rem_sel = zeros(size(name,1),1);
+    end
+    
+    if any(contains(scans_tsv.Properties.VariableNames,'iiaw_sel')) % this was added later, so not allf iles have this
+        iiaw_sel = scans_tsv.iiaw_sel;
+    else
+        iiaw_sel = zeros(size(name,1),1);
+    end
+    
+    if any(contains(scans_tsv.Properties.VariableNames,'EI_sel')) % this was added later, so not allf iles have this
+        EI_sel = scans_tsv.EI_sel;
+    else
+        EI_sel = zeros(size(name,1),1);
+    end
+    
     
 else
     scansnum = 1;
 end
 
 name{scansnum,1}                  = f;
+
 % sleep period
 id_sleep                          = strcmp(annotation_tsv.trial_type,'sleep');
 durationsl_total = 0;
@@ -2646,14 +2821,24 @@ spes(scansnum,1)                  = sum(strcmpi(annotation_tsv.sub_type,'spes'))
 esm(scansnum,1)                   = sum(strcmpi(annotation_tsv.sub_type,'esm'));
 slowesm(scansnum,1)               = sum(strcmpi(annotation_tsv.sub_type,'slowesm'));
 sleepwaketransition(scansnum,1)   = sum(strcmp(annotation_tsv.trial_type,'sleep-wake transition'));
+sws_sel(scansnum,1)               = sum(strcmp(annotation_tsv.trial_type,'sws selection'));
+rem_sel(scansnum,1)               = sum(strcmp(annotation_tsv.trial_type,'rem selection'));
+iiaw_sel(scansnum,1)               = sum(strcmp(annotation_tsv.trial_type,'iiaw selection'));
+EI_sel(scansnum,1)               = sum(strcmp(annotation_tsv.trial_type,'EI selection'));
+
 if metadata.incl_exist == 1
     format{scansnum,1}            = 'included';
 else
     format{scansnum,1}            = 'not included';
 end
 
-scans_tsv  = table(name, format, artefact, sleep_total, sleep_rem, sleep_nrem, sleepwaketransition, seizure, seizureclin, seizuresubclin, motor, spes, esm, slowesm, language, sens, ...
-    'VariableNames',{'name', 'format','artefact','sleep_total', 'sleep_rem','sleep_nrem','sleepwaketransition','seizure_total','seizure_clinical', 'seizure_subclinical','motor','spes','esm','slowesm', 'language','sens'});
+scans_tsv  = table(name, format, artefact, sleep_total, sleep_rem, sleep_nrem,...
+    sleepwaketransition, seizure, seizureclin, seizuresubclin, motor, spes, ...
+    esm, slowesm, language, sens, sws_sel, rem_sel, iiaw_sel, EI_sel,...
+    'VariableNames',{'name', 'format','artefact','sleep_total', 'sleep_rem',...
+    'sleep_nrem','sleepwaketransition','seizure_total','seizure_clinical', ...
+    'seizure_subclinical','motor','spes','esm','slowesm', 'language','sens',...
+    'sws_se','rem_sel','iiaw_sel','EI_sel'});
 
 if ~isempty(scans_tsv)
     write_tsv(filename, scans_tsv);
@@ -2765,6 +2950,17 @@ end
 
 biannot = regexp(lower(annots_new{numannots,2}),'bi');
 low_expect = regexp(lower(annots_new{numannots,2}),'requested');
+if ~isempty(low_expect)
+    note = annots_new{numannots,2};
+elseif numannots < size(annots_new,1)
+    if contains(annots_new{numannots+1,2},'requested') % in newer patients, the sentence "Current is lower than requested" is added at the end of the stimulation
+        note = annots_new{numannots+1,2};
+    else
+        note = note_desc;
+    end
+else
+    note = note_desc;
+end
 
 if size(stimnums,2) ==2 && size(stimnames,2) == 2 % it is a stimulus pair
     [stimchan,stimnum] = findstimpair(stimnums,stimnames,ch_label);
@@ -2773,7 +2969,7 @@ if size(stimnums,2) ==2 && size(stimnames,2) == 2 % it is a stimulus pair
     end
 elseif ~isempty(negannot) || ~isempty(currannot) || ~isempty(biannot) || ~isempty(low_expect) %% it is part of stim annotations
     n=1;
-    while size(stimnums,2) <2 || size(stimnames,2) <2 
+    while size(stimnums,2) <2 || size(stimnames,2) <2
         annotsplit = strsplit(annots_new{numannots-n,2},'_');
         stimnames = regexp(lower(annotsplit{1}),'[a-z]*','match');
         stimnums = regexp(lower(annotsplit{1}),'\d*','match');
@@ -2789,10 +2985,10 @@ elseif ~isempty(negannot) || ~isempty(currannot) || ~isempty(biannot) || ~isempt
     if find(stimnum == 0)
         error('one stimulation channel has not been found')
     end
-
+    
 else % if it is not part of stim annotations
     n=1;
-    while size(stimnums,2) <2 || size(stimnames,2) <2 || ~isempty(negannot) || ~isempty(currannot) || ~isempty(biannot) || ~isempty(low_expect) %% it is part of stim annotations
+    while size(stimnums,2) ~=2 || size(stimnames,2) ~= 2 || ~isempty(negannot) || ~isempty(currannot) || ~isempty(biannot) || ~isempty(low_expect) %% it is part of stim annotations
         annotsplit = strsplit(annots_new{numannots-n,2},'_');
         stimnames = regexp(lower(annotsplit{1}),'[a-z]*','match');
         stimnums = regexp(lower(annotsplit{1}),'\d*','match');
@@ -2803,7 +2999,7 @@ else % if it is not part of stim annotations
     annotsplit = strsplit(annots_new{numannots,2},'_');
     stimnames = regexp(lower(annotsplit{1}),'[a-z]*','match');
     stimnums = regexp(lower(annotsplit{1}),'\d*','match');
-   
+    
     % does this have 'ma'/'neg'/'bi'/'current is lower than expected' in the string? (respectively
     % negative current, lower pulse current, biphasic instead of monophasic)
     negannot = regexp(lower(annots_new{numannots,2}),'neg');
@@ -2816,10 +3012,20 @@ else % if it is not part of stim annotations
     else
         stimcurr = stimcurdefault/1000;
     end
-
-    biannot = regexp(lower(annots_new{numannots,2}),'bi');
-    low_expect = regexp(lower(annots_new{numannots,2}),'requested');
     
+    biannot = regexp(lower(annots_new{numannots,2}),'bi');
+    low_expect = regexp(lower(annots_new{numannots,2}),'requested', 'once');
+    if ~isempty(low_expect)
+        note = annots_new{numannots,2};
+    elseif numannots < size(annots_new,1)
+        if contains(annots_new{numannots+1,2},'requested') % in newer patients, the sentence "Current is lower than requested" is added at the end of the stimulation
+            note = annots_new{numannots+1,2};
+        else
+            note = note_desc;
+        end
+    else
+        note = note_desc;
+    end
     if size(stimnums,2) <2 || size(stimnames,2) <2 % if it is a stim annotation, but no stimpair
         n=1;
         while size(stimnums,2) <2 || size(stimnames,2) <2
@@ -2839,19 +3045,7 @@ else % if it is not part of stim annotations
     if find(stimnum == 0)
         error('one stimulation channel has not been found')
     end
-
-end
-
-if ~isempty(low_expect)
-    note = annots_new{numannots,2};
-elseif numannots < size(annots_new,1)
-    if contains(annots_new{numannots+1,2},'requested') % in newer patients, the sentence "Current is lower than requested" is added at the end of the stimulation
-        note = annots_new{numannots+1,2};
-    else
-        note = note_desc;
-    end
-else
-    note = note_desc;
+    
 end
 
 if ~isempty(negannot)
