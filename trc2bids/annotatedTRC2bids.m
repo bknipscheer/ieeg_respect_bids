@@ -2851,6 +2851,9 @@ function write_participants_tsv(cfg,header)
 [p,f] = fileparts(cfg(1).outputfile);
 q = strsplit(p,'/');
 
+% find session number
+sesnum = str2double(ses(regexp(q{contains(q,'ses')},'\d')));
+
 filename = ['/', q{2},'/' q{3},'/','participants.tsv'];
 
 files = dir(['/',q{2},'/',q{3},'/']);
@@ -2859,20 +2862,24 @@ if contains([files(:).name],'participants')
     % read existing scans-file
     participants_tsv = read_tsv(filename);
     
-    if any(contains(participants_tsv.name,deblank(header.name)))
-        partnum = find(contains(participants_tsv.name,deblank(header.name)) ==1);
+    if any(contains(participants_tsv.name,deblank(header.name))) % look whether the name is already in the participants-table
+        partnum = find(contains(participants_tsv.name,deblank(header.name)) ==1 & participants_tsv.session==sesnum); %find patient number and session number
         pat_exist = 1;
-    else
+    else % if participant is not yet in the table, the number is the last one plus one
         partnum = size(participants_tsv,1)+1;
     end
     
     name = participants_tsv.name;
     age = participants_tsv.age;
+    session = participants_tsv.session;
 else
     partnum = 1;
 end
 
+% set RESPect name and session number
 name{partnum,1}   = deblank(header.name);
+session(partnum,1) = sesnum;
+% set age of RESPect patient (comparing with current participants-table)
 if pat_exist == 1
     if age(partnum,1) == header.age && age(partnum,1) ~= 0 % if age in participants.tsv is not equal to 0  and equal to header.age
         age(partnum,1)    = header.age;
@@ -2892,9 +2899,24 @@ else
     age(partnum,1) = header.age;
 end
 
-participants_tsv  = table(name, age, ...
-    'VariableNames',{'name', 'age'});
+% extract RESPect numbers from RESPect names
+numname = zeros(size(name));
+for i=1:size(name,1)
+    numname(i) = str2double(name{i}(5:end));
+end
 
+% sorts table based on RESPect number and session number
+[~,I] = sortrows([numname,session]);
+ 
+name_sort = name(I);
+age_sort = age(I);
+session_sort = session(I);
+
+% makes a table from name, session and age
+participants_tsv  = table(name_sort, session_sort, age_sort,  ...
+    'VariableNames',{'name','session', 'age'});
+
+% save participants.tsv
 if ~isempty(participants_tsv)
     write_tsv(filename, participants_tsv);
 end
