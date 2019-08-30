@@ -43,7 +43,7 @@ elec_input = '/Fridge/CCEP/';
 
 tb_elecs = readtable(fullfile(pathname,filename),'FileType','text','Delimiter','\t');
 
-sortElectrodes(tb_elecs.name);
+sortElectrodes(tb_elecs, fullfile(pathname,filename));
 % loads img file with electrodes from previous step
 % saves as electrodes_locX;
 
