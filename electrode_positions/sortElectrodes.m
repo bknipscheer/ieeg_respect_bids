@@ -1,4 +1,4 @@
-function elecmatrix=sortElectrodes(pathname,tb_elecs)
+function elecmatrix=sortElectrodes(tb_elecs,pathname)
 %   Created by:
 %
 %     Copyright (C) 2009  D. Hermes, Dept of Neurology and Neurosurgery, University Medical Center Utrecht
@@ -58,11 +58,13 @@ totalnrElec=size(tb_elecs,1);
 % end
 
 elecmatrix=zeros(totalnrElec,3);
+fprintf('Total number of electrodes is %d\n',numel(find(strcmp(tb_elecs.group,'other')==0)))
+
 elecNr=1;
 disp('press 1 to start')
 r=input('');
 if r==1
-    while elecNr<totalnrElec
+    while elecNr<=totalnrElec
         if strcmp(tb_elecs.group(elecNr),'other') % when electrode is not part of ECoG/SEEG
             elecmatrix(elecNr,:) = NaN;
             elecNr = elecNr+1;
