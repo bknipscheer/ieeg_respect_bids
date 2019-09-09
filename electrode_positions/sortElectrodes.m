@@ -1,4 +1,4 @@
-function elecmatrix=sortElectrodes(tb_elecs,pathname)
+function elecmatrix=sortElectrodes(tb_elecs,cfg)
 %   Created by:
 %
 %     Copyright (C) 2009  D. Hermes, Dept of Neurology and Neurosurgery, University Medical Center Utrecht
@@ -24,7 +24,7 @@ function elecmatrix=sortElectrodes(tb_elecs,pathname)
 
 %% load electrodes file
 
-[data1.elecName]=spm_select(1,'image','select image with electrodes');
+[data1.elecName]=spm_select(1,'image','Select image with electrodes (electrodes1.img)',[],cfg.anat_directory);
 data1.elecStruct=spm_vol(data1.elecName);
 % from structure to data matrix
 data1.elec=spm_read_vols(data1.elecStruct);
@@ -96,13 +96,14 @@ if r==1
     end
 end
 
-tb_elecs.x = elecmatrix(:,1);
-tb_elecs.y = elecmatrix(:,2);
-tb_elecs.z = elecmatrix(:,3);
+elecs.name = tb_elecs.name;
+elecs.x = elecmatrix(:,1);
+elecs.y = elecmatrix(:,2);
+elecs.z = elecmatrix(:,3);
 
 %% save electrode matrix
-
-writetable(tb_elecs, pathname, 'Delimiter', 'tab', 'FileType', 'text');
+pathname = cfg.saveFile;
+save(pathname,'elecs');
 
 % outputdir= spm_select(1,'dir','select directory to save locations matrix');
 % 
