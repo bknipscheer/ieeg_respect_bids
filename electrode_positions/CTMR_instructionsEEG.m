@@ -24,21 +24,23 @@
 %% 0) preparations
 % This script has a part that should be run in a linux terminal, and part
 % that can be run in matlab. The parts that should be run in a linux
-% terminal have "run in linux terminal" in the section title. 
+% terminal have "run in linux terminal" in the section title.
 
 % Make sure SPM functions are in your Matlab path
 
 addpath(genpath('/home/dorien/git_rep/Paper_Hermes_2010_JNeuroMeth/'))
 addpath(('/home/dorien/git_rep/ieeg_respect_bids/electrode_positions/'))
+addpath(genpath('/home/dorien/git_rep/jsonlab/'))
 
 % cfg.dataPath = '/Fridge/chronic_ECoG';
 cfg.path_talairach = '/Fridge/users/dorien/MRI_defaced/talairach_mixed_with_skull.gca';
 cfg.path_face = '/Fridge/users/dorien/MRI_defaced/face.gca';
-cfg.freesurfer_directory = '/Fridge/users/dorien/ccep/dataBIDS/derivatives/freesurfer/';
+cfg.freesurfer_directory = '/Fridge/users/dorien/dataBIDS/derivatives/freesurfer/';
 cfg.sub_labels = {['sub-' input('Patient number (RESPXXXX): ','s')]};
 cfg.ses_label = input('Session number (ses-X): ','s');
-cfg.anat_directory = sprintf('/Fridge/users/dorien/ccep/dataBIDS/%s/%s/anat/',cfg.sub_labels{:},cfg.ses_label);
-cfg.ieeg_directory = sprintf('/Fridge/users/dorien/ccep/dataBIDS/%s/%s/ieeg/',cfg.sub_labels{:},cfg.ses_label);
+cfg.anat_directory = sprintf('/Fridge/users/dorien/dataBIDS/%s/%s/anat/',cfg.sub_labels{:},cfg.ses_label);
+cfg.ieeg_directory = sprintf('/Fridge/users/dorien/dataBIDS/%s/%s/ieeg/',cfg.sub_labels{:},cfg.ses_label);
+cfg.elec_input = sprintf('/Fridge/CCEP/%s/%s/ieeg/',cfg.sub_labels{:},cfg.ses_label);
 
 %% defacing MRI - RUN IN LINUX TERMINAL!
 
@@ -89,27 +91,40 @@ fprintf('recon-all -autorecon-all -s %s -i %s%s_%s_proc-deface_T1w.nii -cw256\n'
 % this file to a .nii file so we can read it and use it to create the hull
 % (a tight balloon of where the electrodes should be on the pre-op MRI)
 
-% TERMINAL:
-mri_convert ribbon.mgz t1_class.nii
+% RUN IN LINUX TERMINAL:
+% Right click in the freesurfer/mri-folder and start Linux terminal.
+% Copy the printed lines in the command window into the linux terminal:
+fprintf('mri_convert ribbon.mgz t1_class.nii\n')
+
+settings_hull = [13,0.3];
 
 % Go back to Matlab and create the hull
 get_mask_V3(cfg.sub_labels{:},... % subject name
-    't1_class.nii',... % freesurfer class file
-    './',... % where you want to safe the file
+    [cfg.freesurfer_directory,cfg.sub_labels{:},'/mri/t1_class.nii'],... % freesurfer class file
+    cfg.anat_directory,... % where you want to safe the file
     'r',... % 'l' for left 'r' for right
-    13,0.3); % settings for smoothing and threshold
-% check in MRIcron whether ther hull looks like it matches the dura (should
-% be a tight baloon around the grey matter)
+    settings_hull(1),...% setting for smoothing
+    settings_hull(2)); % settings for  threshold
+% the hull is saved as sub-RESPXXXX_surface1_13_03.img
+
+%% check hull - RUN IN Linux TERMINAL
+% type 'mricron'
+% load the MRI
+% put the hull as overlay on top of the mri
+% check whether the hull looks like it matches the dura (should be a tight
+% baloon around the grey matter)
 
 %% 3) select electrodes from ct
+% the order in which you click electrodes does not matter. Just make sure
+% you click all electrodes implanted!
+
 ctmr
 % view result
 % save image: saves as nifti hdr and img files
 
 %% 4) sort unprojected electrodes
 % open electrodes.tsv
-elec_input = sprintf('/Fridge/CCEP/%s/%s/ieeg/',cfg.sub_labels{:},cfg.ses_label);
-[filename, pathname] = uigetfile('*.tsv;*.tsv','Select electroces.tsv file',elec_input);
+[filename, pathname] = uigetfile('*.tsv;*.tsv','Select electroces.tsv file',cfg.elec_input);
 tb_elecs = readtable(fullfile(pathname,filename),'FileType','text','Delimiter','\t');
 
 % Make ieeg folder
@@ -123,94 +138,134 @@ end
 cfg.saveFile = sprintf('%s%s_%s_electrodes_temp.mat',cfg.ieeg_directory,cfg.sub_labels{:},cfg.ses_label);
 sortElectrodes(tb_elecs,cfg); % [electrode labels, folder to save]
 % loads img file with electrodes from previous step
-% saves in electrodes_temp.tsv;
-
-% TODO: change NaN to n/a!!
+% saves in electrodes_temp.mat;
 
 %% 5) plot electrodes 2 surface
 % corrects for the brain shift - ONLY for ECoG
+% 1xN STRIP: do not project any electrodes that are already close to the
+%               surfaces, such as subtemporal and interhemispheric
+% DEPTH: do not project
 
-% electrodes2surf(subject,localnorm index,do not project electrodes closer than 3 mm to surface)
+% open electrodes.tsv
+[filename, pathname] = uigetfile('*.tsv;*.tsv','Select electroces.tsv file',cfg.elec_input);
+tb_elecs = readtable(fullfile(pathname,filename),'FileType','text','Delimiter','\t');
 
-% electrodes2surf(
-    % 1: subject
-    % 2: number of electrodes local norm for projection (0 = whole grid)
-    % 3: 0 = project all electrodes, 1 = only project electrodes > 3 mm
-    %    from surface, 2 = only map to closest point (for strips)
-    % 4: electrode numbers
-    % 5: (optional) electrode matrix.mat (if not given, SPM_select popup)
-    % 6: (optional) surface.img (if not given, SPM_select popup)
-    % 7: (optional) mr.img for same image space with electrode
-    %    positions
-% saves automatically a matrix with projected electrode positions and an image
-% with projected electrodes
-% saves as electrodes_onsurface_filenumber_inputnr2
+% only select letters from channelname
+letters = regexp(tb_elecs.name,'[a-z_A-Z]');
+channame = cell(size(tb_elecs,1),1);
+for chan = 1:size(tb_elecs,1)
+    channame{chan,1} = tb_elecs.name{chan}(letters{chan});
+end
 
-% % GRID:
-% [out_els,out_els_ind]=electrodes2surf('name',...
-%     5,1,... % use these settings for the grid
-%     [1:32],... % electrode numbers from the following file
-%     './data/electrodes_loc1.mat',... % file with electrode XYZ coordinates
-%     './data/name_surface1_13_02.img',... % surface to which the electrodes are projected
-%     './data/t1_aligned.nii');
-% % 2xN STRIP:
-% [out_els,out_els_ind]=electrodes2surf('name',4,1,[1:32],'./data/electrodes_loc1.mat','./data/name_surface1_13_02.img','./data/t1_aligned.nii');
-% % 1xN STRIP: (project to closest point on the surface, no direction):
-% [out_els,out_els_ind]=electrodes2surf('name',0,2,[1:32],'./data/electrodes_loc1.mat','./data/name_surface1_13_02.img','./data/t1_aligned.nii');
-% % 1xN STRIP: do not project any electrodes that are already close to the
-% surfaces, such as subtemporal and interhemispheric
-% % DEPTH: do not project
+% load json-file with formats of specific electrode strips/grids
+files = dir(cfg.elec_input);
+jsonfile = find(contains({files(:).name},'_ieeg.json')==1,1);
+json = loadjson(fullfile(cfg.elec_input, files(jsonfile).name));
+chansplit = strsplit(json.iEEGElectrodeGroups,{';','['});
+changroups = chansplit(diff(contains(chansplit,']'))==1);
 
-surface_name='./data/name_surface1_13_02.img';
-t1_name='./data/name_t1.nii';
+fprintf('Which electrodes should be skipped since they are already close to surfaces? \n')
+fprintf('(such as subtemporal, interhemispheric)? \n')
+fprintf('choose from %s %s %s %s %s %s', changroups{:});
+skip_elec = input(': ','s');
+skip_elec = strsplit(skip_elec,{', ',',',' '});
+skip_elec = skip_elec(~cellfun(@isempty,skip_elec));
 
-% lateral grid:
-[out_els,out_els_ind] = electrodes2surf(...
-    'name',... % subject name
-    5,... % 5 for grid, 4 for 2xN strip, 0 for 1xN strip
-    1,... % 1 for grid or 2xN strip, 2 for 1xN strip
-    [1:64],... % matrix indices (rows) in elecmatrix, e.g. 1:64 is the grid
-    './data/electrodes_loc1.mat',... % file that contains elecmatrix
-    surface_name,... % hull we just created
-    t1_name); % T1 file 
+% determine format of each specific electrode strip/grid and correct for
+% brainshift
+if contains(json.iEEGElectrodeGroups,'seeg','IgnoreCase',1)
+    disp('This session is seeg, so no correction for brain shift is needed')
+    
+elseif contains(json.iEEGElectrodeGroups,'ecog','IgnoreCase',1)
+    
+    format = strsplit(json.iEEGElectrodeGroups,';');
+    elecmatrix_shift = NaN(size(elecmatrix));
+    
+    for i=1:size(format,2)
+        if contains(format{i},'[')
+            % find channame and format of this group of electrodes
+            formatelec = strsplit(format{i},{'[','x',']'});
+            formatelec = formatelec(~cellfun(@isempty,formatelec));
+            
+            % find which electrodes belong to this specific group
+            num_elecs = find(strcmp(formatelec{1},channame)==1);
+            
+            % check whether all electrodes in group are included
+            if str2double(formatelec{2}) * str2double(formatelec{3}) == numel(num_elecs)
+            else
+                disp('ERROR: mismatch between found electrodes and expected number of electrodes in format!')
+            end
+            
+            % skip electrodes mentioned above
+            if ~contains(format{i},skip_elec)
+                % format of specific grid/strip
+                if any(contains(formatelec,'1')) % it is a 1xN strip/depth electrode
+                    settings = [0,2];
+                elseif any(contains(formatelec,'2')) % it is a 2xN strip
+                    settings = [4,1];
+                else % it is a grid (larger than 2xN)
+                    settings = [5,1];
+                end
+                % correct location of electrodes for brain shift
+                [out_els,out_els_ind] = electrodes2surf(...
+                    cfg.sub_labels{:},... % subject name
+                    settings(1),... % 5 for grid, 4 for 2xN strip, 0 for 1xN strip
+                    settings(2),... % 1 for grid or 2xN strip, 2 for 1xN strip
+                    num_elecs,... % matrix indices (rows) in elecmatrix, e.g. 1:64 is for grid C1-C64
+                    [cfg.ieeg_directory, cfg.sub_labels{:},'_',cfg.ses_label,'_electrodes_temp.mat'],... % file that contains elecmatrix
+                    [cfg.anat_directory, cfg.sub_labels{:},'_surface1_',num2str(settings_hull(1)),'_0',num2str(settings_hull(2)*10),'.img'],... % hull we just created
+                    [cfg.anat_directory, cfg.sub_labels{:},'_',cfg.ses_label,'_T1w.nii'],... % T1 file (mr.img for same image space with electrode positions)
+                    cfg.anat_directory);
+                
+                % saves automatically a matrix with projected electrode positions and an image
+                % with projected electrodes
+                % saves as electrodes_onsurface_filenumber_inputnr2
+                elecmatrix_shift(num_elecs,:) = out_els;
+                
+            elseif contains(format{i},skip_elec)
+                elecmatrix_shift(num_elecs,:) = elecmatrix(num_elecs,:);
+            end
 
-% 4x2 strip example:
-[out_els,out_els_ind] = electrodes2surf(...
-    'name',... % subject name
-    4,... % 5 for grid, 4 for 2xN strip, 0 for 1xN strip
-    1,... % 1 for grid or 2xN strip, 2 for 1xN strip
-    [65:72],... % matrix indices (rows) in elecmatrix, e.g. 1:64 is the grid
-    './data/electrodes_loc1.mat',... % file that contains elecmatrix
-    surface_name,... % hull we just created
-    t1_name); % T1 file 
+        end
+    end
+end
 
+tb_elecs.x = elecmatrix_shift(:,1);
+tb_elecs.y = elecmatrix_shift(:,2);
+tb_elecs.z = elecmatrix_shift(:,3);
+
+%% save electrode positions, corrected for brain shift to electrodes.tsv
+
+saveFile = replace(cfg.saveFile,'_temp.mat','.tsv');
+writetable(tb_elecs, saveFile, 'Delimiter', 'tab', 'FileType', 'text');
+% TODO: change NaN to n/a!!
 
 %% 6) combine electrode files into one and make an image
-% Only necessary of you did step 5), because each grid/strip is projected
-% separately... 
+% Only necessary if you did step 5), because each grid/strip is projected
+% separately...
 % The separate projection can maybe be fixed by using code from iElvis or
 % the Dykstra method...
 
 % not necessary since we use electrodes.tsv directly
 % elecmatrix=nan(126,3);
-% 
+%
 % a = load('/home/dorien/Desktopelectrodes_loc1.mat'); %
 % elecmatrix(1:64,:) = a.elecmatrix;
 % a = load('/home/dorien/Desktopelectrodes_loc2.mat'); %
 % elecmatrix(65:90,:) = a.elecmatrix;
 % a = load('/home/dorien/Desktopelectrodes_loc3.mat'); %
 % elecmatrix(97:126,:) = a.elecmatrix;
-% 
+%
 % save('/home/dorien/Desktop/Fransen_elecmatrix','elecmatrix')
 
 %% 7) Write electrode positions as numbers in a nifti
 % This is not necessary, only if you want to do some extra checks or so.
 % e.g. it can be nice to visualize the projected electrodes in MRIcron.
-[output,els,els_ind,outputStruct] = position2reslicedImage(elecmatrix,'./data_freesurfer/name_t1.nii');
+[output,els,els_ind,outputStruct] = position2reslicedImage(elecmatrix_shift,[cfg.anat_directory, cfg.sub_labels{:},'_',cfg.ses_label,'_T1w.nii']);
 
 for filenummer=1:100
-    save(['./data/' subject '_electrodes_surface_loc_all' int2str(filenummer) '.mat'],'elecmatrix');
-    outputStruct.fname=['./data/electrodes_surface_all' int2str(filenummer) '.img' ];
+    save([cfg.ieeg_directory cfg.sub_labels{:} '_' cfg.ses_label,'_electrodes_surface_loc_all' int2str(filenummer) '.mat'],'elecmatrix_shift');
+    outputStruct.fname=[cfg.anat_directory,cfg.sub_labels{:},'_',cfg.ses_label,'electrodes_surface_all' int2str(filenummer) '.img' ];
     if ~exist(outputStruct.fname,'file')>0
         disp(['saving ' outputStruct.fname]);
         % save the data

@@ -96,14 +96,11 @@ if r==1
     end
 end
 
-elecs.name = tb_elecs.name;
-elecs.x = elecmatrix(:,1);
-elecs.y = elecmatrix(:,2);
-elecs.z = elecmatrix(:,3);
+name = tb_elecs.name;
 
 %% save electrode matrix
 pathname = cfg.saveFile;
-save(pathname,'elecs');
+save(pathname,'name','elecmatrix');
 
 % outputdir= spm_select(1,'dir','select directory to save locations matrix');
 % 
