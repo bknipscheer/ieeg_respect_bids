@@ -19,8 +19,6 @@
 
 % DvB - made it usable with BIDS electrodes.tsv September 2019
 
-
-
 %% 0) preparations
 % This script has a part that should be run in a linux terminal, and part
 % that can be run in matlab. The parts that should be run in a linux
@@ -38,6 +36,7 @@ cfg.path_face = '/Fridge/users/dorien/MRI_defaced/face.gca';
 cfg.freesurfer_directory = '/Fridge/users/dorien/dataBIDS/derivatives/freesurfer/';
 cfg.sub_labels = {['sub-' input('Patient number (RESPXXXX): ','s')]};
 cfg.ses_label = input('Session number (ses-X): ','s');
+cfg.hemisphere = input('Hemisphere with implanted electrodes [l/r]: ','s');
 cfg.anat_directory = sprintf('/Fridge/users/dorien/dataBIDS/%s/%s/anat/',cfg.sub_labels{:},cfg.ses_label);
 cfg.ieeg_directory = sprintf('/Fridge/users/dorien/dataBIDS/%s/%s/ieeg/',cfg.sub_labels{:},cfg.ses_label);
 cfg.elec_input = sprintf('/Fridge/CCEP/%s/%s/ieeg/',cfg.sub_labels{:},cfg.ses_label);
@@ -102,7 +101,7 @@ settings_hull = [13,0.3];
 get_mask_V3(cfg.sub_labels{:},... % subject name
     [cfg.freesurfer_directory,cfg.sub_labels{:},'/mri/t1_class.nii'],... % freesurfer class file
     cfg.anat_directory,... % where you want to safe the file
-    'r',... % 'l' for left 'r' for right
+    cfg.hemisphere,... % 'l' for left 'r' for right --> only use the hemisphere where electrodes are located
     settings_hull(1),...% setting for smoothing
     settings_hull(2)); % settings for  threshold
 % the hull is saved as sub-RESPXXXX_surface1_13_03.img
@@ -121,6 +120,7 @@ get_mask_V3(cfg.sub_labels{:},... % subject name
 ctmr
 % view result
 % save image: saves as nifti hdr and img files
+% this is saved as electrodes1.hdr and electrodes1.img
 
 %% 4) sort unprojected electrodes
 % open electrodes.tsv
@@ -137,6 +137,7 @@ end
 % sort unprojected electrodes
 cfg.saveFile = sprintf('%s%s_%s_electrodes_temp.mat',cfg.ieeg_directory,cfg.sub_labels{:},cfg.ses_label);
 sortElectrodes(tb_elecs,cfg); % [electrode labels, folder to save]
+fprintf('Matched electrodes are saved in %s\n',cfg.saveFile)
 % loads img file with electrodes from previous step
 % saves in electrodes_temp.mat;
 
@@ -214,7 +215,7 @@ elseif contains(json.iEEGElectrodeGroups,'ecog','IgnoreCase',1)
                     num_elecs,... % matrix indices (rows) in elecmatrix, e.g. 1:64 is for grid C1-C64
                     [cfg.ieeg_directory, cfg.sub_labels{:},'_',cfg.ses_label,'_electrodes_temp.mat'],... % file that contains elecmatrix
                     [cfg.anat_directory, cfg.sub_labels{:},'_surface1_',num2str(settings_hull(1)),'_0',num2str(settings_hull(2)*10),'.img'],... % hull we just created
-                    [cfg.anat_directory, cfg.sub_labels{:},'_',cfg.ses_label,'_T1w.nii'],... % T1 file (mr.img for same image space with electrode positions)
+                    [cfg.anat_directory, cfg.sub_labels{:},'_',cfg.ses_label,'_proc-deface_T1w.nii'],... % T1 file (mr.img for same image space with electrode positions)
                     cfg.anat_directory);
                 
                 % saves automatically a matrix with projected electrode positions and an image
@@ -238,6 +239,7 @@ tb_elecs.z = elecmatrix_shift(:,3);
 
 saveFile = replace(cfg.saveFile,'_temp.mat','.tsv');
 writetable(tb_elecs, saveFile, 'Delimiter', 'tab', 'FileType', 'text');
+fprintf('Electrode positions, corrected for brainshift, are saved in %s\n',saveFile)
 % TODO: change NaN to n/a!!
 
 %% 6) combine electrode files into one and make an image
@@ -261,11 +263,11 @@ writetable(tb_elecs, saveFile, 'Delimiter', 'tab', 'FileType', 'text');
 %% 7) Write electrode positions as numbers in a nifti
 % This is not necessary, only if you want to do some extra checks or so.
 % e.g. it can be nice to visualize the projected electrodes in MRIcron.
-[output,els,els_ind,outputStruct] = position2reslicedImage(elecmatrix_shift,[cfg.anat_directory, cfg.sub_labels{:},'_',cfg.ses_label,'_T1w.nii']);
+[output,els,els_ind,outputStruct] = position2reslicedImage(elecmatrix_shift,[cfg.anat_directory, cfg.sub_labels{:},'_',cfg.ses_label,'_proc-deface_T1w.nii']);
 
 for filenummer=1:100
     save([cfg.ieeg_directory cfg.sub_labels{:} '_' cfg.ses_label,'_electrodes_surface_loc_all' int2str(filenummer) '.mat'],'elecmatrix_shift');
-    outputStruct.fname=[cfg.anat_directory,cfg.sub_labels{:},'_',cfg.ses_label,'electrodes_surface_all' int2str(filenummer) '.img' ];
+    outputStruct.fname=[cfg.anat_directory,cfg.sub_labels{:},'_',cfg.ses_label,'_electrodes_surface_all' int2str(filenummer) '.img' ];
     if ~exist(outputStruct.fname,'file')>0
         disp(['saving ' outputStruct.fname]);
         % save the data
