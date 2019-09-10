@@ -19,11 +19,6 @@
 
 % DvB - made it usable with BIDS electrodes.tsv September 2019
 
-%% 1) run segment anatomical MR in SPM5 <-- dit stuk kan denk ik gewoon weg? zie uitgeschreven stuk hieronder
-% startup SPM (spm functions are used)
-% coregister + reslice CT to anatomical MR
-% in SPM5 reference image = MR, source image = CT
-% segment MR in freesurfer
 
 
 %% 0) preparations
@@ -31,13 +26,13 @@
 % that can be run in matlab. The parts that should be run in a linux
 % terminal have "run in linux terminal" in the section title. 
 
-% Make sure SPM functions are in your path
+% Make sure SPM functions are in your Matlab path
 
 addpath(genpath('/home/dorien/git_rep/Paper_Hermes_2010_JNeuroMeth/'))
 addpath(('/home/dorien/git_rep/ieeg_respect_bids/electrode_positions/'))
 
 % cfg.dataPath = '/Fridge/chronic_ECoG';
-cfg.path_talairach = '/Fridge/users/dorien/MRI_defaced/talairach_mixed_with_skull.gca ';
+cfg.path_talairach = '/Fridge/users/dorien/MRI_defaced/talairach_mixed_with_skull.gca';
 cfg.path_face = '/Fridge/users/dorien/MRI_defaced/face.gca';
 cfg.freesurfer_directory = '/Fridge/users/dorien/ccep/dataBIDS/derivatives/freesurfer/';
 cfg.sub_labels = {['sub-' input('Patient number (RESPXXXX): ','s')]};
@@ -63,7 +58,7 @@ fprintf('mri_deface %s_%s_T1w.nii %s  %s %s_%s_proc_deface_T1w.nii\n',...
     cfg.sub_labels{:},...
     cfg.ses_label);
 
-%% run freesurfer to add Destrieux atlases - RUN IN LINUX TERMINAL!
+%% run freesurfer to segment brain add Destrieux atlases - RUN IN LINUX TERMINAL!
 
 % Make a freesurfer folder
 if exist(cfg.freesurfer_directory, 'dir')
@@ -87,18 +82,24 @@ fprintf('recon-all -autorecon-all -s %s -i %s%s_%s_proc-deface_T1w.nii -cw256\n'
 
 
 %% 2) generate surface (The Hull) to project electrodes to
-% only for ECoG
+% only for ECoG, because this is necessary to correct for brain-shift.
+% ECoG electrodes are projected to the hull.
 
-% get_mask(subject,gray,white,outputdir,degree of smoothing,threshold) 
-% e.g. get_mask(6,0.1) or get_mask(16,0.3)
+% Freesurfer creates a file called /mri/ribbon.mgz and we want to convert
+% this file to a .nii file so we can read it and use it to create the hull
+% (a tight balloon of where the electrodes should be on the pre-op MRI)
 
-% if using freesurfer: 
+% TERMINAL:
+mri_convert ribbon.mgz t1_class.nii
+
+% Go back to Matlab and create the hull
 get_mask_V3(cfg.sub_labels{:},... % subject name
-    './data/t1_class.nii',... % freesurfer class file
+    't1_class.nii',... % freesurfer class file
     './',... % where you want to safe the file
     'r',... % 'l' for left 'r' for right
     13,0.3); % settings for smoothing and threshold
-
+% check in MRIcron whether ther hull looks like it matches the dura (should
+% be a tight baloon around the grey matter)
 
 %% 3) select electrodes from ct
 ctmr
@@ -127,9 +128,69 @@ sortElectrodes(tb_elecs,cfg); % [electrode labels, folder to save]
 % TODO: change NaN to n/a!!
 
 %% 5) plot electrodes 2 surface
+% corrects for the brain shift - ONLY for ECoG
+
 % electrodes2surf(subject,localnorm index,do not project electrodes closer than 3 mm to surface)
 
+% electrodes2surf(
+    % 1: subject
+    % 2: number of electrodes local norm for projection (0 = whole grid)
+    % 3: 0 = project all electrodes, 1 = only project electrodes > 3 mm
+    %    from surface, 2 = only map to closest point (for strips)
+    % 4: electrode numbers
+    % 5: (optional) electrode matrix.mat (if not given, SPM_select popup)
+    % 6: (optional) surface.img (if not given, SPM_select popup)
+    % 7: (optional) mr.img for same image space with electrode
+    %    positions
+% saves automatically a matrix with projected electrode positions and an image
+% with projected electrodes
+% saves as electrodes_onsurface_filenumber_inputnr2
+
+% % GRID:
+% [out_els,out_els_ind]=electrodes2surf('name',...
+%     5,1,... % use these settings for the grid
+%     [1:32],... % electrode numbers from the following file
+%     './data/electrodes_loc1.mat',... % file with electrode XYZ coordinates
+%     './data/name_surface1_13_02.img',... % surface to which the electrodes are projected
+%     './data/t1_aligned.nii');
+% % 2xN STRIP:
+% [out_els,out_els_ind]=electrodes2surf('name',4,1,[1:32],'./data/electrodes_loc1.mat','./data/name_surface1_13_02.img','./data/t1_aligned.nii');
+% % 1xN STRIP: (project to closest point on the surface, no direction):
+% [out_els,out_els_ind]=electrodes2surf('name',0,2,[1:32],'./data/electrodes_loc1.mat','./data/name_surface1_13_02.img','./data/t1_aligned.nii');
+% % 1xN STRIP: do not project any electrodes that are already close to the
+% surfaces, such as subtemporal and interhemispheric
+% % DEPTH: do not project
+
+surface_name='./data/name_surface1_13_02.img';
+t1_name='./data/name_t1.nii';
+
+% lateral grid:
+[out_els,out_els_ind] = electrodes2surf(...
+    'name',... % subject name
+    5,... % 5 for grid, 4 for 2xN strip, 0 for 1xN strip
+    1,... % 1 for grid or 2xN strip, 2 for 1xN strip
+    [1:64],... % matrix indices (rows) in elecmatrix, e.g. 1:64 is the grid
+    './data/electrodes_loc1.mat',... % file that contains elecmatrix
+    surface_name,... % hull we just created
+    t1_name); % T1 file 
+
+% 4x2 strip example:
+[out_els,out_els_ind] = electrodes2surf(...
+    'name',... % subject name
+    4,... % 5 for grid, 4 for 2xN strip, 0 for 1xN strip
+    1,... % 1 for grid or 2xN strip, 2 for 1xN strip
+    [65:72],... % matrix indices (rows) in elecmatrix, e.g. 1:64 is the grid
+    './data/electrodes_loc1.mat',... % file that contains elecmatrix
+    surface_name,... % hull we just created
+    t1_name); % T1 file 
+
+
 %% 6) combine electrode files into one and make an image
+% Only necessary of you did step 5), because each grid/strip is projected
+% separately... 
+% The separate projection can maybe be fixed by using code from iElvis or
+% the Dykstra method...
+
 % not necessary since we use electrodes.tsv directly
 % elecmatrix=nan(126,3);
 % 
@@ -142,8 +203,10 @@ sortElectrodes(tb_elecs,cfg); % [electrode labels, folder to save]
 % 
 % save('/home/dorien/Desktop/Fransen_elecmatrix','elecmatrix')
 
-%% 7) ?
-[output,els,els_ind,outputStruct]=position2reslicedImage(elecmatrix,'./data_freesurfer/name_t1.nii');
+%% 7) Write electrode positions as numbers in a nifti
+% This is not necessary, only if you want to do some extra checks or so.
+% e.g. it can be nice to visualize the projected electrodes in MRIcron.
+[output,els,els_ind,outputStruct] = position2reslicedImage(elecmatrix,'./data_freesurfer/name_t1.nii');
 
 for filenummer=1:100
     save(['./data/' subject '_electrodes_surface_loc_all' int2str(filenummer) '.mat'],'elecmatrix');
