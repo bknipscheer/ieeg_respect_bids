@@ -165,6 +165,8 @@ json = loadjson(fullfile(cfg.elec_input, files(jsonfile).name));
 chansplit = strsplit(json.iEEGElectrodeGroups,{';','['});
 changroups = chansplit(diff(contains(chansplit,']'))==1);
 
+% electrodes on strip subtemporal or interhemispheric should be skipped
+% because they are already located close to brain surface.
 fprintf('Which electrodes should be skipped since they are already close to surfaces? \n')
 fprintf('(such as subtemporal, interhemispheric)? \n')
 fprintf('choose from %s %s %s %s %s %s', changroups{:});
