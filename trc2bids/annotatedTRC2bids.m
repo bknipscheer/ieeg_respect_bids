@@ -733,7 +733,7 @@ if metadata.incl_exist == 1 % format and included were annotated in the file, fi
             end
         end
     end
-    write_tsv(filename_dataset, electrodes_tsv);
+   write_tsv(filename_dataset, electrodes_tsv);
 end
 
 
@@ -2852,7 +2852,8 @@ function write_participants_tsv(cfg,header)
 q = strsplit(p,'/');
 
 % find session number
-sesnum = str2double(ses(regexp(q{contains(q,'ses')},'\d')));
+containsses = q{contains(q,'ses')};
+sesnum = str2double(containsses(regexp(containsses,'\d')));
 
 filename = ['/', q{2},'/' q{3},'/','participants.tsv'];
 
