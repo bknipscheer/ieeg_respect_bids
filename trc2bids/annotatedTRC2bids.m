@@ -446,6 +446,7 @@ cfg.ieeg.SamplingFrequency            = ft_getopt(cfg.ieeg, 'SamplingFrequency' 
 cfg.ieeg.PowerLineFrequency           = ft_getopt(cfg.ieeg, 'PowerLineFrequency'         ); % REQUIRED.
 cfg.ieeg.iEEGReference                = ft_getopt(cfg.ieeg, 'iEEGReference'              ); % REQUIRED.
 cfg.ieeg.ElectrodeManufacturer        = ft_getopt(cfg.ieeg, 'ElectrodeManufacturer'      ); %RECOMMENDED
+cfg.ieeg.iEEGPlacementScheme          = ft_getopt(cfg.ieeg, 'iEEGPlacementScheme'        ); %RECOMMENDED
 cfg.ieeg.iEEGElectrodeGroups          = ft_getopt(cfg.ieeg, 'iEEGElectrodeGroups'        ); %RECOMMENDED
 
 
@@ -523,6 +524,7 @@ ieeg_json.SamplingFrequency            = header.Rate_Min;
 ieeg_json.PowerLineFrequency           = 50;
 ieeg_json.iEEGReference                = 'probably mastoid';
 ieeg_json.ElectrodeManufacturer        = 'AdTech';
+ieeg_json.iEEGPlacementScheme          = metadata.hemisphere;
 ieeg_json.iEEGElectrodeGroups          = metadata.format_info;
 if strfind(cfg.TaskName,'SPES') ~=0
     ieeg_json.ElectricalStimulation        = 'true';
@@ -535,8 +537,6 @@ for i=1:numel(fn)
         cfg.channels.(fn{i}) = repmat(cfg.channels.(fn{i}), header.Num_Chan, 1);
     end
 end
-
-
 
 
 %% iEEG  channels.tsv file
@@ -1670,7 +1670,7 @@ try
     str2parse=annots{task_idx,2};
     C=strsplit(str2parse,';');
     metadata.task_name=C{2};
-    
+      
     % Stimcurr unknown (in SPES)
     stimcur_idx=cellfun(@(x) contains(x,{'Stimcurr'}),annots(:,2));
     
@@ -2069,6 +2069,29 @@ try
         metadata.elec_info = 'SEEG';
     elseif contains(lower(metadata.format_info),'ecog')
         metadata.elec_info = 'ECoG';
+    end
+    
+    % Hemisphere where electrodes are placed
+    hemisphere_idx = cellfun(@(x) contains(x,{'Hemisphere'}),annots(:,2));
+    if (sum(hemisphere_idx) ~= 1)
+        if exist('ieeg_json','var') % if ieeg_json is loaded in determining Format
+            if isfield(ieeg_json,'iEEGPlacementScheme') % if iEEGPlacementScheme is in ieeg_json
+                metadata.hemisphere = ieeg_json.iEEGPlacementScheme;
+            else
+                warning('Hemisphere where electrodes are implanted is not mentioned')
+                metadata.hemisphere='unknown';
+            end
+        else
+            warning('Hemisphere where electrodes are implanted is not mentioned')
+            metadata.hemisphere='unknown';
+        end
+    else
+        str2parse=annots{hemisphere_idx,2};
+        C=strsplit(str2parse,{'; ',';'});
+        metadata.hemisphere=C{2};
+        if size(C,2) >2
+            warning('Annotation in "Hemisphere" might be incorrect')
+        end
     end
     
     %% add triggers
