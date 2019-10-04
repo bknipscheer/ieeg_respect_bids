@@ -29,6 +29,8 @@
 addpath(genpath('/home/dorien/git_rep/Paper_Hermes_2010_JNeuroMeth/'))
 addpath(('/home/dorien/git_rep/ieeg_respect_bids/electrode_positions/'))
 addpath(genpath('/home/dorien/git_rep/jsonlab/'))
+addpath(genpath('/home/dorien/git_rep/JSONio/'))
+addpath(genpath('/home/dorien/git_rep/BasicCode_ECoG_DvB/'))
 
 % cfg.dataPath = '/Fridge/chronic_ECoG';
 cfg.path_talairach = '/Fridge/users/dorien/MRI_defaced/talairach_mixed_with_skull.gca';
@@ -39,6 +41,7 @@ cfg.ses_label = input('Session number (ses-X): ','s');
 cfg.hemisphere = input('Hemisphere with implanted electrodes [l/r]: ','s');
 cfg.anat_directory = sprintf('/Fridge/users/dorien/dataBIDS/%s/%s/anat/',cfg.sub_labels{:},cfg.ses_label);
 cfg.ieeg_directory = sprintf('/Fridge/users/dorien/dataBIDS/%s/%s/ieeg/',cfg.sub_labels{:},cfg.ses_label);
+cfg.surface_directory = sprintf('/Fridge/users/dorien/dataBIDS/derivatives/surfaces/%s/%s/',cfg.sub_labels{:},cfg.ses_label);
 cfg.elec_input = sprintf('/Fridge/CCEP/%s/%s/ieeg/',cfg.sub_labels{:},cfg.ses_label);
 
 %% defacing MRI - RUN IN LINUX TERMINAL!
@@ -58,6 +61,10 @@ fprintf('mri_deface %s_%s_T1w.nii %s  %s %s_%s_proc_deface_T1w.nii\n',...
     cfg.path_face,...
     cfg.sub_labels{:},...
     cfg.ses_label);
+
+%% fill in coordsystem.json
+
+write_coordsystemJSON(cfg)
 
 %% run freesurfer to segment brain add Destrieux atlases - RUN IN LINUX TERMINAL!
 
@@ -82,7 +89,7 @@ fprintf('recon-all -autorecon-all -s %s -i %s%s_%s_proc-deface_T1w.nii -cw256\n'
 % folder in the freesurfer folder.
 
 
-%% 2) generate surface (The Hull) to project electrodes to
+%% 2) generate surface (The Hull) to project electrodes to - RUN IN LINUX TERMINAL
 % only for ECoG, because this is necessary to correct for brain-shift.
 % ECoG electrodes are projected to the hull.
 
@@ -90,14 +97,14 @@ fprintf('recon-all -autorecon-all -s %s -i %s%s_%s_proc-deface_T1w.nii -cw256\n'
 % this file to a .nii file so we can read it and use it to create the hull
 % (a tight balloon of where the electrodes should be on the pre-op MRI)
 
-% RUN IN LINUX TERMINAL:
 % Right click in the freesurfer/mri-folder and start Linux terminal.
 % Copy the printed lines in the command window into the linux terminal:
 fprintf('mri_convert ribbon.mgz t1_class.nii\n')
 
-settings_hull = [13,0.3];
+%% Create the hull
+settings_hull = [13,... % setting for smoothing
+                0.3]; % setting for threshold
 
-% Go back to Matlab and create the hull
 get_mask_V3(cfg.sub_labels{:},... % subject name
     [cfg.freesurfer_directory,cfg.sub_labels{:},'/mri/t1_class.nii'],... % freesurfer class file
     cfg.anat_directory,... % where you want to safe the file
@@ -277,6 +284,36 @@ for filenummer=1:100
         break
     end
 end
+
+%% 8) convert freesurfer file to .gii - RUN IN LINUX TERMINAL
+
+% Make surface folder
+if exist(cfg.surface_directory, 'dir')
+    fprintf('%s exists already\n',cfg.surface_directory)
+else
+    mkdir(cfg.surface_directory)
+end
+
+% Right click in the dataBIDS/derivatives/freesurfer/sub-,./surf-folder and
+% start Linux terminal.
+% Copy the printed lines in the command window into the linux terminal:
+fprintf('mris_convert %sh.pial %sh.pial.gii\n',cfg.hemisphere,cfg.hemisphere)
+
+%% 9) add labels of atlases to tsv-file 
+
+% copy Xh.pial.gii to derivatives folder
+copyfile([cfg.freesurfer_directory,cfg.sub_labels{:},'/surf/',sprintf('%sh.pial.gii',cfg.hemisphere)],...
+    [cfg.surface_directory,cfg.sub_labels{:} '_', cfg.ses_label,sprintf('_T1w_pial.%s.surf.gii',cfg.hemisphere)])
+
+electrodes_tableWithlabels = lookupAtlases(cfg);
+
+%% 10) check rendering with atlases and electrodes
+
+cfg.view_atlas='yes';
+cfg.view_elec='yes';
+cfg.show_labels='yes';
+
+check_atlas_elec_MRI(cfg)
 
 
 
