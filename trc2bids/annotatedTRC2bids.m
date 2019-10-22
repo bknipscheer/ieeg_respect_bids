@@ -133,10 +133,17 @@ try
         run_label     = strcat('run-',deblank(metadata.run_name),header.hour,header.min,' ','');
         
         % make directories
-        sub_dir       = fullfile([proj_diroutput,proj_diroutputcopy],sub_label);
-        ses_dir       = fullfile([proj_diroutput,proj_diroutputcopy],sub_label,ses_label);
-        ieeg_dir      = fullfile([proj_diroutput,proj_diroutputcopy],sub_label,ses_label,'ieeg');
-        ieeg_file     = strcat(sub_label,'_',ses_label,'_',task_label,'_',run_label);
+        if ~isempty(proj_diroutputcopy{1})
+            sub_dir       = fullfile([proj_diroutput,proj_diroutputcopy],sub_label);
+            ses_dir       = fullfile([proj_diroutput,proj_diroutputcopy],sub_label,ses_label);
+            ieeg_dir      = fullfile([proj_diroutput,proj_diroutputcopy],sub_label,ses_label,'ieeg');
+            ieeg_file     = strcat(sub_label,'_',ses_label,'_',task_label,'_',run_label);
+        else
+            sub_dir       = fullfile(proj_diroutput,sub_label);
+            ses_dir       = fullfile(proj_diroutput,sub_label,ses_label);
+            ieeg_dir      = fullfile(proj_diroutput,sub_label,ses_label,'ieeg');
+            ieeg_file     = strcat(sub_label,'_',ses_label,'_',task_label,'_',run_label);
+        end
         
         for i=1:size(sub_dir,2)
             mydirMaker(sub_dir{i});
@@ -1557,10 +1564,12 @@ if ~isempty(metadata.spes) || ~isempty(metadata.esm) || ~isempty(metadata.stimul
     site_channum    = {site_channum{noSPEStype},site_channum{I}};
     stim_cur        = {stim_cur{noSPEStype},stim_cur{I}};
     notes           = {notes{noSPEStype},notes{I}};
+    
+    
 end
 
 
-if isempty(s_start)
+if isempty(eventsannots.s_start)
     s_start= 'n/a';
     s_end = 'n/a';
     duration = 'n/a';
@@ -1575,9 +1584,25 @@ if isempty(s_start)
     site_channum='n/a';
     stim_cur='n/a';
     notes='n/a';
+else
+    s_start         = eventsannots.s_start;
+    s_end           = eventsannots.s_end;
+    duration        = eventsannots.duration;
+    type            = eventsannots.type;
+    sub_type        = eventsannots.sub_type;
+    ch_name_on      = eventsannots.ch_name_on;
+    ch_name_off     = eventsannots.ch_name_off;
+    samp_start      = eventsannots.samp_start;
+    samp_end        = eventsannots.samp_end;
+    stim_type       = eventsannots.stim_type;
+    site_name       = eventsannots.site_name;
+    site_channum    = eventsannots.site_channum;
+    stim_cur        = eventsannots.stim_cur;
+    notes           = eventsannots.notes;
+
 end
 
-annotation_tsv  = table(s_start', s_end', duration', type', sub_type', ch_name_on', ch_name_off', samp_start', samp_end', stim_type', site_name', site_channum',stim_cur', notes',  ...
+annotation_tsv  = table(s_start', s_end', duration', type', sub_type', ch_name_on', ch_name_off', samp_start', samp_end', stim_type', site_name', site_channum', stim_cur', notes',  ...
     'VariableNames',{'onset', 'offset','duration','trial_type', 'sub_type','electrodes_involved_onset','electrodes_involved_offset','sample_start','sample_end','electrical_stimulation_type','electrical_stimulation_site','electrical_stimulation_site_num','electrical_stimulation_current','notes' });
 
 if ~isempty(annotation_tsv)
