@@ -172,8 +172,8 @@ try
         fchs_name = strcat(sub_label,'_',ses_label,'_',task_label,'_',run_label,'_','channels','.tsv');
         fevents_name = strcat(sub_label,'_',ses_label,'_',task_label,'_',run_label,'_','events','.tsv');
         felec_name = strcat(sub_label,'_',ses_label,'_','electrodes','.tsv');
-        fcoords_name = strcat(sub_label,'_',ses_label,'_','coordsystem','.json');
-        fpic_name = strcat(sub_label,'_',ses_label,'_','photo','.jpg');
+%         fcoords_name = strcat(sub_label,'_',ses_label,'_','coordsystem','.json');
+%         fpic_name = strcat(sub_label,'_',ses_label,'_','photo','.jpg');
         
         % file ieeg of the recording to .vhdr extension
         fileTRC = cell(1);
@@ -271,23 +271,23 @@ try
             end
         end
         
-        %% create coordsystem.json
-        cfg.outputfile                  = fileVHDR{1};
-        cfg.coordsystem.iEEGCoordinateSystem                = []  ;
-        cfg.coordsystem.iEEGCoordinateUnits                 = []      ;
-        cfg.coordsystem.iEEGCoordinateProcessingDescription = []    ;
-        cfg.coordsystem.IntendedFor                         =  fpic_name;
-        
-        json_coordsystem(cfg)
-        
-         % to each output-file in fileVHDRcopy, the json coordsystem should be copied
-        if ~isempty(fileVHDRcopy{1})
-            for i=1:size(fileVHDRcopy,2)
-                cfg.outputfile = fileVHDRcopy{i};
-                json_coordsystem(cfg);
-            end
-        end
-        
+%         %% create coordsystem.json --> is made when adding electrode positions
+%         cfg.outputfile                  = fileVHDR{1};
+%         cfg.coordsystem.iEEGCoordinateSystem                = []  ;
+%         cfg.coordsystem.iEEGCoordinateUnits                 = []      ;
+%         cfg.coordsystem.iEEGCoordinateProcessingDescription = []    ;
+%         cfg.coordsystem.IntendedFor                         =  fpic_name;
+%         
+%         json_coordsystem(cfg)
+%         
+%          % to each output-file in fileVHDRcopy, the json coordsystem should be copied
+%         if ~isempty(fileVHDRcopy{1})
+%             for i=1:size(fileVHDRcopy,2)
+%                 cfg.outputfile = fileVHDRcopy{i};
+%                 json_coordsystem(cfg);
+%             end
+%         end
+%         
         %% write annotations of the TRC
         cfg.outputfile                  = fileVHDR{1};
         annotations_tsv = write_annotations_tsv(header,metadata,annots,cfg);
@@ -1679,7 +1679,7 @@ try
     str2parse=annots{run_idx,2};
     C=strsplit(str2parse,';');
     D = strsplit(C{2},'y');
-    if str2num(D{2}) <10
+    if str2double(D{2}) <10
         metadata.run_name=['0' D{2}];
     else
         metadata.run_name=D{2};
@@ -1743,15 +1743,15 @@ try
                     test2 = ch{i};
                 end
                 
-                if sum(cellfun(@(x) strcmp(x,test1),elec_name)) == 1
-                    idx = cellfun(@(x) strcmp(x,test1),elec_name);
+                if sum(cellfun(@(x) strcmpi(x,test1),elec_name)) == 1
+                    idx = cellfun(@(x) strcmpi(x,test1),elec_name);
                     elec_incl(i) = ~strcmp(cc_elecs.group{idx},'other');
                     elec_soz(i) = strcmp(cc_elecs.soz{idx},'yes');
                     elec_silicon(i) = strcmp(cc_elecs.silicon{idx},'yes');
                     elec_resected(i) = strcmp(cc_elecs.resected{idx},'yes');                    
                     elec_edge(i) = strcmp(cc_elecs.edge{idx},'yes');
-                elseif sum(cellfun(@(x) strcmp(x,test2),elec_name)) == 1
-                    idx = cellfun(@(x) strcmp(x,test2),elec_name);
+                elseif sum(cellfun(@(x) strcmpi(x,test2),elec_name)) == 1
+                    idx = cellfun(@(x) strcmpi(x,test2),elec_name);
                     elec_incl(i) = ~strcmp(cc_elecs.group{idx},'other');                    
                     elec_soz(i) = strcmp(cc_elecs.soz{idx},'yes');
                     elec_silicon(i) = strcmp(cc_elecs.silicon{idx},'yes');
@@ -2702,7 +2702,7 @@ elseif strcmpi(metadata.elec_info,'ECoG')
                     idx_strip = ~idx_strip;
                     idx_strips = idx_strips + idx_strip;
                 end
-            elseif depthnum >stripnum
+            elseif depthnum > stripnum
                 if ngridnum(i) > stripnum && ngridnum(i) < depthnum
                     idx_strip = regexpi(ch_label,C{ngridnum(i)-1});
                     idx_strip = cellfun(@isempty,idx_strip);
@@ -2710,7 +2710,14 @@ elseif strcmpi(metadata.elec_info,'ECoG')
                     idx_strips = idx_strips + idx_strip;
                     
                 elseif ngridnum(i) > depthnum
+                    % this finds all electrodes with a specific name, so
+                    % for example when depth electrode is called 'L', then
+                    % the grid electrodes 'CL'  will also be noted as depth
+                    % electrodes
                     idx_depth = regexpi(ch_label,C{ngridnum(i)-1});
+                    % this searches for when the 'L' is mentioned as first,
+                    % otherwise the 'L' is part of another electrodename
+                    idx_depth = cellfun(@(x) find(x==1), idx_depth, 'UniformOutput', false);
                     idx_depth = cellfun(@isempty,idx_depth);
                     idx_depth = ~idx_depth;
                     idx_depths = idx_depths + idx_depth;
