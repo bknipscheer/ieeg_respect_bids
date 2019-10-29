@@ -24,62 +24,47 @@
 % that can be run in matlab. The parts that should be run in a linux
 % terminal have "run in linux terminal" in the section title.
 
-% Make sure SPM functions are in your Matlab path
+config_elecPositions
 
-addpath(genpath('/home/dorien/git_rep/Paper_Hermes_2010_JNeuroMeth/'))
-addpath(('/home/dorien/git_rep/ieeg_respect_bids/electrode_positions/'))
-addpath(genpath('/home/dorien/git_rep/jsonlab/'))
-addpath(genpath('/home/dorien/git_rep/JSONio/'))
-addpath(genpath('/home/dorien/git_rep/BasicCode_ECoG_DvB/'))
+%% step 3: defacing MRI - RUN IN LINUX TERMINAL!
 
-% cfg.dataPath = '/Fridge/chronic_ECoG';
-cfg.path_talairach = '/Fridge/users/dorien/MRI_defaced/talairach_mixed_with_skull.gca';
-cfg.path_face = '/Fridge/users/dorien/MRI_defaced/face.gca';
-cfg.freesurfer_directory = '/Fridge/users/dorien/dataBIDS/derivatives/freesurfer/';
-cfg.sub_labels = {['sub-' input('Patient number (RESPXXXX): ','s')]};
-cfg.ses_label = input('Session number (ses-X): ','s');
-cfg.hemisphere = input('Hemisphere with implanted electrodes [l/r]: ','s');
-cfg.anat_directory = sprintf('/Fridge/users/dorien/dataBIDS/%s/%s/anat/',cfg.sub_labels{:},cfg.ses_label);
-cfg.ieeg_directory = sprintf('/Fridge/users/dorien/dataBIDS/%s/%s/ieeg/',cfg.sub_labels{:},cfg.ses_label);
-cfg.surface_directory = sprintf('/Fridge/users/dorien/dataBIDS/derivatives/surfaces/%s/%s/',cfg.sub_labels{:},cfg.ses_label);
-cfg.elec_input = sprintf('/Fridge/CCEP/%s/%s/ieeg/',cfg.sub_labels{:},cfg.ses_label);
-
-%% defacing MRI - RUN IN LINUX TERMINAL!
+clc
 
 % Find the original MRI and copy this to the folder you're using.
 % Rename the original MRI to (run the line below and copy the printed line in the command window):
-fprintf('%s_%s_proc_deface_T1w.nii\n',...
+fprintf('\n ----- RENAME T1WEIGHTED MRI TO: ----- \n %s_%s_T1w.nii\n',...
     cfg.sub_labels{:},...
     cfg.ses_label);
 
 % Right click in the folder with the original MRI and start Linux terminal.
 % Copy the printed lines in the command window to deface the MRI in the linux terminal:
-fprintf('mri_deface %s_%s_T1w.nii %s  %s %s_%s_proc_deface_T1w.nii\n',...
+fprintf('\n ----- RUN LINE BELOW IN LINUX TERMINAL ----- \n mri_deface %s_%s_T1w.nii %s  %s %s_%s_proc-deface_T1w.nii\n',...
     cfg.sub_labels{:},...
     cfg.ses_label,...
     cfg.path_talairach,...
     cfg.path_face,...
     cfg.sub_labels{:},...
     cfg.ses_label);
+% this takes around 5 minutes
 
-%% fill in coordsystem.json
+% Copy the defaced MRI to the/sub-RESPXXXX/ses-X/anat-folder
+fprintf('\n ----- COPY DEFACED MRI TO %s -----\n', cfg.anat_directory)
 
-write_coordsystemJSON(cfg)
-
-%% run freesurfer to segment brain add Destrieux atlases - RUN IN LINUX TERMINAL!
+%% STEP 4: run freesurfer to segment brain add Destrieux atlases - RUN IN LINUX TERMINAL!
+clc
 
 % Make a freesurfer folder
 if exist(cfg.freesurfer_directory, 'dir')
-    fprintf('%s exists already\n',cfg.freesurfer_directory)
+%     fprintf('\n%s exists already\n',cfg.freesurfer_directory)
 else
     mkdir(cfg.freesurfer_directory)
 end
 
 % Right click in the folder with the original MRI and start Linux terminal.
 % Copy the printed lines in the command window into the linux terminal:
-fprintf('export SUBJECTS_DIR=%s\n',cfg.freesurfer_directory)
+fprintf('\n ----- RUN LINE BELOW IN LINUX TERMINAL ----- \nexport SUBJECTS_DIR=%s\n',cfg.freesurfer_directory)
 % Copy the printed lines in the command window to run Freesurfer in the linux terminal:
-fprintf('recon-all -autorecon-all -s %s -i %s%s_%s_proc-deface_T1w.nii -cw256\n',...
+fprintf('\n ----- RUN LINE BELOW IN LINUX TERMINAL ----- \nrecon-all -autorecon-all -s %s -i %s%s_%s_proc-deface_T1w.nii -cw256\n',...
     cfg.sub_labels{:},...
     cfg.anat_directory,...
     cfg.sub_labels{:},...
@@ -88,8 +73,8 @@ fprintf('recon-all -autorecon-all -s %s -i %s%s_%s_proc-deface_T1w.nii -cw256\n'
 % This takes up to 12 hours to run! In the end, you will see a subject
 % folder in the freesurfer folder.
 
-
-%% 2) generate surface (The Hull) to project electrodes to - RUN IN LINUX TERMINAL
+%% STEP5: generate surface (The Hull) to project electrodes to - RUN IN LINUX TERMINAL
+clc
 % only for ECoG, because this is necessary to correct for brain-shift.
 % ECoG electrodes are projected to the hull.
 
@@ -99,37 +84,41 @@ fprintf('recon-all -autorecon-all -s %s -i %s%s_%s_proc-deface_T1w.nii -cw256\n'
 
 % Right click in the freesurfer/mri-folder and start Linux terminal.
 % Copy the printed lines in the command window into the linux terminal:
-fprintf('mri_convert ribbon.mgz t1_class.nii\n')
+fprintf('\n ----- OPEN %smri AND RUN LINE BELOW IN LINUX TERMINAL ----- \nmri_convert ribbon.mgz t1_class.nii\n',cfg.freesurfer_directory)
 
-%% Create the hull
+%% STEP 6: Create the hull - matlab
 settings_hull = [13,... % setting for smoothing
                 0.3]; % setting for threshold
 
 get_mask_V3(cfg.sub_labels{:},... % subject name
-    [cfg.freesurfer_directory,cfg.sub_labels{:},'/mri/t1_class.nii'],... % freesurfer class file
+    [cfg.freesurfer_directory,'mri/t1_class.nii'],... % freesurfer class file
     cfg.anat_directory,... % where you want to safe the file
     cfg.hemisphere,... % 'l' for left 'r' for right --> only use the hemisphere where electrodes are located
     settings_hull(1),...% setting for smoothing
     settings_hull(2)); % settings for  threshold
 % the hull is saved as sub-RESPXXXX_surface1_13_03.img
 
-%% check hull - RUN IN Linux TERMINAL
+%% STEP 7: check hull - RUN IN Linux TERMINAL
 % type 'mricron'
 % load the MRI
 % put the hull as overlay on top of the mri
 % check whether the hull looks like it matches the dura (should be a tight
 % baloon around the grey matter)
 
-%% 3) select electrodes from ct
+%% STEP 8: select electrodes from ct
 % the order in which you click electrodes does not matter. Just make sure
 % you click all electrodes implanted!
+
+fprintf(' -----OPEN THE CT-SCAN AND CLICK ON ALL ELECTRODES. YOU CAN CHECK WHETHER YOU HAVE ALL ELECTRODES BY CLICKING ON VIEW RESULT ----- \n')
 
 ctmr
 % view result
 % save image: saves as nifti hdr and img files
 % this is saved as electrodes1.hdr and electrodes1.img
 
-%% 4) sort unprojected electrodes
+%% STEP 9: sort unprojected electrodes
+
+fprintf('------ OPEN THE ELECTRODES.TSV \n-----')
 % open electrodes.tsv
 [filename, pathname] = uigetfile('*.tsv;*.tsv','Select electroces.tsv file',cfg.elec_input);
 tb_elecs = readtable(fullfile(pathname,filename),'FileType','text','Delimiter','\t');
@@ -141,6 +130,8 @@ else
     mkdir(cfg.ieeg_directory)
 end
 
+fprintf('------ OPEN THE CLICKED ELECTRODES YOU SAVED IN THE PREVIOUS STEP \n-----')
+
 % sort unprojected electrodes
 cfg.saveFile = sprintf('%s%s_%s_electrodes_temp.mat',cfg.ieeg_directory,cfg.sub_labels{:},cfg.ses_label);
 sortElectrodes(tb_elecs,cfg); % [electrode labels, folder to save]
@@ -148,7 +139,7 @@ fprintf('Matched electrodes are saved in %s\n',cfg.saveFile)
 % loads img file with electrodes from previous step
 % saves in electrodes_temp.mat;
 
-%% 5) plot electrodes 2 surface
+%% STEP 10: plot electrodes 2 surface
 % corrects for the brain shift - ONLY for ECoG
 % 1xN STRIP: do not project any electrodes that are already close to the
 %               surfaces, such as subtemporal and interhemispheric
@@ -157,6 +148,9 @@ fprintf('Matched electrodes are saved in %s\n',cfg.saveFile)
 % open electrodes.tsv
 [filename, pathname] = uigetfile('*.tsv;*.tsv','Select electroces.tsv file',cfg.elec_input);
 tb_elecs = readtable(fullfile(pathname,filename),'FileType','text','Delimiter','\t');
+
+[filename, pathname] = uigetfile('*.mat','Select electrodes_temp.mat',cfg.elec_input);
+load(fullfile(pathname,filename));
 
 % only select letters from channelname
 letters = regexp(tb_elecs.name,'[a-z_A-Z]');
@@ -175,7 +169,7 @@ changroups = chansplit(diff(contains(chansplit,']'))==1);
 % electrodes on strip subtemporal or interhemispheric should be skipped
 % because they are already located close to brain surface.
 fprintf('Which electrodes should be skipped since they are already close to surfaces? \n')
-fprintf('(such as subtemporal, interhemispheric)? \n')
+fprintf('(such as subtemporal, interhemispheric, depth)? \n')
 fprintf('choose from %s %s %s %s %s %s', changroups{:});
 skip_elec = input(': ','s');
 skip_elec = strsplit(skip_elec,{', ',',',' '});
@@ -244,48 +238,36 @@ tb_elecs.x = elecmatrix_shift(:,1);
 tb_elecs.y = elecmatrix_shift(:,2);
 tb_elecs.z = elecmatrix_shift(:,3);
 
-%% save electrode positions, corrected for brain shift to electrodes.tsv
+
+%% STEP 11: save electrode positions, corrected for brain shift to electrodes.tsv
 
 saveFile = replace(cfg.saveFile,'_temp.mat','.tsv');
 writetable(tb_elecs, saveFile, 'Delimiter', 'tab', 'FileType', 'text');
 fprintf('Electrode positions, corrected for brainshift, are saved in %s\n',saveFile)
 % TODO: change NaN to n/a!!
 
-%% 6) combine electrode files into one and make an image
-% Only necessary if you did step 5), because each grid/strip is projected
-% separately...
-% The separate projection can maybe be fixed by using code from iElvis or
-% the Dykstra method...
-
-% not necessary since we use electrodes.tsv directly
-% elecmatrix=nan(126,3);
-%
-% a = load('/home/dorien/Desktopelectrodes_loc1.mat'); %
-% elecmatrix(1:64,:) = a.elecmatrix;
-% a = load('/home/dorien/Desktopelectrodes_loc2.mat'); %
-% elecmatrix(65:90,:) = a.elecmatrix;
-% a = load('/home/dorien/Desktopelectrodes_loc3.mat'); %
-% elecmatrix(97:126,:) = a.elecmatrix;
-%
-% save('/home/dorien/Desktop/Fransen_elecmatrix','elecmatrix')
-
-%% 7) Write electrode positions as numbers in a nifti
+%% STEP 12: Write electrode positions as numbers in a nifti
 % This is not necessary, only if you want to do some extra checks or so.
 % e.g. it can be nice to visualize the projected electrodes in MRIcron.
+% to visualize in MRIcron: open the defaced MRI and add the surface_all.img
+% as overlay
+
 [output,els,els_ind,outputStruct] = position2reslicedImage(elecmatrix_shift,[cfg.anat_directory, cfg.sub_labels{:},'_',cfg.ses_label,'_proc-deface_T1w.nii']);
 
 for filenummer=1:100
     save([cfg.ieeg_directory cfg.sub_labels{:} '_' cfg.ses_label,'_electrodes_surface_loc_all' int2str(filenummer) '.mat'],'elecmatrix_shift');
     outputStruct.fname=[cfg.anat_directory,cfg.sub_labels{:},'_',cfg.ses_label,'_electrodes_surface_all' int2str(filenummer) '.img' ];
     if ~exist(outputStruct.fname,'file')>0
-        disp(['saving ' outputStruct.fname]);
+        fprintf('----- SAVING %s ------ \n', outputStruct.fname);
         % save the data
         spm_write_vol(outputStruct,output);
         break
     end
 end
 
-%% 8) convert freesurfer file to .gii - RUN IN LINUX TERMINAL
+
+%% STEP 13: convert freesurfer file to .gii - RUN IN LINUX TERMINAL
+clc
 
 % Make surface folder
 if exist(cfg.surface_directory, 'dir')
@@ -297,23 +279,146 @@ end
 % Right click in the dataBIDS/derivatives/freesurfer/sub-,./surf-folder and
 % start Linux terminal.
 % Copy the printed lines in the command window into the linux terminal:
-fprintf('mris_convert %sh.pial %sh.pial.gii\n',cfg.hemisphere,cfg.hemisphere)
+fprintf('\n ----- OPEN %s%s/surf/ AND RUN LINE BELOW IN LINUX TERMINAL ----- \nmris_convert %sh.pial %sh.pial.gii\n',cfg.freesurfer_directory,cfg.sub_labels{1},cfg.hemisphere,cfg.hemisphere)
 
-%% 9) add labels of atlases to tsv-file 
+%% STEP 14: add labels of atlases to tsv-file 
 
 % copy Xh.pial.gii to derivatives folder
-copyfile([cfg.freesurfer_directory,cfg.sub_labels{:},'/surf/',sprintf('%sh.pial.gii',cfg.hemisphere)],...
+copyfile([cfg.freesurfer_directory,'surf/',sprintf('%sh.pial.gii',cfg.hemisphere)],...
     [cfg.surface_directory,cfg.sub_labels{:} '_', cfg.ses_label,sprintf('_T1w_pial.%s.surf.gii',cfg.hemisphere)])
 
-electrodes_tableWithlabels = lookupAtlases(cfg);
+[tb_elecs_atlases, cfg.destrieux_labels, cfg.DKT_labels] = lookupAtlases(cfg,tb_elecs);
 
-%% 10) check rendering with atlases and electrodes
+disp('Atlases added')
 
-cfg.view_atlas='yes';
-cfg.view_elec='yes';
-cfg.show_labels='yes';
+%% STEP 15: CHECK ATLAS WITH ELECTRODE POSITIONS 
 
-check_atlas_elec_MRI(cfg)
+cfg.show_labels = 'yes';
+cfg.change_size = 'no';
+cfg.change_color = 'no';
+cfg.view_atlas ='yes';
+% cfg.atlas = 'Destrieux'; % [DKT/Destrieux]
+cfg.atlas = 'DKT'; % [DKT/Destrieux]
+cfg.view_elec ='yes';
+
+check_atlas_elec_MRI(cfg,tb_elecs_atlases)
+
+%% STEP 16: save electrodes.tsv, make electrodes descriptor, write coordsystem and add hemisphere to existing ieeg_json files
+
+addpath('git_rep/fieldtrip/')
+ft_defaults
+
+writetable(tb_elecs_atlases, ...
+    fullfile(cfg.ieeg_directory, ...
+    [cfg.sub_labels{:} '_' cfg.ses_label '_electrodes.tsv' ]),...
+    'Filetype','text','Delimiter','\t');
+
+fprintf('Saved %s\n',fullfile(cfg.ieeg_directory, ...
+    [cfg.sub_labels{:} '_' cfg.ses_label '_electrodes.tsv' ]))
+
+% 6. create electrodes descriptor
+
+create_elecDesc(cfg.home_directory,cfg)
+
+% 7. write coordsystem
+
+write_coordsystemJSON(cfg)
+
+% 8. add hemisphere to ieeg_json files 
+
+D = dir(cfg.ieeg_directory);
+ieeg_json_filenums = contains({D(:).name},'_ieeg.json');
+
+for i=1:size(D,1)
+    if ieeg_json_filenums(i) == 1
+        ieeg_json = read_json([D(i).folder '/' D(i).name] );
+        if strcmpi(cfg.hemisphere,'r')
+            ieeg_json.iEEGPlacementScheme = 'right';
+        elseif strcmpi(cfg.hemisphere,'l')
+            ieeg_json.iEEGPlacementScheme = 'left';
+        end
+        write_json([D(i).folder '/' D(i).name], ieeg_json)
+    end
+end
+
+%% now, everything is in the /Fridge/CCEP folder, 
+% copy all to /Fridge/chronic_ECoG
+
+cfg.home_directory = '/Fridge/chronic_ECoG/';
+cfg.freesurfer_directory = sprintf('%sderivatives/freesurfer/%s/%s/',cfg.home_directory,cfg.sub_labels{:},cfg.ses_label);
+cfg.anat_directory = sprintf('%s%s/%s/anat/',cfg.home_directory,cfg.sub_labels{:},cfg.ses_label);
+cfg.ieeg_directory = sprintf('%s%s/%s/ieeg/',cfg.home_directory,cfg.sub_labels{:},cfg.ses_label);
+cfg.surface_directory = sprintf('%sderivatives/surfaces/%s/%s/',cfg.home_directory,cfg.sub_labels{:},cfg.ses_label);
+cfg.elec_input = sprintf('%s%s/%s/ieeg/',cfg.home_directory,cfg.sub_labels{:},cfg.ses_label);
+
+% 5B. save electrodes.tsv 
+writetable(tb_elecs_atlases, ...
+    fullfile(cfg.ieeg_directory, ...
+    [cfg.sub_labels{:} '_' cfg.ses_label '_electrodes.tsv' ]),...
+    'Filetype','text','Delimiter','\t');
+
+disp('Saved electrodes.tsv')
+
+% 6. create electrodes descriptor
+
+create_elecDesc(cfg.home_directory,cfg)
+
+% 7. write coordsystem
+
+write_coordsystemJSON(cfg)
+
+% 8. add hemisphere to ieeg_json files 
+
+D = dir(cfg.ieeg_directory);
+ieeg_json_filenums = contains({D(:).name},'_ieeg.json');
+
+for i=1:size(D,1)
+    if ieeg_json_filenums(i) == 1
+        ieeg_json = read_json([D(i).folder '/' D(i).name] );
+        if strcmpi(cfg.hemisphere,'r')
+            ieeg_json.iEEGPlacementScheme = 'right';
+        elseif strcmpi(cfg.hemisphere,'l')
+            ieeg_json.iEEGPlacementScheme = 'left';
+        end
+        write_json([D(i).folder '/' D(i).name], ieeg_json)
+    end
+end
+
+
+
+%% FUNCTIONS
+            
+function json = read_json(filename)
+ft_info('reading %s\n', filename);
+if ft_hastoolbox('jsonlab', 3)
+    json = loadjson(filename);
+else
+    fid = fopen(filename, 'r');
+    str = fread(fid, [1 inf], 'char=>char');
+    fclose(fid);
+    json = jsondecode(str);
+end
+end
+
+function write_json(filename, json)
+json = remove_empty(json);
+ft_info('writing %s\n', filename);
+if ft_hastoolbox('jsonlab', 3)
+    savejson('', json, filename);
+else
+    str = jsonencode(json);
+    fid = fopen(filename, 'w');
+    fwrite(fid, str);
+    fclose(fid);
+end
+end
+
+function s = remove_empty(s)
+fn = fieldnames(s);
+fn = fn(structfun(@isempty, s));
+s = removefields(s, fn);
+end
+
 
 
 
