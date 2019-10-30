@@ -281,6 +281,32 @@ end
 % Copy the printed lines in the command window into the linux terminal:
 fprintf('\n ----- OPEN %s%s/surf/ AND RUN LINE BELOW IN LINUX TERMINAL ----- \nmris_convert %sh.pial %sh.pial.gii\n',cfg.freesurfer_directory,cfg.sub_labels{1},cfg.hemisphere,cfg.hemisphere)
 
+%%%% Convert the .gii coordinates to the MRI native space %%%
+% load the Freesurfer gifti (freesurfer coordinates)
+g = gifti('ADD HERE THER PATH TO YOUR GIFTI Xh.pial.gii']);
+
+% convert from freesurfer space to original space
+% the transformation matrix is in the /freesurfer/sub/mri/orig.mgz file:
+mri_orig = ([dataRootPath '/derivatives/freesurfer/sub-' subj '/mri/orig.mgz']);
+orig = MRIread(mri_orig); % MRIread is a function from vistasoft
+Torig = orig.tkrvox2ras;
+Norig = orig.vox2ras;
+freeSurfer2T1 = Norig*inv(Torig);
+
+% convert freesurfer vertices to original T1 space
+vert_mat = double(([g.vertices ones(size(g.vertices,1),1)])');
+vert_mat = freeSurfer2T1*vert_mat;
+vert_mat(4,:) = [];
+vert_mat = vert_mat';
+g.vertices = vert_mat; clear vert_mat
+
+% save correct coordinates back as a gifti
+gifti_name = ['ADD HERE THER PATH/NAME TO YOUR GIFTI /surfaces/sub-' subj '/sub-' subj '_T1w_pial.' hemi_cap{s} '.surf.gii'];
+
+save(g,gifti_name,'Base64Binary')
+
+disp('gifti converted to original space')
+
 %% STEP 14: add labels of atlases to tsv-file 
 
 % copy Xh.pial.gii to derivatives folder
