@@ -281,13 +281,13 @@ end
 % Copy the printed lines in the command window into the linux terminal:
 fprintf('\n ----- OPEN %s%s/surf/ AND RUN LINE BELOW IN LINUX TERMINAL ----- \nmris_convert %sh.pial %sh.pial.gii\n',cfg.freesurfer_directory,cfg.sub_labels{1},cfg.hemisphere,cfg.hemisphere)
 
-%%%% Convert the .gii coordinates to the MRI native space %%%
+%% %% Convert the .gii coordinates to the MRI native space %%%
 % load the Freesurfer gifti (freesurfer coordinates)
-g = gifti('ADD HERE THER PATH TO YOUR GIFTI Xh.pial.gii']);
+g = gifti(fullfile(cfg.freesurfer_directory,'surf',[cfg.hemisphere,'h.pial.gii']));
 
 % convert from freesurfer space to original space
 % the transformation matrix is in the /freesurfer/sub/mri/orig.mgz file:
-mri_orig = ([dataRootPath '/derivatives/freesurfer/sub-' subj '/mri/orig.mgz']);
+mri_orig = fullfile(cfg.freesurfer_directory,'mri','orig.mgz');
 orig = MRIread(mri_orig); % MRIread is a function from vistasoft
 Torig = orig.tkrvox2ras;
 Norig = orig.vox2ras;
@@ -301,17 +301,14 @@ vert_mat = vert_mat';
 g.vertices = vert_mat; clear vert_mat
 
 % save correct coordinates back as a gifti
-gifti_name = ['ADD HERE THER PATH/NAME TO YOUR GIFTI /surfaces/sub-' subj '/sub-' subj '_T1w_pial.' hemi_cap{s} '.surf.gii'];
+gifti_name = fullfile(cfg.surface_directory, ...
+[cfg.sub_labels{:},'_',cfg.ses_label,'_T1w_pial.' cfg.hemisphere '.surf.gii']);
 
 save(g,gifti_name,'Base64Binary')
 
 disp('gifti converted to original space')
 
 %% STEP 14: add labels of atlases to tsv-file 
-
-% copy Xh.pial.gii to derivatives folder
-copyfile([cfg.freesurfer_directory,'surf/',sprintf('%sh.pial.gii',cfg.hemisphere)],...
-    [cfg.surface_directory,cfg.sub_labels{:} '_', cfg.ses_label,sprintf('_T1w_pial.%s.surf.gii',cfg.hemisphere)])
 
 [tb_elecs_atlases, cfg.destrieux_labels, cfg.DKT_labels] = lookupAtlases(cfg,tb_elecs);
 
@@ -331,7 +328,8 @@ check_atlas_elec_MRI(cfg,tb_elecs_atlases)
 
 %% STEP 16: save electrodes.tsv, make electrodes descriptor, write coordsystem and add hemisphere to existing ieeg_json files
 
-addpath('git_rep/fieldtrip/')
+addpath(cfg.fieldtrip_folder) 
+addpath(cfg.fieldtrip_private)
 ft_defaults
 
 writetable(tb_elecs_atlases, ...
