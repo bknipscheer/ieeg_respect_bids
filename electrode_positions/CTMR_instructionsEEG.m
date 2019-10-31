@@ -19,14 +19,14 @@
 
 % DvB - made it usable with BIDS electrodes.tsv September 2019
 
-%% 0) preparations
+%% 0) preparations - matlab
 % This script has a part that should be run in a linux terminal, and part
 % that can be run in matlab. The parts that should be run in a linux
 % terminal have "run in linux terminal" in the section title.
 
 config_elecPositions
 
-%% step 3: defacing MRI - RUN IN LINUX TERMINAL!
+%% STEP 3: defacing MRI - RUN IN LINUX TERMINAL!
 
 clc
 
@@ -38,7 +38,10 @@ fprintf('\n ----- RENAME T1WEIGHTED MRI TO: ----- \n %s_%s_T1w.nii\n',...
 
 % Right click in the folder with the original MRI and start Linux terminal.
 % Copy the printed lines in the command window to deface the MRI in the linux terminal:
-fprintf('\n ----- RUN LINE BELOW IN LINUX TERMINAL ----- \n mri_deface %s_%s_T1w.nii %s  %s %s_%s_proc-deface_T1w.nii\n',...
+fprintf('\n ----- OPEN %ssourcedata/%s/%s/anat/  ----- \n ----- CLICK WITH RIGHT MOUSE AND OPEN LINUX TERMINAL -----\n ----- RUN LINE BELOW IN LINUX TERMINAL ----- \n mri_deface %s_%s_T1w.nii %s  %s %s_%s_proc-deface_T1w.nii\n',...
+    cfg.home_directory,...
+    cfg.sub_labels{:},...
+    cfg.ses_label,...
     cfg.sub_labels{:},...
     cfg.ses_label,...
     cfg.path_talairach,...
@@ -47,8 +50,10 @@ fprintf('\n ----- RUN LINE BELOW IN LINUX TERMINAL ----- \n mri_deface %s_%s_T1w
     cfg.ses_label);
 % this takes around 5 minutes
 
+fprintf('\n ----- RUN LINE BELOW IN LINUX TERMINAL, OPEN DEFACED MRI TO CHECK DEFACING ----- \n mricron \n')
+
 % Copy the defaced MRI to the/sub-RESPXXXX/ses-X/anat-folder
-fprintf('\n ----- COPY DEFACED MRI TO %s -----\n', cfg.anat_directory)
+fprintf('\n ----- IF DEFACING WAS CORRECT, COPY DEFACED MRI TO %s -----\n', cfg.anat_directory)
 
 %% STEP 4: run freesurfer to segment brain add Destrieux atlases - RUN IN LINUX TERMINAL!
 clc
@@ -62,7 +67,11 @@ end
 
 % Right click in the folder with the original MRI and start Linux terminal.
 % Copy the printed lines in the command window into the linux terminal:
-fprintf('\n ----- RUN LINE BELOW IN LINUX TERMINAL ----- \nexport SUBJECTS_DIR=%s\n',cfg.freesurfer_directory)
+fprintf('\n ----- OPEN %ssourcedata/%s/%s/anat/  ----- \n ----- CLICK WITH RIGHT MOUSE AND OPEN LINUX TERMINAL ----- \n ----- RUN LINE BELOW IN LINUX TERMINAL ----- \nexport SUBJECTS_DIR=%s\n',...
+    cfg.home_directory,...
+    cfg.sub_labels{:},...
+    cfg.ses_label,...
+    cfg.freesurfer_directory)
 % Copy the printed lines in the command window to run Freesurfer in the linux terminal:
 fprintf('\n ----- RUN LINE BELOW IN LINUX TERMINAL ----- \nrecon-all -autorecon-all -s %s -i %s%s_%s_proc-deface_T1w.nii -cw256\n',...
     cfg.sub_labels{:},...
@@ -84,7 +93,7 @@ clc
 
 % Right click in the freesurfer/mri-folder and start Linux terminal.
 % Copy the printed lines in the command window into the linux terminal:
-fprintf('\n ----- OPEN %smri AND RUN LINE BELOW IN LINUX TERMINAL ----- \nmri_convert ribbon.mgz t1_class.nii\n',cfg.freesurfer_directory)
+fprintf('\n ----- OPEN %smri ----- \n ----- CLICK WITH RIGHT MOUSE AND OPEN LINUX TERMINAL ----- \n ----- RUN LINE BELOW IN LINUX TERMINAL ----- \nmri_convert ribbon.mgz t1_class.nii\n',cfg.freesurfer_directory)
 
 %% STEP 6: Create the hull - matlab
 settings_hull = [13,... % setting for smoothing
@@ -104,19 +113,22 @@ get_mask_V3(cfg.sub_labels{:},... % subject name
 % put the hull as overlay on top of the mri
 % check whether the hull looks like it matches the dura (should be a tight
 % baloon around the grey matter)
+clc
 
-%% STEP 8: select electrodes from ct
+fprintf('\n ----- RUN LINE BELOW IN LINUX TERMINAL, OPEN DEFACED MRI AND PUT HULL AS OVERLAY ON TOP ----- \n mricron \n \n ----- CHEKC WHETHER THE HULL IS A TIGHT BALLOON AROUND THE CORTEX ----- \n')
+
+%% STEP 8: select electrodes from ct - matlab
 % the order in which you click electrodes does not matter. Just make sure
 % you click all electrodes implanted!
-
-fprintf(' -----OPEN THE CT-SCAN AND CLICK ON ALL ELECTRODES. YOU CAN CHECK WHETHER YOU HAVE ALL ELECTRODES BY CLICKING ON VIEW RESULT ----- \n')
+clc
+fprintf(' ----- OPEN THE CT-SCAN AND CLICK ON ALL ELECTRODES. YOU CAN CHECK WHETHER YOU HAVE ALL ELECTRODES BY CLICKING ON VIEW RESULT ----- \n')
 
 ctmr
 % view result
 % save image: saves as nifti hdr and img files
 % this is saved as electrodes1.hdr and electrodes1.img
 
-%% STEP 9: sort unprojected electrodes
+%% STEP 9: sort unprojected electrodes - matlab
 
 fprintf('------ OPEN THE ELECTRODES.TSV \n-----')
 % open electrodes.tsv
@@ -139,7 +151,7 @@ fprintf('Matched electrodes are saved in %s\n',cfg.saveFile)
 % loads img file with electrodes from previous step
 % saves in electrodes_temp.mat;
 
-%% STEP 10: plot electrodes 2 surface
+%% STEP 10: plot electrodes 2 surface - matlab
 % corrects for the brain shift - ONLY for ECoG
 % 1xN STRIP: do not project any electrodes that are already close to the
 %               surfaces, such as subtemporal and interhemispheric
@@ -239,14 +251,14 @@ tb_elecs.y = elecmatrix_shift(:,2);
 tb_elecs.z = elecmatrix_shift(:,3);
 
 
-%% STEP 11: save electrode positions, corrected for brain shift to electrodes.tsv
+%% STEP 11: save electrode positions, corrected for brain shift to electrodes.tsv - matlab
 
 saveFile = replace(cfg.saveFile,'_temp.mat','.tsv');
 writetable(tb_elecs, saveFile, 'Delimiter', 'tab', 'FileType', 'text');
 fprintf('Electrode positions, corrected for brainshift, are saved in %s\n',saveFile)
 % TODO: change NaN to n/a!!
 
-%% STEP 12: Write electrode positions as numbers in a nifti
+%% STEP 12: Write electrode positions as numbers in a nifti - matlab
 % This is not necessary, only if you want to do some extra checks or so.
 % e.g. it can be nice to visualize the projected electrodes in MRIcron.
 % to visualize in MRIcron: open the defaced MRI and add the surface_all.img
@@ -271,7 +283,7 @@ clc
 
 % Make surface folder
 if exist(cfg.surface_directory, 'dir')
-    fprintf('%s exists already\n',cfg.surface_directory)
+%     fprintf('%s exists already\n',cfg.surface_directory)
 else
     mkdir(cfg.surface_directory)
 end
@@ -279,9 +291,9 @@ end
 % Right click in the dataBIDS/derivatives/freesurfer/sub-,./surf-folder and
 % start Linux terminal.
 % Copy the printed lines in the command window into the linux terminal:
-fprintf('\n ----- OPEN %s%s/surf/ AND RUN LINE BELOW IN LINUX TERMINAL ----- \nmris_convert %sh.pial %sh.pial.gii\n',cfg.freesurfer_directory,cfg.sub_labels{1},cfg.hemisphere,cfg.hemisphere)
+fprintf('\n ----- OPEN %s%s/surf/ ---- \n ---- CLICK WITH YOUR RIGHT MOUSE AND OPEN LINUX TERMINAL ----- \n ----- RUN LINE BELOW IN LINUX TERMINAL ----- \nmris_convert %sh.pial %sh.pial.gii\n',cfg.freesurfer_directory,cfg.sub_labels{1},cfg.hemisphere,cfg.hemisphere)
 
-%% %% Convert the .gii coordinates to the MRI native space %%%
+%% STEP 14: Convert the .gii coordinates to the MRI native space - matlab
 % load the Freesurfer gifti (freesurfer coordinates)
 g = gifti(fullfile(cfg.freesurfer_directory,'surf',[cfg.hemisphere,'h.pial.gii']));
 
@@ -308,13 +320,13 @@ save(g,gifti_name,'Base64Binary')
 
 disp('gifti converted to original space')
 
-%% STEP 14: add labels of atlases to tsv-file 
+%% STEP 15: add labels of atlases to tsv-file - matlab
 
 [tb_elecs_atlases, cfg.destrieux_labels, cfg.DKT_labels] = lookupAtlases(cfg,tb_elecs);
 
 disp('Atlases added')
 
-%% STEP 15: CHECK ATLAS WITH ELECTRODE POSITIONS 
+%% STEP 16: CHECK ATLAS WITH ELECTRODE POSITIONS - matlab
 
 cfg.show_labels = 'yes';
 cfg.change_size = 'no';
@@ -326,7 +338,7 @@ cfg.view_elec ='yes';
 
 check_atlas_elec_MRI(cfg,tb_elecs_atlases)
 
-%% STEP 16: save electrodes.tsv, make electrodes descriptor, write coordsystem and add hemisphere to existing ieeg_json files
+%% STEP 17: save electrodes.tsv, make electrodes descriptor, write coordsystem and add hemisphere to existing ieeg_json files
 
 addpath(cfg.fieldtrip_folder) 
 addpath(cfg.fieldtrip_private)
