@@ -341,8 +341,7 @@ for i=1:size(D,1)
     end
 end
 
-%% now, everything is in the /Fridge/CCEP folder, 
-% copy all to /Fridge/chronic_ECoG
+%% STEP 17: save everything to /Fridge/chronic_ECoG
 
 cfg.home_directory = '/Fridge/chronic_ECoG/';
 cfg.freesurfer_directory = sprintf('%sderivatives/freesurfer/%s/%s/',cfg.home_directory,cfg.sub_labels{:},cfg.ses_label);
