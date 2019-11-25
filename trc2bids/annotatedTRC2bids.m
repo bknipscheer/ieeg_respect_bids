@@ -81,7 +81,7 @@ try
         error('TRC reading failed')  ;
     end
     ch_label = deblank({header.elec.Name}');
-    sub_label = strcat('sub-',upper(deblank(header.name)));
+    sub_label = strcat('sub-',deblank(header.name)); %strcat('sub-',upper(deblank(header.name)));
     
     output.subjName = sub_label;
     
@@ -110,21 +110,21 @@ try
         %               sub-<label>_ses-<label>_photo.jpg
         
         task_label    = strcat('task-',replace(deblank(metadata.task_name),' ',''));
-        if strfind(lower(task_label),'spes')~=0
+        if contains(lower(task_label),'spes') || contains(lower(task_label),'rec2stim')
             task_desc = 'No task, electrical stimulation is performed. Patient is resting with eyes open/closed. The latter is not always specified.';
-        elseif strfind(lower(task_label),'rest') ~=0
+        elseif contains(lower(task_label),'rest') 
             task_desc = 'Patient is resting with eyes open/closed. The latter is not always specified.';
-        elseif strfind(lower(task_label),'sleep') ~=0
+        elseif contains(lower(task_label),'sleep') 
             task_desc = 'Patient is sleeping.';
-        elseif strfind(lower(task_label),'slawtrans') ~=0
+        elseif contains(lower(task_label),'slawtrans') 
             task_desc = 'Patient is trying to fall asleep or is waking up.';
-        elseif strfind(lower(task_label),'motor') ~=0
+        elseif contains(lower(task_label),'motor') 
             task_desc = 'Patient is doing a motor task.';
-        elseif strfind(lower(task_label),'esm') ~=0
+        elseif contains(lower(task_label),'esm') 
             task_desc = 'Electrical stimulation mapping is performed to delineate functional areas.';
-        elseif strfind(lower(task_label),'sens') ~=0
+        elseif contains(lower(task_label),'sens') 
             task_desc = 'Patient is doing a sensing task.';
-        elseif strfind(lower(task_label),'Language') ~= 0
+        elseif contains(lower(task_label),'Language') 
             task_desc = 'Patient is doing a language task.';
         else
             task_desc = 'Not specified'
@@ -393,7 +393,7 @@ edesc_json.onset                                = 'onset of event in seconds' ;
 edesc_json.offset                               = 'offset of event in seconds' ;
 edesc_json.duration                             = 'duration of event in seconds' ;
 edesc_json.trial_type                           = 'type of event (electrical stimulation/motor task/sensing task/artefact/sleep/sleep wake transition/eyes open)' ;
-edesc_json.subtype                              = 'more description of event (sleep:nrem/rem, motor:Mario/hand/jump, sens:circle, electrical stimulation:SPES/ESM)' ;
+edesc_json.subtype                              = 'more description of event (sleep:nrem/rem, motor:Mario/hand/jump, sens:circle, electrical stimulation:SPES/ESM/REC2stim)' ;
 edesc_json.electrodes_involved_onset            = 'electrodes involved in onset. For example: in seizure: electrodes involved in seizure onset or in artefact.' ;
 edesc_json.electrodes_involved_offset           = 'electrodes involved in offset. For example: in seizure: electrodes involved in the end of a seizure or in an artefact.' ;
 edesc_json.sample_start                         = 'onset of event in samples' ;
@@ -402,7 +402,8 @@ edesc_json.electrical_stimulation_type          = 'type of electrical stimulatio
 edesc_json.electrical_stimulation_site          = 'electrode names of stimulus pair';
 edesc_json.electrical_stimulation_site_num_1    = 'electrode one in stimulus pair' ;
 edesc_json.electrical_stimulation_site_num_2    = 'electrode two in stimulus pair' ;
-edesc_json.electrical_stimulation_current       = 'electrical stimulation current in A';
+edesc_json.electrical_stimulation_current       = 'electrical stimulation current in Ampere';
+edesc_json.frequency                            = 'electrical stimulation frequency in Hertz';
 edesc_json.notes                                = 'notes about stimulation current';
 
 if ~isempty(edesc_json)
@@ -1308,6 +1309,10 @@ annots_new = annots;
 %% electrical stimulation mapping
 [annots_new, eventsannots ] = add_event2annotation(metadata.esm,'esm',eventsannots, annots_new,header);
 
+
+
+
+
 % esm = metadata.esm;
 %
 % if(~isempty(esm))
@@ -1376,11 +1381,23 @@ if ~isempty(metadata.spes) || ~isempty(metadata.esm) || ~isempty(metadata.stimul
         esmfind =    cellfun(@(x) contains(x,{'esm'}),lower(eventsannots.type))==1;
         esmstart = str2double(eventsannots.samp_start{esmfind});
         esmend = str2double(eventsannots.samp_end{esmfind});
+        
     else
         esmstart = 0;
         esmend = 0;
     end
     
+    % determine period of rec2stim
+    if any(cellfun(@(x) contains(x,{'rec2stim'}),lower(eventsannots.sub_type)))
+        rec2stimfind =    cellfun(@(x) contains(x,{'rec2stim'}),lower(eventsannots.sub_type))==1;
+        rec2stimstart = str2double(eventsannots.samp_start{rec2stimfind});
+        rec2stimend = str2double(eventsannots.samp_end{rec2stimfind});
+    else
+        rec2stimstart = 0;
+        rec2stimend = 0;
+        
+    end
+
     % determine period of spes
     if any(cellfun(@(x) contains(x,{'spes'}),lower(eventsannots.sub_type)))
         spesfind =    cellfun(@(x) contains(x,{'spes'}),lower(eventsannots.sub_type))==1;
@@ -1421,14 +1438,16 @@ if ~isempty(metadata.spes) || ~isempty(metadata.esm) || ~isempty(metadata.stimul
                 eventsannots = add_esmtrigger2annotation(idx_start(i),eventsannots,annots_new, header,metadata,trigger);
             elseif trigger.pos(idx_start(i)) > slowesmstart && trigger.pos(idx_start(i)) < slowesmend % if trigger belongs to slowesm period
                 eventsannots = add_spestrigger2annotation(idx_start(i),'slowESM',eventsannots,annots_new, header,metadata,trigger)  ;
+            elseif trigger.pos(idx_start(i)) > rec2stimstart && trigger.pos(idx_start(i)) < rec2stimend % if trigger belongs to rec2stim period
+                eventsannots = add_rec2stimtrigger2annotation(idx_start(i),'REC2Stim',eventsannots,annots_new, header,metadata,trigger)  ;
             else
-                error('Trigger does not belong to SPES period or ESM period')
+                error('Trigger does not belong to SPES, ESM or REC2Stim period')
             end
             
         end
     end
     % in older ECoGs, there are no triggers, but stimulation NEED TO BE FIXED
-    if ~isempty(sum(cellfun(@(x) contains(x,{'No trigger'}),annots_new(:,2)))) 
+    if sum(cellfun(@(x) contains(x,{'No trigger'}),annots_new(:,2)))>0
         if strcmpi(metadata.elec_info,'SEEG')
             stimcurdefault = 2;
         elseif strcmpi(metadata.elec_info,'ECoG')
@@ -1510,7 +1529,8 @@ if ~isempty(metadata.spes) || ~isempty(metadata.esm) || ~isempty(metadata.stimul
                             eventsannots.ch_name_off{cc} = 'n/a';
                             eventsannots.stim_cur{cc} = stimcurr;
                             eventsannots.notes{cc} = note;
-                            
+                            eventsannots.freq{cc} = freq;
+
                         end
                         
                     end
@@ -1544,6 +1564,7 @@ if ~isempty(metadata.spes) || ~isempty(metadata.esm) || ~isempty(metadata.stimul
     site_channum    = eventsannots.site_channum;
     stim_cur        = eventsannots.stim_cur;
     notes           = eventsannots.notes;
+    freq            = eventsannots.freq;
     
     % sort to put the no-triggers in the right order of stimulation
     SPEStype        = strcmp(sub_type,'SPES');
@@ -1564,7 +1585,7 @@ if ~isempty(metadata.spes) || ~isempty(metadata.esm) || ~isempty(metadata.stimul
     site_channum    = {site_channum{noSPEStype},site_channum{I}};
     stim_cur        = {stim_cur{noSPEStype},stim_cur{I}};
     notes           = {notes{noSPEStype},notes{I}};
-    
+    freq            = {freq{noSPEStype},freq{I}};
     
 end
 
@@ -1584,6 +1605,7 @@ if isempty(eventsannots.s_start)
     site_channum='n/a';
     stim_cur='n/a';
     notes='n/a';
+    freq= 'n/a';
 else
     s_start         = eventsannots.s_start;
     s_end           = eventsannots.s_end;
@@ -1599,11 +1621,12 @@ else
     site_channum    = eventsannots.site_channum;
     stim_cur        = eventsannots.stim_cur;
     notes           = eventsannots.notes;
+    freq            = eventsannots.freq;
 
 end
 
-annotation_tsv  = table(s_start', s_end', duration', type', sub_type', ch_name_on', ch_name_off', samp_start', samp_end', stim_type', site_name', site_channum', stim_cur', notes',  ...
-    'VariableNames',{'onset', 'offset','duration','trial_type', 'sub_type','electrodes_involved_onset','electrodes_involved_offset','sample_start','sample_end','electrical_stimulation_type','electrical_stimulation_site','electrical_stimulation_site_num','electrical_stimulation_current','notes' });
+annotation_tsv  = table(s_start', s_end', duration', type', sub_type', ch_name_on', ch_name_off', samp_start', samp_end', stim_type', site_name', site_channum', stim_cur', freq', notes',  ...
+    'VariableNames',{'onset', 'offset','duration','trial_type', 'sub_type','electrodes_involved_onset','electrodes_involved_offset','sample_start','sample_end','electrical_stimulation_type','electrical_stimulation_site','electrical_stimulation_site_num','electrical_stimulation_current','stimulation_frequency','notes' });
 
 if ~isempty(annotation_tsv)
     [p, f, x] = fileparts(cfg.outputfile);
@@ -2403,6 +2426,7 @@ if(~isempty(event))
         eventsannots.site_name{cc} = 'n/a';
         eventsannots.site_channum{cc} = 'n/a';
         eventsannots.stim_cur{cc} = 'n/a';
+        eventsannots.freq{cc} = 'n/a';
        
         if isfield(event{i},'notes') && ~isempty(event{i}.notes)
             eventsannots.notes{cc} = event{i}.notes;
@@ -2813,6 +2837,11 @@ if contains([files(:).name],'scans')
         EI_sel = zeros(size(name,1),1);
     end
     
+    if any(contains(scans_tsv.Properties.VariableNames,'rec2stim')) % this was added later, so not allf iles have this
+        rec2stim = scans_tsv.rec2stim;
+    else
+        rec2stim = zeros(size(name,1),1);
+    end
     
 else
     scansnum = 1;
@@ -2870,12 +2899,12 @@ for i=1:sum(id_lang)
 end
 sens(scansnum,1)           = sum(durationsens_total);
 
-
 artefact(scansnum,1)              = sum(strcmp(annotation_tsv.trial_type,'artefact'));
 seizure(scansnum,1)               = sum(strcmp(annotation_tsv.trial_type,'seizure'));
 seizuresubclin(scansnum,1)        = sum(strcmp(annotation_tsv.sub_type,'subclin'));
 seizureclin(scansnum,1)           = sum(strcmp(annotation_tsv.sub_type,'clin'));
 spes(scansnum,1)                  = sum(strcmpi(annotation_tsv.sub_type,'spes'));
+rec2stim(scansnum,1)              = sum(strcmpi(annotation_tsv.sub_type,'rec2stim'));
 esm(scansnum,1)                   = sum(strcmpi(annotation_tsv.sub_type,'esm'));
 slowesm(scansnum,1)               = sum(strcmpi(annotation_tsv.sub_type,'slowesm'));
 sleepwaketransition(scansnum,1)   = sum(strcmp(annotation_tsv.trial_type,'sleep-wake transition'));
@@ -2891,11 +2920,11 @@ else
 end
 
 scans_tsv  = table(name, format, artefact, sleep_total, sleep_rem, sleep_nrem,...
-    sleepwaketransition, seizure, seizureclin, seizuresubclin, motor, spes, ...
+    sleepwaketransition, seizure, seizureclin, seizuresubclin, motor, spes, rec2stim, ...
     esm, slowesm, language, sens, sws_sel, rem_sel, iiaw_sel, EI_sel,...
     'VariableNames',{'name', 'format','artefact','sleep_total', 'sleep_rem',...
     'sleep_nrem','sleepwaketransition','seizure_total','seizure_clinical', ...
-    'seizure_subclinical','motor','spes','esm','slowesm', 'language','sens',...
+    'seizure_subclinical','motor','spes','rec2stim','esm','slowesm', 'language','sens',...
     'sws_se','rem_sel','iiaw_sel','EI_sel'});
 
 if ~isempty(scans_tsv)
@@ -3020,6 +3049,8 @@ stimnums = regexp(lower(annotsplit{1}),'\d*','match');
 % negative current, lower pulse current, biphasic instead of monophasic)
 negannot = regexp(lower(annots_new{numannots,2}),'neg');
 currannot = regexp(lower(annots_new{numannots,2}),'ma');
+pulsdurannot = regexp(lower(annots_new{numannots,2}),'sec', 'once');
+freqannot = regexp(lower(annots_new{numannots,2}),'hz', 'once');
 if ~isempty(currannot)
     annotsplit = strsplit(lower(annots_new{numannots,2}),'_');
     currsplit = strsplit(lower(annotsplit{2}),'ma');
@@ -3027,6 +3058,28 @@ if ~isempty(currannot)
     stimcurr = str2double(stimcurrstr)/1000;
 else
     stimcurr = stimcurdefault/1000;
+end
+
+if ~isempty(pulsdurannot)
+    annotsplit = strsplit(lower(annots_new{numannots,2}),'_');
+    pulsannot = contains(annotsplit,'sec')==1;
+    pulsdursplit = strsplit(lower(annotsplit{pulsannot}),'sec');
+    pulsdurstr = pulsdursplit{1};
+    if ismember(65533,double(pulsdurstr)) % this value is micro (u) in Micromed
+        pulsdur = str2double(pulsdurstr(~ismember(double(pulsdurstr),65533)))/1000000;
+    end
+else
+    pulsdur = 1/1000;
+end
+
+if ~isempty(freqannot)
+    annotsplit = strsplit(lower(annots_new{numannots,2}),'_');
+    freqnoteannot = contains(annotsplit,'hz')==1;
+    freqsplit = strsplit(lower(annotsplit{freqnoteannot}),'hz');
+    freqstr = freqsplit{1};
+    freq = str2double(freqstr);
+else
+    freq = 0.2;
 end
 
 biannot = regexp(lower(annots_new{numannots,2}),'bi');
@@ -3085,6 +3138,7 @@ else % if it is not part of stim annotations
     % negative current, lower pulse current, biphasic instead of monophasic)
     negannot = regexp(lower(annots_new{numannots,2}),'neg');
     currannot = regexp(lower(annots_new{numannots,2}),'ma', 'once');
+    pulsdurannot = regexp(lower(annots_new{numannots,2}),'sec', 'once');
     if ~isempty(currannot)
         annotsplit = strsplit(lower(annots_new{numannots,2}),'_');
         currsplit = strsplit(lower(annotsplit{2}),'ma');
@@ -3092,6 +3146,18 @@ else % if it is not part of stim annotations
         stimcurr = str2double(stimcurrstr)/1000;
     else
         stimcurr = stimcurdefault/1000;
+    end
+    
+    if ~isempty(pulsdurannot)
+        annotsplit = strsplit(lower(annots_new{numannots,2}),'_');
+        pulsannot = contains(annotsplit,'sec')==1;
+        pulsdursplit = strsplit(lower(annotsplit{pulsannot}),'sec');
+        pulsdurstr = pulsdursplit{1};
+        if ismember(65533,double(pulsdurstr)) % this value is micro (u) in Micromed
+            pulsdur = str2double(pulsdurstr(~ismember(double(pulsdurstr),65533)))/1000000;
+        end
+    else
+        pulsdur = 1/1000;
     end
     
     biannot = regexp(lower(annots_new{numannots,2}),'bi');
@@ -3144,13 +3210,14 @@ end
 
 eventsannots.site_name{cc} = [stimchan{1} '-' stimchan{2}];
 eventsannots.site_channum{cc} = num2str([stimnum(1), stimnum(2)]);
-eventsannots.duration{cc} = 1/1000;
+eventsannots.duration{cc} = pulsdur;
 eventsannots.s_end{cc} = 'n/a';
 eventsannots.samp_end{cc} = 'n/a';
 eventsannots.ch_name_on{cc} = 'n/a';
 eventsannots.ch_name_off{cc} = 'n/a';
 eventsannots.stim_cur{cc} = stimcurr;
 eventsannots.notes{cc} = note;
+eventsannots.freq{cc} = freq;
 
 function eventsannots = add_esmtrigger2annotation(stim,eventsannots,annots_new, header,metadata,trigger)  
 fs = header.Rate_Min;
@@ -3211,7 +3278,71 @@ eventsannots.ch_name_on{cc} = 'n/a';
 eventsannots.ch_name_off{cc} = 'n/a';
 eventsannots.stim_cur{cc} = cur(1)/1000;
 eventsannots.notes{cc} = note;
+eventsannots.freq{cc} = freq;
 
+function eventsannots = add_rec2stimtrigger2annotation(stim,evname, eventsannots,annots_new, header,metadata,trigger)  
+fs = header.Rate_Min;
+ch_label = metadata.ch_label;
+
+if size(eventsannots.type,2) == 0
+    cc = 1;
+else
+    cc = size(eventsannots.type,2)+1;
+end
+
+eventsannots.type{cc} = 'electrical_stimulation';
+eventsannots.sub_type{cc} = evname;
+eventsannots.stim_type{cc} = 'monophasic';
+eventsannots.samp_start{cc} = trigger.pos(stim);
+eventsannots.s_start{cc} = round(trigger.pos(stim)/fs,1); % time in seconds (1 decimal)
+
+% stimulation site
+[~,numannots]=max(1./(repmat(trigger.pos(stim),size(annots_new,1),1)-[annots_new{:,1}]')); %distance between triggerposition and nearbiest annotation (must be the stim channels then)
+
+annotsplit = strsplit(annots_new{numannots,2},char(32));
+stimchans = strsplit(annotsplit{1},'-');
+stimcur = cellfun(@(x) contains(x,{'ma'}),lower(annotsplit))==1;
+stimfreq = cellfun(@(x) contains(x,{'hz'}),lower(annotsplit))==1;
+stimwidth = cellfun(@(x) contains(x,{'sec'}),lower(annotsplit))==1;
+
+if size(stimchans,2) == 1
+    stimnumber = regexp(lower(stimchans{1}),'\d*','match');
+    stimname = regexp(lower(stimchans{1}),'[a-z]*','match');
+    for j=1:size(stimnumber,2)
+        stimnum(j) = find(strcmpi([stimname{j} stimnumber{j}],ch_label)==1);
+    end
+    eventsannots.site_name{cc} = [ch_label{stimnum(1)}, '-', ch_label{stimnum(2)}];
+    eventsannots.site_channum{cc} = num2str([stimnum(1), stimnum(2)]);
+elseif size(stimchans,2) == 2
+    for j=1:size(stimchans,2)
+        stimnum(j) = find(strcmpi(stimchans{j},ch_label)==1);
+    end
+    eventsannots.site_name{cc} = annotsplit{1};
+    eventsannots.site_channum{cc} = num2str([stimnum(1), stimnum(2)]);
+end
+
+
+% current
+cur = str2double(strsplit(lower(annotsplit{stimcur}),'ma'));
+
+% duration
+if ismember(65533,double(annotsplit{stimwidth})) % there is a weird letter, translated from microseconds
+   dur = str2double(strsplit(annotsplit{stimwidth},char(65533)))/1000; % to change it to miliseconds
+end
+
+% frequency
+freq = str2double(strsplit(lower(annotsplit{stimfreq}),'hz'));
+
+note = 'Duration of total stimulus is unclear';
+
+eventsannots.duration{cc} = dur(1)/1000;
+eventsannots.s_end{cc} = 'unknown';
+eventsannots.samp_end{cc} = 'unknown';
+eventsannots.ch_name_on{cc} = 'n/a';
+eventsannots.ch_name_off{cc} = 'n/a';
+eventsannots.stim_cur{cc} = cur(1)/1000;
+eventsannots.notes{cc} = note;
+eventsannots.freq{cc} = freq(1);
 
 function [stimchan,stimnum] = findstimpair(stimnums,stimchans,ch_label)
 
