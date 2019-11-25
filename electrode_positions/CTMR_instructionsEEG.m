@@ -23,6 +23,9 @@
 % This script has a part that should be run in a linux terminal, and part
 % that can be run in matlab. The parts that should be run in a linux
 % terminal have "run in linux terminal" in the section title.
+clear
+close all
+clc
 
 config_elecPositions
 
@@ -96,8 +99,8 @@ clc
 fprintf('\n ----- OPEN %smri ----- \n ----- CLICK WITH RIGHT MOUSE AND OPEN LINUX TERMINAL ----- \n ----- RUN LINE BELOW IN LINUX TERMINAL ----- \nmri_convert ribbon.mgz t1_class.nii\n',cfg.freesurfer_directory)
 
 %% STEP 6: Create the hull - matlab
-settings_hull = [13,... % setting for smoothing
-                0.3]; % setting for threshold
+settings_hull = [13,... % setting for smoothing: default 13
+                0.2]; % setting for threshold: default 0.3
 
 get_mask_V3(cfg.sub_labels{:},... % subject name
     [cfg.freesurfer_directory,'mri/t1_class.nii'],... % freesurfer class file
@@ -113,7 +116,6 @@ get_mask_V3(cfg.sub_labels{:},... % subject name
 % put the hull as overlay on top of the mri
 % check whether the hull looks like it matches the dura (should be a tight
 % baloon around the grey matter)
-clc
 
 fprintf('\n ----- RUN LINE BELOW IN LINUX TERMINAL, OPEN DEFACED MRI AND PUT HULL AS OVERLAY ON TOP ----- \n mricron \n \n ----- CHEKC WHETHER THE HULL IS A TIGHT BALLOON AROUND THE CORTEX ----- \n')
 
@@ -161,6 +163,9 @@ fprintf('Matched electrodes are saved in %s\n',cfg.saveFile)
 [filename, pathname] = uigetfile('*.tsv;*.tsv','Select electroces.tsv file',cfg.elec_input);
 tb_elecs = readtable(fullfile(pathname,filename),'FileType','text','Delimiter','\t');
 
+% log_elec_incl = ~strcmp(tb_elecs.group,'other');
+% tb_elecs = tb_elecs(log_elec_incl,:);
+
 [filename, pathname] = uigetfile('*.mat','Select electrodes_temp.mat',cfg.elec_input);
 load(fullfile(pathname,filename));
 
@@ -204,7 +209,8 @@ elseif contains(json.iEEGElectrodeGroups,'ecog','IgnoreCase',1)
             formatelec = formatelec(~cellfun(@isempty,formatelec));
             
             % find which electrodes belong to this specific group
-            num_elecs = find(strcmp(formatelec{1},channame)==1);
+            num_elecs = find(strcmp(formatelec{1},channame)==1);            
+            num_elecs = num_elecs(~isnan(elecmatrix(num_elecs,1)) );
             
             % check whether all electrodes in group are included
             if str2double(formatelec{2}) * str2double(formatelec{3}) == numel(num_elecs)
@@ -230,10 +236,10 @@ elseif contains(json.iEEGElectrodeGroups,'ecog','IgnoreCase',1)
                     num_elecs,... % matrix indices (rows) in elecmatrix, e.g. 1:64 is for grid C1-C64
                     [cfg.ieeg_directory, cfg.sub_labels{:},'_',cfg.ses_label,'_electrodes_temp.mat'],... % file that contains elecmatrix
                     [cfg.anat_directory, cfg.sub_labels{:},'_surface1_',num2str(settings_hull(1)),'_0',num2str(settings_hull(2)*10),'.img'],... % hull we just created
-                    [cfg.anat_directory, cfg.sub_labels{:},'_',cfg.ses_label,'_proc-deface_T1w.nii'],... % T1 file (mr.img for same image space with electrode positions)
-                    cfg.anat_directory);
-                
-                % saves automatically a matrix with projected electrode positions and an image
+                     [cfg.anat_directory, cfg.sub_labels{:},'_surface1_',num2str(settings_hull(1)),'_0',num2str(settings_hull(2)*10),'.img'],... % hull we just created
+                   cfg.anat_directory);
+%                      [cfg.anat_directory, cfg.sub_labels{:},'_',cfg.ses_label,'_proc-deface_T1w.nii'],... % T1 file (mr.img for same image space with electrode positions)
+               % saves automatically a matrix with projected electrode positions and an image
                 % with projected electrodes
                 % saves as electrodes_onsurface_filenumber_inputnr2
                 elecmatrix_shift(num_elecs,:) = out_els;
