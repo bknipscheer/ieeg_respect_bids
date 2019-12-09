@@ -1,0 +1,166 @@
+trc-file to BIDS
+
+---------- ADDING ANNOTATIONS IN THE CHRONIC ECOG FILE IN SYSTEMPLUS ----------
+One sEEG (often the ECoG containing SPES task) should have these annotations: Format, Included, Silicon, SOZ, RA, Task, Run, Bad, Hemisphere, GM, WM, Amyg, Screw, CSF, Hipp, Lesion, Glio.
+Each sEEG should have these annotations: Task, Run, Bad. 
+
+- Format: should include ECoG/SEEG/depth/strip, and the format of each group of electrodes. When not all electrodes can fit in one annotation, add a second annotation starting with “Format;” and add the other electrodes. Strips always have the format (1x...).
+* EXAMPLE: “Format;ECoG;C[4x8];F[2x4];depth;D[1x6];strip;IH[1x8]” This means that C was a grid with 4 rows of 8 electrodes, F was a grid with 2 rows of 4 electrodes, D was a depth electrode with 6 electrodes, and IH was a strip with 8 electrodes. 
+
+- Included: should include all recording electrodes. When not all electrodes can fit in one annotation, add a second annotation starting with “Included;” and add the other electrodes.
+* EXAMPLE: “Included;C[1:32];F[1:8];D[1:6];IH[1:8]”
+
+- Silicon: should include electrodes overlapping other electrodes and therefore, not recording brain signals. When there are no overlapping electrodes, write “Silicon;”
+* EXAMPLE: “Silicon;C[31,32];IH[8]”
+
+- Hemisphere:  should include the side of the head where electrodes are implanted. 
+* EXAMPLE: “Hemisphere;left” or “Hemisphere;right” or “Hemisphere;left,right” (when electrodes are placed on both sides)
+
+- SOZ: should include the electrodes located in the seizure onset zone. Before entering this annotation in the data, make sure these are checked with one of the neurologists!! When no SOZ has been located yet, write “SOZ;”
+* EXAMPLE: “SOZ; C[18,19]”
+
+- RA: should include the electrodes that are completely or partly located in the resected area. Before entering this annotation in the data, make sure these are correct with one of the neurologists!! When no RA has been located yet, write “RA;”
+* EXAMPLE: “RA; C[16:20]” This means that C16 till C20 has been resected.
+
+- Edge: should include the electrodes that are within 0.5 cm to the edge and not completely inside the resected area. NOTE: Electrodes that are partially but not completely resected are both in ‘RA’ and in ‘Edge’.
+
+- Run: Run is depending on the day (IEMU implantation day = 1). In the BIDS-files, it will eventually look like: run-011707, which means day 1, at 17:07 o’clock.
+* EXAMPLE: "run;day2"
+
+- Bad: Bad are the electrodes with a lot of noise during the recording. When there are no electrodes with noise, write “Bad;”
+* EXAMPLE: “Bad;C[19,25],IH[1]”
+
+- Bad_HF: Bad_HF are the electrodes with a lot of noise in the high frequency range (>80Hz). Only add this annotation if you actually checked it! To do so, you should modify the filter type from IIR to FIR in the montage setup, set the high pass filter to 80Hz and no or 500Hz as lowapass, and increase the amplitude. Do not forget to set the filter type back to IIR afterwards! 
+
+-Task: should be added in each ECoG file, and describes what the patient is doing during this file. When both electrical stimulation mapping (esm) and a motor task are performed in one file, write “Task;esm_motor”. When a seizure occurs in the file, enter what the task was according to the following table. In further annotations, Sz_on/Sz_off should be entered. This will eventually end up in the BIDS events.tsv. See the next part for further information on task annotations
+
+In RESPXXXX_elektroden.xls “Schema” or “Lijst”, for each electrode, it is described where the electrode is located. These electrodes should be described in the following annotations. See example:
+ 
+TISSUE: WM: white matter. 
+EXAMPLE: “WM;SML[1:3,8];AHL[3:6];PHL[5,6];”
+
+TISSUE: GM: gray matter. 
+EXAMPLE: “GM;SML[1,4:9];AHL[6:8];PHL[4,6:8];”
+
+TISSUE: Hipp: Hippocampus
+EXAMPLE: “Hipp;AHL[1,2];PHL[1,2]”
+
+TISSUE: Amyg: Amygdala 
+EXAMPLE: “Amyg;”
+TISSUE: Lesion: Electrodes located in the lesion
+EXAMPLE: “Lesion;”
+
+TISSUE: Screw: Electrodes in the screw, so not recording any data
+EXAMPLE:  “Screw;SML[10];PHL[9,10];ATL[1,6];SL[6];”
+
+TISSUE: CSF: Electrodes located in the csf
+EXAMPLE: “CSF;SML[10];PHL[9,10];ATL[1,6];SL[6];”
+
+TISSUE: Glio: Electrodes mentioned as gliosis 
+EXAMPLE: "Glio;A[1,2];B[2:6]"
+
+Note that electrodes in both gray and white matter are both mentioned in WM and GM!
+
+---------- TASK ANNOTATIONS ----------
+TASK: Task;Sleep
+MEANING: Patient is sleeping during the file 
+COMMENTS: When this is entered, somewhere in the file, "Sl_on"/"Sl_off" should be added as annotation of certain sleep periods.
+
+TASK: Task;Motor
+MEANING: Patient is doing a motor task. 
+COMMENTS: When this is entered, somewhere in the file, "Motor_on"/"Motor_off" should be added as annotation!
+
+TASK: Task;Slawtrans 
+MEANING: Slawtrans stands for sleep-wake-transition. Patient is trying to sleep/wake up for the majority of the file. If the patient is certainly sleeping or clearly awake for >10 minutes without interruptions, use "Task;Sleep" or "Task;Rest" 
+COMMENTS: When this is entered, somewhere in the file, "Slawtrans_on"/"Slawtrans_off" should be added as annotation. 
+
+TASK: Task;Language 
+MEANING: Patient is doing a language task (pipi*/minoes*/picture naming). These tasks are performed by the BCI-group.
+COMMENTS: When this is entered, somewhere in the file, "Lang_on;taskname"/"Lang_off" should be added as annotation, with taskname = name of the task performed (for example: pipi/minous/picnaming).
+
+TASK: Task;sens	
+MEANING: Patient is doing a sensing task.	
+COMMENTS: When this is entered, somewhere in the file, "Sens_on;taskname"/"Sens_off" should be added as annotation, with taskname = name of the task performed (for example: circle).
+
+TASK: Task;Rest	
+MEANING: Patient is awake, but not doing a task during the file.	
+
+TASK: Task;SPESclin	
+MEANING: Clinical SPES protocol has been performed in this file.	
+COMMENT: When this is entered, somewhere in the file, "Stim_on;SPESclin"/"Stim_off;" should be added as annotation!
+
+TASK: Task;SPESsci	
+MEANING: Scientific SPES protocol has been performed in this file. 	
+COMMENT: When this is entered, somewhere in the file, "Stim_on;SPESsci"/"Stim_off;" should be added as annotation!
+
+TASK: Task;SSEP	
+MEANING: When SSEP is performed in this file. 	
+
+TASK: Task;esm	
+MEANING: Electrical stimulation mapping (50Hz) has been performed in this file.	
+COMMENT: When this is entered, somewhere in the file, "Stim_on;ESM"/"Stim_off;" should be added as annotation!
+
+TASK: Task;slowESM	
+MEANING: Cortical stimulation with 1Hz has been applied in this file.	
+COMMENT: When this is entered, somewhere in the file, "Stim_on;slowESM"/"Stim_off;"  should be added as annotation!
+
+
+---------- ADDING EVENTS IN THE ECOG FILE TO THE TRC FILE ----------
+When specific events occur during the file, this should be added in the ECoG file in SystemPlus, when the event starts and stops. Possible events are:
+
+EVENT: Artefact in all electrodes the data	
+EVENT ANNOTATION: “Art_on;” / “Art_off;”	
+MEANING: This means that in all electrodes, no brain signal is measured, due to an artefact (washing/eating/change of bandages etc.). This should not be annotated during a seizure, since this is not an artefact! 
+
+EVENT: Artefact in specific electrodes	
+EVENT ANNOTATION: “Art_on;C[5:7]” / “Art_off;C[5:7]”	
+MEANING: This means that in electrodes C5-C7 an artefact is observed during this period. 
+
+EVENT: Seizure starts and ends in specific electrodes	
+EVENT ANNOTATION: “Sz_on;clin;C[5:7]”/”Sz_off;C[5:7]”	
+MEANING: This means that the seizure had clinical symptoms and started and ended in electrodes C5-C7.
+
+EVENT: Seizure starts in specific electrodes and ends in all electrodes	
+EVENT ANNOTATION: “Sz_on;clin;C[5:7]”/”Sz_off;”	
+
+EVENT: Seizure was subclinical and starts (and ends) in specific electrodes 	
+EVENT ANNOTATION: “Sz_on;subclin;C[5:7]”/”Sz_off;C[5:7]” or “Sz_on;subclin;C[5:7]”/”Sz_off;”	
+COMMENT: Clinically unannotated epileptic events are annotated as subclinical seizures if they last for >3 seconds.
+
+EVENT: When Electrical stimulation mapping starts and ends	
+EVENT ANNOTATION: ”Stim_on;ESM"/"Stim_off;"
+
+EVENT: When SPES starts and ends	
+EVENT ANNOTATION: "Stim_on;SPESclin"/"Stim_off;" or Stim_on;SPESsci/Stim_off
+COMMENT: In the file, it should also be annotated whether stimulation parameters are known (“Stimcurr;known”) or not (“Stimcurr;unknown”).
+When no triggers are present in the ECoG with SPES task, add “No triggers” after "Stim_on;SPESclin" or "Stim_on;SPESsci" but before the first stimulation pair is mentioned. 	
+
+EVENT: When slowESM (1Hz) starts and ends	 
+EVENT ANNOTATION: "Stim_on";slowESM"/"Stim_off;"
+	
+EVENT: Patient is sleeping	
+EVENT ANNOTATION: “Sl_on;” / “Sl_off;”	
+COMMENT: This means that the patient was considered certain to be asleep during monitoring; or that video+ECoG+EMG clearly show sleep.
+
+EVENT: Patient is sleeping in a Non-REM sleep state (optional)	
+EVENT ANNOTATION: “Sl_on;NREM” / “Sl_off;”	
+MEANING: This means that the patient is sleeping and ECoG activity is visibly different from wakeful rest and REM signals; i.e. exhibiting stronger low-frequency components.
+
+EVENT: Patient is sleeping with a REM sleep state (optional)	
+EVENT ANNOTATION: “Sl_on;REM” / “Sl_off;” 
+MEANING: This means that the patient is sleeping, and ECoG resembles a wakeful signal. Video and EMG may indicate atony and eye movement.
+
+EVENT: Patient opens eyes (during sleep)	
+EVENT ANNOTATION: “Eyes_open;”/ “Eyes_close;”	
+MEANING: This means the patient opens their eyes while asleep (i.e. between Sl_on/Sl_off). If this lasts longer than a few minutes it should be considered a Sl_off and possibly Slawtrans_on.
+NB: Eyes_close/Eyes_open is also annotated while awake if the patient received explicit eye closing instructions.
+
+EVENT: Patient is transitioning between awake & sleep	
+EVENT ANNOTATION: “Slawtrans_on;/Slawtrans_off;”	
+MEANING: This means that the patient is transitioning between sleep and awake state. A catch-all for what  cannot be classified as certainly sleep nor awake. E.g. the patient is trying to fall asleep or slowly waking up. May include drowsiness and intermittent opening of the eyes.
+
+EVENT: Patient is awake	
+EVENT ANNOTATION: No annotation. If not sleeping nor transitioning, patient is considered to be awake.
+
+
+
