@@ -1,6 +1,7 @@
 % parse annotation of group of channels 
 
 %     Copyright (C) 2019 Matteo Demuru
+%     Copyright (C) 2019 Dorien van Blooijs
 % 
 %     This program is free software: you can redistribute it and/or modify
 %     it under the terms of the GNU General Public License as published by
@@ -26,17 +27,34 @@ ch_subset_str={};
 if(strcmp(remain(1),'[') &&  strcmp(remain(end),']'))
     
     remain=remain(2:end-1);
-    ch_range=strsplit(remain,':');
-    start_ch=str2num(ch_range{1});
-    stop_ch=str2num(ch_range{end});
-    idx=start_ch:stop_ch;
+    if contains(remain,',') %for example C[14,15,21:24,38,39]
+        idx = [];
+        ch_rangesplit = strsplit(remain,',');
+        find_range = strfind(ch_rangesplit,':');
+        for j=1:numel(ch_rangesplit)
+            if ~isempty(find_range{j})
+                ch_range=strsplit(ch_rangesplit{j},':');
+                start_ch=str2num(ch_range{1});
+                stop_ch=str2num(ch_range{end});
+                idx= [idx, start_ch:stop_ch];
+            else
+                idx = [idx, str2num(ch_rangesplit{j})];
+            end
+        end
+    else % for example C[1:48]
+        ch_range=strsplit(remain,':');
+        start_ch=str2num(ch_range{1});
+        stop_ch=str2num(ch_range{end});
+        idx=start_ch:stop_ch;
+    end
     ch_subset_str=cell(length(idx),1);
+    
     
     for k=1:numel(idx)
         if(idx(k)<10) %check the zeros (01 or 1)  change with regexp
             test1=sprintf('%s%s',ch_name,int2str(idx(k)));
             test2=sprintf('%s0%s',ch_name,int2str(idx(k)));
-            if(sum(strcmp(test1,chs))>sum(strcmp(test2,chs)))
+            if(sum(strcmpi(test1,chs))>sum(strcmpi(test2,chs)))
                 ch_subset_str{k}=test1;
             else
                 ch_subset_str{k}=test2;
