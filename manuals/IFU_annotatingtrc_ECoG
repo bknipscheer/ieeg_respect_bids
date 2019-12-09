@@ -97,7 +97,8 @@ COMMENT: When this is entered, somewhere in the file, "Stim_on;slowESM"/"Stim_of
 
 
 ---------- ADDING EVENTS IN THE ECOG FILE TO THE TRC FILE ----------
-When specific events occur during the file, this should be added in the ECoG file in SystemPlus, when the event starts and stops. Possible events are:
+When specific events occur during the file, this should be added in the ECoG file in SystemPlus, when the event starts and 
+  stops. Possible events are:
 
 EVENT: Artefact in all electrodes the data	
 EVENT ANNOTATION: “Art_on;” / “Art_off;”	
