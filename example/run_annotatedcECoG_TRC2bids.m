@@ -1,20 +1,20 @@
 %% example cecog TRC to bids
 % make sure you have the toolboxes jsonlab and fieldtrip available
 
-clear all
-addpath('Desktop/git_rep/ieeg_respect_bids/trc2bids/')
-addpath('Desktop/git_rep/ieeg_respect_bids/micromed_utils/')
-addpath('Desktop/git_rep/ieeg_respect_bids/external/')
+addpath('git_rep/ieeg_respect_bids/trc2bids/')
+addpath('git_rep/ieeg_respect_bids/micromed_utils/')
+addpath('git_rep/ieeg_respect_bids/external/')
 
-fieldtrip_folder  = '/home/dorien/Desktop/git_rep/fieldtrip/';
+fieldtrip_folder  = '/home/dorien/git_rep/fieldtrip/';
 % copy the private folder in fieldtrip to somewhere else
-fieldtrip_private = '/home/dorien/Desktop/git_rep/fieldtrip_private/';
-jsonlab_folder    = '/home/dorien/Desktop/git_rep/jsonlab/';
+fieldtrip_private = '/home/dorien/git_rep/fieldtrip_private/';
+jsonlab_folder    = '/home/dorien/git_rep/jsonlab/';
 addpath(fieldtrip_folder) 
 addpath(fieldtrip_private)
 addpath(jsonlab_folder)
 ft_defaults
-clear all
+
+clear
 
 %% TRC to bids - run all files in patient-folder
 % CLE
@@ -27,7 +27,9 @@ cfg(2).proj_dirinput = '/Fridge/chronic_ECoG';
 cfg(1).proj_diroutput = '/Fridge/chronic_ECoG'; 
 cfg(2).proj_diroutput = '/Fridge/CCEP'; % optional: this could remain empty
 
-[~, pathname] = uigetfile('*.TRC;*.trc','Select *.TRC file',[cfg(1).proj_dirinput]);
+% [~, pathname] = uigetfile('*.TRC;*.trc','Select *.TRC file',[cfg(1).proj_dirinput]);
+pat = [input('What is the PAT-folder in micromed database? [PAT_XXX] ','s'),'/'];
+pathname = fullfile(cfg(1).proj_dirinput,pat);
 files = dir(pathname);
 runall = struct;
 
