@@ -14,14 +14,19 @@ cfg.fieldtrip_private = '/home/dorien/git_rep/fieldtrip_private/';
 % addpath(cfg.fieldtrip_private)
 % ft_defaults
 
-cfg.home_directory = '/Fridge/CCEP/';
-% cfg.home_directory = '/Fridge/REC2Stimstudy/';
 cfg.path_talairach = '/Fridge/users/dorien/MRI_defaced/talairach_mixed_with_skull.gca';
 cfg.path_face = '/Fridge/users/dorien/MRI_defaced/face.gca';
 
 %% this part will be filled in when you run config_elecPositions.m, so do not touch this!
 
-cfg.sub_labels = {['sub-' input('Patient number (RESPXXXX): ','s')]};
+cfg.sub_labels = {['sub-' input('Patient number (RESPXXXX)/(REC2StimXX): ','s')]};
+
+if contains(cfg.sub_labels{:},'RESP')
+    cfg.home_directory = '/Fridge/CCEP/';
+elseif contains(cfg.sub_labels{:},'REC2Stim')
+    cfg.home_directory = '/Fridge/REC2Stimstudy/';
+end
+
 cfg.ses_label = input('Session number (ses-X): ','s');
 cfg.hemisphere = input('Hemisphere with implanted electrodes [l/r]: ','s');
 % cfg.freesurfer_directory = '/Fridge/users/dorien/dataBIDS/derivatives/freesurfer/';

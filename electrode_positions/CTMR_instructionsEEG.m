@@ -197,6 +197,8 @@ skip_elec = skip_elec(~cellfun(@isempty,skip_elec));
 if contains(json.iEEGElectrodeGroups,'seeg','IgnoreCase',1)
     disp('This session is seeg, so no correction for brain shift is needed')
     
+    elecmatrix_shift = elecmatrix;
+    
 elseif contains(json.iEEGElectrodeGroups,'ecog','IgnoreCase',1)
     
     format = strsplit(json.iEEGElectrodeGroups,';');
@@ -378,6 +380,8 @@ for i=1:size(D,1)
             ieeg_json.iEEGPlacementScheme = 'right';
         elseif strcmpi(cfg.hemisphere,'l')
             ieeg_json.iEEGPlacementScheme = 'left';
+        elseif strcmpi(cfg.hemisphere,'l,r') ||strcmpi(cfg.hemisphere,'r,l')
+            ieeg_json.iEEGPlacementScheme = 'left,right';
         end
         write_json([D(i).folder '/' D(i).name], ieeg_json)
     end
@@ -420,6 +424,8 @@ for i=1:size(D,1)
             ieeg_json.iEEGPlacementScheme = 'right';
         elseif strcmpi(cfg.hemisphere,'l')
             ieeg_json.iEEGPlacementScheme = 'left';
+        elseif strcmpi(cfg.hemisphere,'l,r') ||strcmpi(cfg.hemisphere,'r,l')
+            ieeg_json.iEEGPlacementScheme = 'left,right';
         end
         write_json([D(i).folder '/' D(i).name], ieeg_json)
     end
