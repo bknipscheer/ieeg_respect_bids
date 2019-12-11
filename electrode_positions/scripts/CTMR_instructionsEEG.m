@@ -117,7 +117,7 @@ get_mask_V3(cfg.sub_labels{:},... % subject name
 % check whether the hull looks like it matches the dura (should be a tight
 % baloon around the grey matter)
 
-fprintf('\n ----- RUN LINE BELOW IN LINUX TERMINAL, OPEN DEFACED MRI AND PUT HULL AS OVERLAY ON TOP ----- \n mricron \n \n ----- CHEKC WHETHER THE HULL IS A TIGHT BALLOON AROUND THE CORTEX ----- \n')
+fprintf('\n ----- RUN LINE BELOW IN LINUX TERMINAL, OPEN DEFACED MRI AND PUT HULL AS OVERLAY ON TOP ----- \n mricron \n \n ----- CHECK WHETHER THE HULL IS A TIGHT BALLOON AROUND THE CORTEX ----- \n')
 
 %% STEP 8: select electrodes from ct - matlab
 % the order in which you click electrodes does not matter. Just make sure
