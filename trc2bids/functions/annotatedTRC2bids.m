@@ -49,6 +49,7 @@ try
     filename  = cfg(1).filename;
     
     proj_diroutput = {cfg.proj_diroutput};
+    proj_diroutput = proj_diroutput(~cellfun(@isempty, proj_diroutput));
     
     % obtain information from the header of the trc-file
     [header,data,data_time,trigger,annots] = read_TRC_HDR_DATA_TRIGS_ANNOTS(filename);
