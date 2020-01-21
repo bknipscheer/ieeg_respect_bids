@@ -7,6 +7,10 @@ config_trc2bids
 files = dir(pathname);
 runall = struct;
 
+if size(files,1)<1
+    error('Pathname is wrong, no files found')
+end
+
 % run all files within your input directory
 for i=1:size(files,1) 
     runall(i).file = files(i).name;
@@ -58,9 +62,13 @@ end
       
 files = dir(pathname);
 eegfiles = {files(contains({files(:).name},'EEG')==1).name};
-string = [repmat('%s, ',size(eegfiles,2)-1),'%s'];
+string = [repmat('%s, ',1,size(eegfiles,2)-1),'%s'];
 
-fileinput = input(sprintf(['Select one of these files [',string,']: \n'],eegfiles{:}),'s');
+if size(files,1) <1
+    error('Pathname does not contain any files')
+else
+    fileinput = input(sprintf(['Select one of these files [',string,']: \n'],eegfiles{:}),'s');
+end
 
 cfg(1).filename = [pathname,fileinput];
 
@@ -68,7 +76,7 @@ pathsplit = strsplit(pathname,{'/'});
 patient = pathsplit{end-1};
 filesplit = strsplit(fileinput,{'_','.TRC'});
 file = filesplit{end-1};
-
+%%
 fprintf('Running %s, writing EEG: %s to BIDS \n', patient,file)
 [status,msg,metadata,annots] = annotatedTRC2bids(cfg);
 

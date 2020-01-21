@@ -10,7 +10,7 @@ fieldtrip_folder  = '/home/dorien/git_rep/fieldtrip/';
 % copy the private folder in fieldtrip to somewhere else
 fieldtrip_private = '/home/dorien/git_rep/fieldtrip_private/';
 jsonlab_folder    = '/home/dorien/git_rep/jsonlab/';
-addpath(fieldtrip_folder) 
+addpath(fieldtrip_folder)
 addpath(fieldtrip_private)
 addpath(jsonlab_folder)
 ft_defaults
@@ -19,16 +19,34 @@ clear
 
 %% folder settings and selecting the correct patient
 
+cfg(1).sub_labels = {['sub-' input('Patient number (RESPXXXX)/(REC2StimXX): ','s')]};
+
 % CLE
 % cfg(1).proj_dirinput = '/home/dorien/Desktop/bulk/smb-share:server=smb-ds.bsc01.gd.umcutrecht.nl,share=ds_her_respect-leijten/Dorien/c_ecog/sz_cle/RESPect_sz_scratch/patients';
 % cfg(1).proj_diroutput = '/Fridge/chronic_ECoG';%'/Fridge/users/Dorien/sz_cle';
 
-% SPES
-% cfg(1).proj_dirinput = '/home/dorien/Desktop/bulk/smb-share:server=smb-ds.bsc01.gd.umcutrecht.nl,share=ds_her_respect-leijten/Dorien/c_ecog/spes/RESPect_spes_scratch/patients';
-cfg(1).proj_dirinput = '/home/dorien/Desktop/bulk/smb-share:server=smb-ds.bsc01.gd.umcutrecht.nl,share=ds_her_respect-leijten/RESPect_chronic_ECoG_trc/patients';
-cfg(2).proj_dirinput = '/Fridge/chronic_ECoG'; 
-cfg(1).proj_diroutput = '/Fridge/chronic_ECoG'; 
-cfg(2).proj_diroutput = '/Fridge/CCEP'; % optional: this could remain empty
+if contains(cfg(1).sub_labels,'RESP')
+    % SPES
+    foldername = input('Choose SystemPlus-folder: testomgeving, RESPect_spes_scratch, RESPect_chronic_ECoG_trc: ','s');
+    if strcmp(foldername,'testomgeving')
+        cfg(1).proj_dirinput = '/home/dorien/Desktop/bulk/smb-share:server=smb-ds.bsc01.gd.umcutrecht.nl,share=ds_her_respect-leijten/Dorien/testomgeving/patients';
+    elseif strcmp(foldername,'RESPect_spes_scratch')
+        cfg(1).proj_dirinput = '/home/dorien/Desktop/bulk/smb-share:server=smb-ds.bsc01.gd.umcutrecht.nl,share=ds_her_respect-leijten/Dorien/c_ecog/spes/RESPect_spes_scratch/patients';
+    elseif strcmp(foldername,'RESPect_chronic_ECoG_trc')
+        cfg(1).proj_dirinput = '/home/dorien/Desktop/bulk/smb-share:server=smb-ds.bsc01.gd.umcutrecht.nl,share=ds_her_respect-leijten/RESPect_chronic_ECoG_trc/patients';
+    else
+       error('Foldername is not recognized') 
+    end
+    cfg(2).proj_dirinput = '/Fridge/chronic_ECoG';
+    cfg(1).proj_diroutput = '/Fridge/chronic_ECoG';
+    cfg(2).proj_diroutput = '/Fridge/CCEP'; % optional: this could remain empty
+    
+elseif contains(cfg(1).sub_labels,'REC2Stim')
+    % REC2Stim
+    cfg(1).proj_dirinput = '/home/dorien/Desktop/bulk/smb-share:server=smb-ds.bsc01.gd.umcutrecht.nl,share=ds_her_respect-leijten/Dorien/REC2Stim/patients';
+    cfg(2).proj_dirinput = '/Fridge/REC2Stimstudy';
+    cfg(1).proj_diroutput = '/Fridge/REC2Stimstudy';
+end
 
 % [~, pathname] = uigetfile('*.TRC;*.trc','Select *.TRC file',[cfg(1).proj_dirinput]);
 pat = [input('What is the PAT-folder in micromed database? [PAT_XXX] ','s'),'/'];
