@@ -29,11 +29,11 @@ if contains(cfg(1).sub_labels,'RESP')
     % SPES
     foldername = input('Choose SystemPlus-folder: testomgeving, RESPect_spes_scratch, RESPect_chronic_ECoG_trc: ','s');
     if strcmp(foldername,'testomgeving')
-        cfg(1).proj_dirinput = '/home/dorien/Desktop/bulk/smb-share:server=smb-ds.bsc01.gd.umcutrecht.nl,share=ds_her_respect-leijten/Dorien/testomgeving/patients';
+        cfg(1).proj_dirinput = '/home/dorien/Desktop/db_respect/Dorien/testomgeving/patients';
     elseif strcmp(foldername,'RESPect_spes_scratch')
-        cfg(1).proj_dirinput = '/home/dorien/Desktop/bulk/smb-share:server=smb-ds.bsc01.gd.umcutrecht.nl,share=ds_her_respect-leijten/Dorien/c_ecog/spes/RESPect_spes_scratch/patients';
+        cfg(1).proj_dirinput = '/home/dorien/Desktop/db_respect/Dorien/c_ecog/spes/RESPect_spes_scratch/patients';
     elseif strcmp(foldername,'RESPect_chronic_ECoG_trc')
-        cfg(1).proj_dirinput = '/home/dorien/Desktop/bulk/smb-share:server=smb-ds.bsc01.gd.umcutrecht.nl,share=ds_her_respect-leijten/RESPect_chronic_ECoG_trc/patients';
+        cfg(1).proj_dirinput = '/home/dorien/Desktop/bulk_respect/smb-share:server=arch11-smb-ds.arch11.gd.umcutrecht.nl,share=her$/snap/Respect-Leijten/RESPect_chronic_ECoG_trc/patients';
     else
        error('Foldername is not recognized') 
     end
