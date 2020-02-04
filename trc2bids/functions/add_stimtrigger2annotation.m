@@ -15,7 +15,8 @@ while size(stimnums,2) <2 || size(stimnames,2) <2
     pulsdurannot = regexp(lower(annots_new{numannots-n,2}),'sec', 'once');
     freqannot = regexp(lower(annots_new{numannots-n,2}),'hz', 'once');
     biannot = regexp(lower(annots_new{numannots-n,2}),'_bi', 'once');
-    
+    low_expect = regexp(lower(annots_new{numannots,2}),'requested', 'once');
+
     %% if the annotation is part of stimulation
     if ~isempty(negannot) && isempty(negannotfin)
         negannotfin = negannot;
@@ -39,6 +40,10 @@ while size(stimnums,2) <2 || size(stimnames,2) <2
     if ~isempty(biannot) && isempty(biannotfin)
         biannotfin = biannot;
     end
+
+    if ~isempty(low_expect) && isempty(low_expectfin)
+        low_expectfin = low_expect;
+    end    
     
     %% find annotation with stimulus pair
     if ~isempty(regexp(annots_new{numannots-n,2},'_', 'once')) % if there is a _ in the annotation (normally, this is a SPES annotation)
@@ -67,6 +72,7 @@ while size(stimnums,2) <2 || size(stimnames,2) <2
     n = n+1;
 end
 
+numannots_orig = numannots;
 numannots = numannots-n+1;
 
 %% find stimulus pair
@@ -147,12 +153,11 @@ else
 end
 
 %% current lower than expected? 
-low_expect = regexp(lower(annots_new{numannots,2}),'requested', 'once');
 if ~isempty(low_expect)
     note = annots_new{numannots,2};
-elseif numannots < size(annots_new,1)
-    if contains(annots_new{numannots+1,2},'requested') % in newer patients, the sentence "Current is lower than requested" is added at the end of the stimulation
-        note = annots_new{numannots+1,2};
+elseif numannots_orig < size(annots_new,1)
+    if contains(annots_new{numannots_orig+1,2},'requested') % in newer patients, the sentence "Current is lower than requested" is added at the end of the stimulation
+        note = annots_new{numannots_orig+1,2};
     else
         note = note_desc;
     end
