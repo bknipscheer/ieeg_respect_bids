@@ -169,6 +169,23 @@ end
 samp_start = trigger.pos(stim);
 s_start = round(trigger.pos(stim)/header.Rate_Min,1);% time in seconds (1 decimal)
 
+%% stimulation end
+
+% in REC2Stim, ESM, stimulation series can be mentioned to indicate when
+% stimulation is over (and its artefact)
+if any(trigger.val == 0)
+    
+    trig_stop = find(trigger.val ==0);
+    
+    num_trig_stop = find(trigger.pos(trig_stop)-trigger.pos(stim)>0,1,'first');
+    samp_end = trigger.pos(trig_stop(num_trig_stop));
+    s_end = round(samp_end/header.Rate_Min,1);% time in seconds (1 decimal)
+    
+else
+    samp_end = 'n/a';
+    s_end = 'n/a';
+end
+
 %% add to eventsannots
 if size(eventsannots.type,2) == 0
     cc = 1;
@@ -184,8 +201,8 @@ eventsannots.s_start{cc} = s_start; % time in seconds (1 decimal)
 eventsannots.site_name{cc} = [stimchan{1} '-' stimchan{2}];
 eventsannots.site_channum{cc} = num2str([stimnum(1), stimnum(2)]);
 eventsannots.duration{cc} = pulsdur;
-eventsannots.s_end{cc} = 'n/a';
-eventsannots.samp_end{cc} = 'n/a';
+eventsannots.s_end{cc} = s_end;
+eventsannots.samp_end{cc} = samp_end;
 eventsannots.ch_name_on{cc} = 'n/a';
 eventsannots.ch_name_off{cc} = 'n/a';
 eventsannots.stim_cur{cc} = stimcurr;
