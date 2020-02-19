@@ -1,4 +1,4 @@
-function [mask_matrix,mask_indices]=get_mask_V3(subject,grayfilename,outputdir,l_r,varargin)
+function k = get_mask_V3(subject,grayfilename,outputdir,l_r,varargin)
 % function [mask_matrix,mask_indices]=get_mask(FWHM for smoothing, brain_cutoff)
 % default FWHM for smoothing = 6
 % default brain_cutoff = 0.1 (of smoothed images)
