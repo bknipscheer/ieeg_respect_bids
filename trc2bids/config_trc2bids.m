@@ -43,7 +43,7 @@ if contains(cfg(1).sub_labels,'RESP')
     
 elseif contains(cfg(1).sub_labels,'REC2Stim')
     % REC2Stim
-    cfg(1).proj_dirinput = '/home/dorien/Desktop/bulk/smb-share:server=smb-ds.bsc01.gd.umcutrecht.nl,share=ds_her_respect-leijten/Dorien/REC2Stim/patients';
+    cfg(1).proj_dirinput = '/home/dorien/Desktop/db/Dorien/REC2Stim/patients';
     cfg(2).proj_dirinput = '/Fridge/REC2Stimstudy';
     cfg(1).proj_diroutput = '/Fridge/REC2Stimstudy';
 end
