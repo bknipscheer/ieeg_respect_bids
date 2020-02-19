@@ -58,6 +58,22 @@ fprintf('\n ----- RUN LINE BELOW IN LINUX TERMINAL, OPEN DEFACED MRI TO CHECK DE
 % Copy the defaced MRI to the/sub-RESPXXXX/ses-X/anat-folder
 fprintf('\n ----- IF DEFACING WAS CORRECT, COPY DEFACED MRI TO %s -----\n', cfg.anat_directory)
 
+% fprintf('\n ----- IF DEFACING WAS NOT CORRECT, TRY CODE BELOW (TAKES 10-20MIN) -----\nrecon-all -autorecon1 -s %s -i %s%s_%s_T1w.nii -cw256\n',...
+%     cfg.sub_labels{:},...
+%     [fullfile(cfg.home_directory,'sourcedata',cfg.sub_labels{:},cfg.ses_label),'/anat/'],...
+%     cfg.sub_labels{:},...
+%     cfg.ses_label)
+% 
+% fprintf('\n ----- AND TRY DEFACING AGAIN ON T1.MGZ ----- \n ')
+% fprintf('\n ----- mri_deface %s_%s_T1w.nii %s  %s %s_%s_proc-deface_T1w.nii\n',...
+%     cfg.sub_labels{:},...
+%     cfg.ses_label,...
+%     cfg.path_talairach,...
+%     cfg.path_face,...
+%     cfg.sub_labels{:},...
+%     cfg.ses_label);
+
+
 %% STEP 4: run freesurfer to segment brain add Destrieux atlases - RUN IN LINUX TERMINAL!
 clc
 
@@ -100,9 +116,8 @@ fprintf('\n ----- OPEN %smri ----- \n ----- CLICK WITH RIGHT MOUSE AND OPEN LINU
 
 %% STEP 6: Create the hull - matlab
 settings_hull = [13,... % setting for smoothing: default 13
-                0.2]; % setting for threshold: default 0.3
-
-get_mask_V3(cfg.sub_labels{:},... % subject name
+                0.3]; % setting for threshold: default 0.3
+k = get_mask_V3(cfg.sub_labels{:},... % subject name
     [cfg.freesurfer_directory,'mri/t1_class.nii'],... % freesurfer class file
     cfg.anat_directory,... % where you want to safe the file
     cfg.hemisphere,... % 'l' for left 'r' for right --> only use the hemisphere where electrodes are located
@@ -179,15 +194,21 @@ end
 % load json-file with formats of specific electrode strips/grids
 files = dir(cfg.elec_input);
 jsonfile = find(contains({files(:).name},'_ieeg.json')==1,1);
-json = loadjson(fullfile(cfg.elec_input, files(jsonfile).name));
-chansplit = strsplit(json.iEEGElectrodeGroups,{';','['});
-changroups = chansplit(diff(contains(chansplit,']'))==1);
+if ~isempty(jsonfile)
+    json = loadjson(fullfile(cfg.elec_input, files(jsonfile).name));
+    chansplit = strsplit(json.iEEGElectrodeGroups,{';','['});
+    changroups = chansplit(diff(contains(chansplit,']'))==1);
+else
+    changroups = [];
+end
 
 % electrodes on strip subtemporal or interhemispheric should be skipped
 % because they are already located close to brain surface.
 fprintf('Which electrodes should be skipped since they are already close to surfaces? \n')
 fprintf('(such as subtemporal, interhemispheric, depth)? \n')
-fprintf('choose from %s %s %s %s %s %s', changroups{:});
+if ~isempty(changroups)
+    fprintf('choose from %s %s %s %s %s %s %s %s %s', changroups{:});
+end
 skip_elec = input(': ','s');
 skip_elec = strsplit(skip_elec,{', ',',',' '});
 skip_elec = skip_elec(~cellfun(@isempty,skip_elec));
@@ -237,8 +258,8 @@ elseif contains(json.iEEGElectrodeGroups,'ecog','IgnoreCase',1)
                     settings(2),... % 1 for grid or 2xN strip, 2 for 1xN strip
                     num_elecs,... % matrix indices (rows) in elecmatrix, e.g. 1:64 is for grid C1-C64
                     [cfg.ieeg_directory, cfg.sub_labels{:},'_',cfg.ses_label,'_electrodes_temp.mat'],... % file that contains elecmatrix
-                    [cfg.anat_directory, cfg.sub_labels{:},'_surface1_',num2str(settings_hull(1)),'_0',num2str(settings_hull(2)*10),'.img'],... % hull we just created
-                     [cfg.anat_directory, cfg.sub_labels{:},'_surface1_',num2str(settings_hull(1)),'_0',num2str(settings_hull(2)*10),'.img'],... % hull we just created
+                    [cfg.anat_directory, cfg.sub_labels{:},'_surface',num2str(k),'_',num2str(settings_hull(1)),'_0',num2str(settings_hull(2)*10),'.img'],... % hull we just created 
+                    [cfg.anat_directory, cfg.sub_labels{:},'_surface',num2str(k),'_',num2str(settings_hull(1)),'_0',num2str(settings_hull(2)*10),'.img'],... % hull we just created instead of T1 file
                    cfg.anat_directory);
 %                      [cfg.anat_directory, cfg.sub_labels{:},'_',cfg.ses_label,'_proc-deface_T1w.nii'],... % T1 file (mr.img for same image space with electrode positions)
                % saves automatically a matrix with projected electrode positions and an image

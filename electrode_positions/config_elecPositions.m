@@ -10,8 +10,8 @@ cfg.fieldtrip_folder  = '/home/dorien/git_rep/fieldtrip/';
 % copy the private folder in fieldtrip to somewhere else
 cfg.fieldtrip_private = '/home/dorien/git_rep/fieldtrip_private/'; 
 %%add those later to path to avoid errors with function 'dist'
-% addpath(cfg.fieldtrip_folder) 
-% addpath(cfg.fieldtrip_private)
+rmpath(cfg.fieldtrip_folder) 
+rmpath(cfg.fieldtrip_private)
 % ft_defaults
 
 cfg.path_talairach = '/Fridge/users/dorien/MRI_defaced/talairach_mixed_with_skull.gca';
