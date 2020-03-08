@@ -18,8 +18,12 @@ for i=1:size(cfg,2)
             participants_tsv = read_tsv(filename);
             
             if any(contains(participants_tsv.name,deblank(header.name))) % look whether the name is already in the participants-table
-                partnum = find(contains(participants_tsv.name,deblank(header.name)) ==1 & participants_tsv.session==sesnum); %find patient number and session number
-                pat_exist = 1;
+                if ~isempty(find(contains(participants_tsv.name,deblank(header.name)) ==1 & participants_tsv.session==sesnum, 1)) % patient and session is already in participants-table
+                    partnum = find(contains(participants_tsv.name,deblank(header.name)) ==1 & participants_tsv.session==sesnum); %find patient number and session number
+                    pat_exist = 1;
+                elseif isempty(find(contains(participants_tsv.name,deblank(header.name)) ==1 & participants_tsv.session==sesnum, 1)) % this session is not yet in participants-table
+                     partnum = size(participants_tsv,1)+1;
+                end
             else % if participant is not yet in the table, the number is the last one plus one
                 partnum = size(participants_tsv,1)+1;
             end

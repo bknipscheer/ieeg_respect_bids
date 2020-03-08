@@ -94,7 +94,7 @@ end
 %% stimulation current
 if ~isempty(currannotfin)
     annotsplit = strsplit(lower(annots_new{numannotscurr,2}),{'_',' '});
-    containscurr = contains(lower(annotsplit),'ma');
+    containscurr = contains(lower(annotsplit{2:end}),'ma')+1;
     currsplit = strsplit(lower(annotsplit{containscurr}),'ma');
     stimcurrstr = currsplit{1};
     stimcurr = str2double(stimcurrstr)/1000;
