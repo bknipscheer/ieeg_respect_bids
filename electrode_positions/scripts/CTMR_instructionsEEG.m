@@ -17,7 +17,7 @@
 %     You should have received a copy of the GNU General Public License
 %     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-% DvB - made it usable with BIDS electrodes.tsv September 2019
+% DvB - made it compatible with BIDS electrodes.tsv September 2019
 
 %% 0) preparations - matlab
 % This script has a part that should be run in a linux terminal, and part
@@ -55,27 +55,18 @@ fprintf('\n ----- OPEN %ssourcedata/%s/%s/anat/  ----- \n ----- CLICK WITH RIGHT
 
 fprintf('\n ----- RUN LINE BELOW IN LINUX TERMINAL, OPEN DEFACED MRI TO CHECK DEFACING ----- \n mricron \n')
 
-% Copy the defaced MRI to the/sub-RESPXXXX/ses-X/anat-folder
-fprintf('\n ----- IF DEFACING WAS CORRECT, COPY DEFACED MRI TO %s -----\n', cfg.anat_directory)
-
-% fprintf('\n ----- IF DEFACING WAS NOT CORRECT, TRY CODE BELOW (TAKES 10-20MIN) -----\nrecon-all -autorecon1 -s %s -i %s%s_%s_T1w.nii -cw256\n',...
-%     cfg.sub_labels{:},...
-%     [fullfile(cfg.home_directory,'sourcedata',cfg.sub_labels{:},cfg.ses_label),'/anat/'],...
-%     cfg.sub_labels{:},...
-%     cfg.ses_label)
-% 
-% fprintf('\n ----- AND TRY DEFACING AGAIN ON T1.MGZ ----- \n ')
-% fprintf('\n ----- mri_deface %s_%s_T1w.nii %s  %s %s_%s_proc-deface_T1w.nii\n',...
-%     cfg.sub_labels{:},...
-%     cfg.ses_label,...
-%     cfg.path_talairach,...
-%     cfg.path_face,...
-%     cfg.sub_labels{:},...
-%     cfg.ses_label);
-
-
 %% STEP 4: run freesurfer to segment brain add Destrieux atlases - RUN IN LINUX TERMINAL!
 clc
+
+% Copy defaced .nii to correct folder
+if exist(cfg.anat_directory,'dir')
+    copyfile(fullfile(cfg.home_directory,'sourcedata',cfg.sub_labels{:},cfg.ses_label,'anat',...
+        [cfg.sub_labels{:},'_',cfg.ses_label,'_proc-deface_T1w.nii']),[cfg.anat_directory,cfg.sub_labels{:},'_',cfg.ses_label,'_proc-deface_T1w.nii'])
+else
+    mkdir(cfg.anat_directory)
+        copyfile(fullfile(cfg.home_directory,'sourcedata',cfg.sub_labels{:},cfg.ses_label,'anat',...
+        [cfg.sub_labels{:},'_',cfg.ses_label,'_proc-deface_T1w.nii']),[cfg.anat_directory,cfg.sub_labels{:},'_',cfg.ses_label,'_proc-deface_T1w.nii'])
+end
 
 % Make a freesurfer folder
 if exist(cfg.freesurfer_directory, 'dir')
@@ -139,6 +130,7 @@ fprintf('\n ----- RUN LINE BELOW IN LINUX TERMINAL, OPEN DEFACED MRI AND PUT HUL
 % you click all electrodes implanted!
 clc
 fprintf(' ----- OPEN THE CT-SCAN AND CLICK ON ALL ELECTRODES. YOU CAN CHECK WHETHER YOU HAVE ALL ELECTRODES BY CLICKING ON VIEW RESULT ----- \n')
+fprintf(' ----- SAVE WHEN FINISHED IN %s \n',cfg.anat_directory)
 
 ctmr
 % view result

@@ -70,7 +70,7 @@ for k = 1:size(v_dirs,1) % loop across viewing angles
     
     if strcmp(cfg.view_elec,'yes')
         % make sure electrodes pop out
-        a_offset = .1*max(abs(elecmatrix(:,1)))*[cosd(v_d(1)-90)*cosd(v_d(2)) sind(v_d(1)-90)*cosd(v_d(2)) sind(v_d(2))];
+        a_offset = 0.1*max(abs(elecmatrix(:,1)))*[cosd(v_d(1)-90)*cosd(v_d(2)) sind(v_d(1)-90)*cosd(v_d(2)) sind(v_d(2))];
         els = elecmatrix+repmat(a_offset,size(elecmatrix,1),1);
         
         % add electrode numbers
