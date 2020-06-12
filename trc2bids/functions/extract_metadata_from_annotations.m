@@ -36,9 +36,9 @@ try
     C=strsplit(str2parse,';');
     D = strsplit(C{2},'y');
     if str2double(D{2}) <10
-        metadata.run_name=['0' D{2}];
+        metadata.run_name=['0' deblank(D{2})];
     else
-        metadata.run_name=D{2};
+        metadata.run_name=deblank(D{2});
     end
     
     %% ---------- TASK ----------
@@ -49,7 +49,7 @@ try
     end
     str2parse=annots{task_idx,2};
     C=strsplit(str2parse,';');
-    metadata.task_name=C{2};
+    metadata.task_name=deblank(C{2});
       
     if contains(metadata.task_name,'SPES')
         % Stimcurr unknown (in SPES)
