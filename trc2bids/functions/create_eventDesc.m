@@ -20,7 +20,7 @@ edesc_json.notes                                = 'notes about stimulation curre
 
 if ~isempty(edesc_json)
     
-    filename = fullfile(proj_dir,'event_description.json');
+    filename = fullfile(proj_dir,'description_events.json');
     if isfile(filename)
         existing = read_json(filename);
     else
