@@ -136,6 +136,8 @@ switch acquisition_eq
         acquisition_eq = 'LTM64 Express';
     case 49
         acquisition_eq = 'LTM128 Express';
+    case 50
+        acquisition_eq = 'LTM256 Express';
 end
 header.acquisition_eq = acquisition_eq;
 
