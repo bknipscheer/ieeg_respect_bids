@@ -1,4 +1,4 @@
-function write_participants_tsv(cfg,header)
+function write_participants_tsv(cfg,header,metadata)
 
 for i=1:size(cfg,2)
     
@@ -31,13 +31,16 @@ for i=1:size(cfg,2)
             name = participants_tsv.name;
             age = participants_tsv.age;
             session = participants_tsv.session;
+            sex = participants_tsv.sex;
         else
             partnum = 1;
         end
         
-        % set RESPect name and session number
+        % set RESPect name and session number and sex
         name{partnum,1}   = deblank(header.name);
         session(partnum,1) = sesnum;
+        sex{partnum,1} = metadata.sex;
+        
         % set age of RESPect patient (comparing with current participants-table)
         if pat_exist == 1
             if age(partnum,1) == header.age && age(partnum,1) ~= 0 % if age in participants.tsv is not equal to 0  and equal to header.age
@@ -69,11 +72,12 @@ for i=1:size(cfg,2)
         
         name_sort = name(I);
         age_sort = age(I);
+        sex_sort = sex(I);
         session_sort = session(I);
         
         % makes a table from name, session and age
-        participants_tsv  = table(name_sort, session_sort, age_sort,  ...
-            'VariableNames',{'name','session', 'age'});
+        participants_tsv  = table(name_sort, session_sort, age_sort, sex_sort, ...
+            'VariableNames',{'name','session', 'age', 'sex'});
         
         % save participants.tsv
         if ~isempty(participants_tsv)

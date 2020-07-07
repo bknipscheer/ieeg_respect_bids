@@ -7,11 +7,11 @@ function annotation_tsv = write_annotations_tsv(cfg,metadata,header,annots,feven
 % ch2use_included = metadata.ch2use_included;
 % fs = header.Rate_Min;
 
+eventsannots = struct();
 eventsannots.type        = {};
 eventsannots.sub_type    = {};
 eventsannots.s_start     = {};
 eventsannots.s_end       = {};
-% ch_name     = {};
 eventsannots.ch_name_on  = {};
 eventsannots.ch_name_off = {};
 
@@ -60,7 +60,7 @@ annots_new = annots;
 % skip following section if no spes/esm/stimulation has been annotated in
 % the file
 if ~isempty(metadata.stimulation)
-    eventsannots = add_stimulation2annotation(metadata,header,annots_new,eventsannots);
+    eventsannots = add_stimulation2annotation(cfg,metadata,header,annots_new,eventsannots,fevents_name);
 end
 
 %% strip eventsannots into separate variables
@@ -100,8 +100,8 @@ else
 end
 
 % make table
-annotation_tsv  = table(s_start', s_end', duration', type', sub_type', ch_name_on', ch_name_off', samp_start', samp_end', stim_type', site_name', site_channum', stim_cur', freq', notes',  ...
-    'VariableNames',{'onset', 'offset','duration','trial_type', 'sub_type','electrodes_involved_onset','electrodes_involved_offset','sample_start','sample_end','electrical_stimulation_type','electrical_stimulation_site','electrical_stimulation_site_num','electrical_stimulation_current','stimulation_frequency','notes' });
+annotation_tsv  = table(s_start,duration, type, sub_type, ch_name_on, ch_name_off,s_end, samp_start, samp_end, stim_type, site_name, stim_cur, freq, notes,  ...
+    'VariableNames',{'onset', 'duration','trial_type', 'sub_type','electrodes_involved_onset','electrodes_involved_offset','offset','sample_start','sample_end','electrical_stimulation_type','electrical_stimulation_site','electrical_stimulation_current','electrical_stimulation_frequency','notes' });
 
 % write table
 if ~isempty(annotation_tsv)

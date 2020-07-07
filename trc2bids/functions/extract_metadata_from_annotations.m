@@ -100,7 +100,33 @@ try
         end
         
     end
-        
+    
+    %% ---------- ELECTRODE MODEL ---------- 
+    elecmodel_idx=cellfun(@(x) contains(x,{'Elec_model'}),annots(:,2));
+    if(sum(elecmodel_idx)<1)
+        file = dir(fullfile(cfg(2).proj_dirinput,patName,['ses-',metadata.ses_name],'ieeg','*ieeg.json'));
+        if ~isempty(file)
+            ieeg_json = jsondecode(fileread([file(1).folder '/' file(1).name]) );
+            metadata.electrode_manufacturer = ieeg_json.ElectrodeManufacturer;
+        else
+            warning('Missing Electrode_manufacturer annotation, and no other json from other ECoG with electrode_manufacturer annotation found')
+            metadata.electrode_manufacturer = 'supposed to be AdTech, but needs to be checked'; 
+        end
+    else
+        metadata = look_for_electrode_manufacturer(metadata,elecmodel_idx,annots);
+    end
+    
+     %% ---------- GENDER ----------
+    gender_idx=cellfun(@(x) contains(x,{'Gender'}),annots(:,2));
+    if(sum(gender_idx)~=1)
+        warning('Gender is missing')
+        metadata.gender = 'unknown';
+    else
+        str2parse=annots{gender_idx,2};
+        C=strsplit(str2parse,';');
+        metadata.gender=C{2};
+    end
+    
     %% Look for bad channels
     metadata.ch2use_bad=single_annotation(annots,'Bad;',ch); % without the semicolon, the bad_HF channels are also included in Bad
     

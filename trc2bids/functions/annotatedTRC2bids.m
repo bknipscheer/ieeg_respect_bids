@@ -134,12 +134,12 @@ try
         
         %% write participants-file
         
-        write_participants_tsv(cfg,header)
+        write_participants_tsv(cfg,header,metadata)
                
         %% write dataset descriptor
         
         for i=1:size(proj_diroutput,2)
-            create_datasetDesc(proj_diroutput{i})
+            create_datasetDesc(proj_diroutput{i},sub_label)
         end
 
         %% write event descriptor

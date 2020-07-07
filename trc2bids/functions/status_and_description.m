@@ -1,8 +1,14 @@
 function [ch_status,ch_status_desc]=status_and_description(metadata)
 
-ch_label = metadata.ch_label                         ;
+ch_label = metadata.ch_label;
 ch2use_included = metadata.ch2use_included; 
 ch2use_silicon = metadata.ch2use_silicon;
+if any(contains(fieldnames(metadata),'screw'))
+    ch2use_screw = metadata.ch2use_screw;
+else
+   ch2use_screw = false(size(ch2use_silicon)); 
+end
+
 % in some patients in some files an extra headbox is included in a later
 % stadium because an EMG-recording was necessary (for example).
 % if size(metadata.ch2use_included,1) < size(metadata.ch_label,1)
@@ -24,36 +30,39 @@ ch2use_silicon = metadata.ch2use_silicon;
 %     
 % end
 
-ch_status                                                       = cell(size(ch2use_included))      ;
-ch_status_desc                                                  = cell(size(ch2use_included))      ;
+ch_status         = cell(size(ch2use_included));
+ch_status_desc    = cell(size(ch2use_included));
 
-idx_ecg                                                         = ~cellfun(@isempty,regexpi(ch_label,'ECG'));
-idx_ecg                                                         = idx_ecg                                  ;
-idx_mkr                                                         = ~cellfun(@isempty,regexpi(ch_label,'MKR'));
-idx_mkr                                                         = idx_mkr                                  ;
+idx_ecg           = ~cellfun(@isempty,regexpi(ch_label,'ECG'));
+idx_mkr           = ~cellfun(@isempty,regexpi(ch_label,'MKR'));
+idx_emg           = ~cellfun(@isempty,regexpi(ch_label,'EMG'));
+
+idx_orb           = ~cellfun(@isempty,regexpi(ch_label,'EOG'));
+idx_orb2           = ~cellfun(@isempty,regexpi(ch_label,'orb'));
+idx_eog = (idx_orb | idx_orb2);
+
+ch_externalelec   = (idx_ecg | idx_mkr| idx_emg | idx_eog);
+
 % channels which are open but not recording
-ch_open                                                         = ~(ch2use_included | ...
-    metadata.ch2use_bad      | ...
-    ch2use_silicon  | ...
-    idx_ecg                  | ...
-    idx_mkr                    ...
-    )                                       ;
-%     metadata.ch2use_cavity   | ...
+ch_open           = ~(ch2use_included | idx_ecg | idx_mkr | idx_emg | idx_eog);
 
-[ch_status{:}]                                                  = deal('good')                              ;
+[ch_status{:}]    = deal('good')                              ;
 
-if(any(metadata.ch2use_bad              ...
-        )) % removed metadata.ch2use_cavity  | ...
-    
-    [ch_status{(metadata.ch2use_bad     ...
-        )}] = deal('bad'); % removed metadata.ch2use_cavity  | ...
+if(any(metadata.ch2use_bad)) 
+    [ch_status{(metadata.ch2use_bad)}] = deal('bad'); 
 end
 
 % bad in high frequency band
-if(any(metadata.ch2use_badhf)) % removed metadata.ch2use_cavity  | ...
-    
-    [ch_status{(metadata.ch2use_badhf     ...
-        )}] = deal('bad_hf'); % removed metadata.ch2use_cavity  | ...
+if(any(metadata.ch2use_badhf))    
+    [ch_status{(metadata.ch2use_badhf)}] = deal('bad_hf'); 
+end
+
+if(any(ch2use_silicon))
+    [ch_status{ch2use_silicon}] = deal('bad');
+end
+
+if(any(ch2use_screw))
+    [ch_status{ch2use_screw}] = deal('bad');
 end
 
 if (any(ch_open))
@@ -77,22 +86,20 @@ if(any(metadata.ch2use_badhf))
     end
 end
 
-% if(any(metadata.ch2use_cavity))
-%     [ch_status_desc{metadata.ch2use_cavity}] = deal('cavity');
-% end
-%
-% silicon information not in channels.tsv but in electrodes.tsv
-% if(any(metadata.ch2use_silicon))
-%     [ch_status_desc{metadata.ch2use_silicon}] = deal('silicon');
-% end
+if(any(ch2use_silicon))
+    [ch_status_desc{ch2use_silicon}] = deal('electrode on top of other electrode');
+end
+
+if(any(ch2use_screw))
+    [ch_status_desc{ch2use_screw}] = deal('electrode in screw');
+end
 
 if(any(ch_open))
     [ch_status_desc{ch_open}] = deal('not recording');
 end
 
-if(sum(idx_ecg))
-    [ch_status_desc{idx_ecg}] = deal('not included');
+if(sum(ch_externalelec))
+    [ch_status_desc{ch_externalelec}] = deal('not included');
 end
-if(sum(idx_mkr))
-    [ch_status_desc{idx_mkr}] = deal('not included');
-end
+
+

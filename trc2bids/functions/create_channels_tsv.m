@@ -6,16 +6,15 @@ temp.channels = [];
 temp.channels.name               = ft_getopt(temp.channels, 'name'               , nan);  % REQUIRED. Channel name (e.g., MRT012, MEG023)
 temp.channels.type               = ft_getopt(temp.channels, 'type'               , nan);  % REQUIRED. Type of channel; MUST use the channel types listed below.
 temp.channels.units              = ft_getopt(temp.channels, 'units'              , nan);  % REQUIRED. Physical unit of the data values recorded by this channel in SI (see Appendix V: Units for allowed symbols).
-temp.channels.low_cutoff         = ft_getopt(temp.channels, 'low_cutoff'         , nan);  % OPTIONAL. Frequencies used for the high-pass filter applied to the channel in Hz. If no high-pass filter applied, use n/a.
-temp.channels.high_cutoff        = ft_getopt(temp.channels, 'high_cutoff'        , nan);  % OPTIONAL. Frequencies used for the low-pass filter applied to the channel in Hz. If no low-pass filter applied, use n/a. Note that hardware anti-aliasing in A/D conversion of all MEG/EEG electronics applies a low-pass filter; specify its frequency here if applicable.
-temp.channels.reference          = ft_getopt(temp.channels, 'reference'          , nan);  % OPTIONAL.
-temp.channels.group              = ft_getopt(temp.channels, 'group'              , nan);  % OPTIONAL.
+temp.channels.low_cutoff         = ft_getopt(temp.channels, 'low_cutoff'         , nan);  % REQUIRED. Frequencies used for the high-pass filter applied to the channel in Hz. If no high-pass filter applied, use n/a.
+temp.channels.high_cutoff        = ft_getopt(temp.channels, 'high_cutoff'        , nan);  % REQUIRED. Frequencies used for the low-pass filter applied to the channel in Hz. If no low-pass filter applied, use n/a. Note that hardware anti-aliasing in A/D conversion of all MEG/EEG electronics applies a low-pass filter; specify its frequency here if applicable.
+temp.channels.reference          = ft_getopt(temp.channels, 'reference'          , nan);  % RECOMMENDED.
+temp.channels.group              = ft_getopt(temp.channels, 'group'              , nan);  % RECOMMENDED.
 temp.channels.sampling_frequency = ft_getopt(temp.channels, 'sampling_frequency' , nan);  % OPTIONAL. Sampling rate of the channel in Hz.
 temp.channels.description        = ft_getopt(temp.channels, 'description'        , nan);  % OPTIONAL. Brief free-text description of the channel, or other information of interest. See examples below.
 temp.channels.notch              = ft_getopt(temp.channels, 'notch'              , nan);  % OPTIONAL. Frequencies used for the notch filter applied to the channel, in Hz. If no notch filter applied, use n/a.
 temp.channels.status             = ft_getopt(temp.channels, 'status'             , nan);  % OPTIONAL. Data quality observed on the channel (good/bad). A channel is considered bad if its data quality is compromised by excessive noise. Description of noise type SHOULD be provided in [status_description].
 temp.channels.status_description = ft_getopt(temp.channels, 'status_description' , nan);  % OPTIONAL. Freeform text description of noise or artifact affecting data quality on the channel. It is meant to explain why the channel was declared bad in [status].
-temp.channels.software_filters   = ft_getopt(temp.channels, 'software_filters'   , nan);  % OPTIONAL. List of temporal and/or spatial software filters applied (e.g. "SSS", "SpatialCompensation"). Note that parameters should be defined in the general MEG sidecar .json file. Indicate n/a in the absence of software filters applied.
 
 fn = {'name' 'type' 'units' 'low_cutoff' 'high_cutoff' 'reference' 'group' 'sampling_frequency'...
     'description' 'notch' 'status' 'status_description'};
@@ -26,8 +25,13 @@ for i=1:numel(fn)
 end
 
 %% iEEG  channels.tsv file
+%% name
 name                                = mergevector({header.elec(:).Name}', temp.channels.name);
+
+%% type
 type                                = cell(size(name));
+
+% ECOG/SEEG
 if(any(metadata.ch2use_included))
     if contains(lower(metadata.format_info),'ecog')
         [type{metadata.ch2use_included}] = deal('ECOG');
@@ -36,6 +40,7 @@ if(any(metadata.ch2use_included))
     end
 end
 
+% OTHER
 if(any(~metadata.ch2use_included))
     [type{~metadata.ch2use_included}] = deal('OTHER');
 end
@@ -80,29 +85,29 @@ if(any(idx_trig))
     [type{idx_trig}]                = deal('TRIG') ;
 end
 
+%% units, sampling frequency, low cutoff, high cutoff, reference, group, notch, status
 units                               = mergevector({header.elec(:).Unit}', temp.channels.units);
 sampling_frequency                  = mergevector(repmat(header.Rate_Min, header.Num_Chan, 1), temp.channels.sampling_frequency);
 low_cutoff                          = cell(size(name));
-[low_cutoff{:}]                     = deal(cfg(1).HardwareFilters.LowpassFilter.CutoffFrequency); 
+[low_cutoff{:}]                     = deal(cfg(1).HardwareFilters.LowpassFilter.CutoffFrequency);
 high_cutoff                         = cell(size(name)) ;
-[high_cutoff{:}]                    = deal(cfg(1).HardwareFilters.HighpassFilter.CutoffFrequency);                                          
+[high_cutoff{:}]                    = deal(cfg(1).HardwareFilters.HighpassFilter.CutoffFrequency);
 reference                           = {header.elec(:).Ref}';
-
 group                               = extract_group_info(metadata);
-
 notch                               = repmat('n/a',header.Num_Chan, 1);
-
-[ch_status,ch_status_desc]          = status_and_description(metadata) ;
+[ch_status,ch_status_desc]          = status_and_description(metadata);
 status                              = ch_status;
 status_description                  = ch_status_desc;
 
-channels_tsv                        = table(name, type, units,  low_cutoff,    ...
+%% make channels_tsv
+channels_tsv = table(name, type, units,  low_cutoff,    ...
     high_cutoff, reference, group, sampling_frequency,   ...
     notch, status, status_description);
 
 %% write channels.tsv
-if ~isempty(channels_tsv)
 
+if ~isempty(channels_tsv)
+    
     for i=1:size(cfg(1).ieeg_dir,2)
         filename = fullfile(cfg(1).ieeg_dir{i},fchannels_name);
         if isfile(filename)
