@@ -1,16 +1,40 @@
 %% create dataset descriptor
-function create_datasetDesc(proj_dir)
+function create_datasetDesc(proj_dir,sub_label)
 
-ddesc_json.Name               = 'RESPect' ;
-ddesc_json.BIDSVersion        = 'BEP010';
-ddesc_json.License            = 'Not licenced yet';
-ddesc_json.Authors            = {'van Blooijs D., Demuru M., Zweiphenning W.J.E.M, Leijten F.S.S., Zijlmans M.'};
-ddesc_json.Acknowledgements   = 'Huiskamp G.J.M.';
-ddesc_json.HowToAcknowledge   = 'possible paper to quote' ;
-ddesc_json.Funding            = 'Epi-Sign Project and Epilepsiefonds #17-07' ;
-ddesc_json.ReferencesAndLinks = {'articles and/or links'};
-ddesc_json.DatasetDOI         = 'DOI of the dataset if online';
 
+if contains(sub_label,'RESP')
+    ddesc_json.Name               = 'RESPect' ;
+    ddesc_json.BIDSVersion        = 'BEP010';
+    ddesc_json.License            = 'Not licenced yet';
+    ddesc_json.Authors            = {'van Blooijs D., Demuru M., Zweiphenning W.J.E.M, Leijten F.S.S., Zijlmans M.'};
+    ddesc_json.Acknowledgements   = 'Huiskamp G.J.M.';
+    ddesc_json.HowToAcknowledge   = 'possible paper to quote' ;
+    ddesc_json.Funding            = 'Epi-Sign Project, Alexandre Suerman Stipendium 2015, and Epilepsiefonds #17-07' ;
+    ddesc_json.ReferencesAndLinks = {'articles and/or links'};
+    ddesc_json.DatasetDOI         = 'DOI of the dataset if online';
+    
+elseif contains(sub_label,'PRIOS')
+    ddesc_json.Name               = 'PRIOS' ;
+    ddesc_json.BIDSVersion        = 'BEP010';
+    ddesc_json.License            = 'Not licenced yet';
+    ddesc_json.Authors            = {'Blok S., van Blooijs D., Huiskamp G.J.M., Leijten F.S.S.'};
+    ddesc_json.Acknowledgements   = 'persons to acknowledge';
+    ddesc_json.HowToAcknowledge   = 'possible paper to quote' ;
+    ddesc_json.Funding            = 'Epilepsiefonds #17-07' ;
+    ddesc_json.ReferencesAndLinks = {'articles and/or links'};
+    ddesc_json.DatasetDOI         = 'DOI of the dataset if online';
+    
+elseif contains(sub_label,'REC2Stim')
+    ddesc_json.Name               = 'REC2Stim' ;
+    ddesc_json.BIDSVersion        = 'BEP010';
+    ddesc_json.License            = 'Not licenced yet';
+    ddesc_json.Authors            = {'van Blooijs D., Aarnoutse E.J., Ramsey N.F., Huiskamp G.J.M., Leijten F.S.S.'};
+    ddesc_json.Acknowledgements   = 'persons to acknowledge';
+    ddesc_json.HowToAcknowledge   = 'possible paper to quote' ;
+    ddesc_json.Funding            = 'Epilepsiefonds #17-07' ;
+    ddesc_json.ReferencesAndLinks = {'articles and/or links'};
+    ddesc_json.DatasetDOI         = 'DOI of the dataset if online';
+end
 
 if ~isempty(ddesc_json)
     
