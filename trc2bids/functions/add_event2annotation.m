@@ -11,25 +11,25 @@ end
 if(~isempty(event))
     for i=1:numel(event)
         
-        eventsannots.type{cc}    = evname                           ;
+        eventsannots.type{cc,1}    = evname                           ;
         
         %         if strcmp(evname,'artefact')
-        eventsannots.sub_type{cc} = event{i}.type;
-        eventsannots.s_start{cc} = round(event{i}.pos(1)/fs,1); % time in seconds (1 decimal)
-        eventsannots.samp_start{cc} = num2str(event{i}.pos(1))          ;
-        eventsannots.s_end{cc}   = round(event{i}.pos(end)/fs,1); % time in seconds (1 decimal)
-        eventsannots.samp_end{cc} = num2str(event{i}.pos(end))          ;
-        eventsannots.duration{cc} = round(eventsannots.s_end{cc} - eventsannots.s_start{cc},3);
-        eventsannots.stim_type{cc} = 'n/a';
-        eventsannots.site_name{cc} = 'n/a';
-        eventsannots.site_channum{cc} = 'n/a';
-        eventsannots.stim_cur{cc} = 'n/a';
-        eventsannots.freq{cc} = 'n/a';
+        eventsannots.sub_type{cc,1} = event{i}.type;
+        eventsannots.s_start{cc,1} = event{i}.pos(1)/fs; % time in seconds 
+        eventsannots.samp_start{cc,1} = num2str(event{i}.pos(1))          ;
+        eventsannots.s_end{cc,1}   = event{i}.pos(end)/fs; % time in seconds 
+        eventsannots.samp_end{cc,1} = num2str(event{i}.pos(end))          ;
+        eventsannots.duration{cc,1} = eventsannots.s_end{cc} - eventsannots.s_start{cc};
+        eventsannots.stim_type{cc,1} = 'n/a';
+        eventsannots.site_name{cc,1} = 'n/a';
+        eventsannots.site_channum{cc,1} = 'n/a';
+        eventsannots.stim_cur{cc,1} = 'n/a';
+        eventsannots.freq{cc,1} = 'n/a';
        
         if isfield(event{i},'notes') && ~isempty(event{i}.notes)
-            eventsannots.notes{cc} = event{i}.notes;
+            eventsannots.notes{cc,1} = event{i}.notes;
         else
-            eventsannots.notes{cc} = 'n/a';
+            eventsannots.notes{cc,1} = 'n/a';
         end
         
         if size(event{i}.ch_names_on,2) == 1
@@ -43,7 +43,7 @@ if(~isempty(event))
                 name = [name ,',', event{i}.ch_names_on{j}];
             end
         end
-        eventsannots.ch_name_on{cc} = name;
+        eventsannots.ch_name_on{cc,1} = name;
         
         if size(event{i}.ch_names_off,2) == 1
             name = event{i}.ch_names_off{1}              ;
@@ -57,7 +57,7 @@ if(~isempty(event))
             end
         end
         
-        eventsannots.ch_name_off{cc} = name;
+        eventsannots.ch_name_off{cc,1} = name;
         
         annots_new([annots_new{:,1}]==event{i}.pos(1),:)=[];
         annots_new([annots_new{:,1}]==event{i}.pos(end),:)=[];
