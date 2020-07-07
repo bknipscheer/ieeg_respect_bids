@@ -1,10 +1,20 @@
+%% description of this code
+% This scripts defines the patient study name and converts ieeg data to
+% BIDS with accompanying meta-files
 
-%% preparations - matlab
-% make sure you have the right settings by running config_trc2bids
-config_trc2bids
+% Dorien van Blooijs, Willemiek Zweiphenning 2019
+
+clear 
+
+%% patient characteristics
+
+cfg.sub_labels = {['sub-' input('Patient number (RESPXXXX)/(REC2StimXX)/(PRIOSXX): ','s')]};
+
+%% set paths
+cfg = setLocalDataPath(cfg);
 
 %% 1a) TRC to bids - run all files in patient-folder
-files = dir(pathname);
+files = dir(cfg(1).pathname);
 runall = struct;
 
 if size(files,1)<1
@@ -16,9 +26,9 @@ for i=1:size(files,1)
     runall(i).file = files(i).name;
     if contains(files(i).name,'EEG_')
         
-        cfg(1).filename = [pathname,files(i).name];
+        cfg(1).filename = [cfg(1).pathname,files(i).name];
         
-        pathsplit = strsplit(pathname,{'/'});
+        pathsplit = strsplit(cfg(1).pathname,{'/'});
         patient = pathsplit{end-1};
         filesplit = strsplit(files(i).name,{'_','.TRC'});
         file = filesplit{end-1};
@@ -76,7 +86,7 @@ pathsplit = strsplit(pathname,{'/'});
 patient = pathsplit{end-1};
 filesplit = strsplit(fileinput,{'_','.TRC'});
 file = filesplit{end-1};
-%%
+
 fprintf('Running %s, writing EEG: %s to BIDS \n', patient,file)
 [status,msg,metadata,annots] = annotatedTRC2bids(cfg);
 
