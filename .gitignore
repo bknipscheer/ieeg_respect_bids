@@ -11,3 +11,6 @@ desktop.ini
 
 # No personalDataPath
 personalDataPath.m
+personalDataPath_bidsconvert.m
+personalDataPath_elecpos.m
+personalDataPath_anonymization.m
