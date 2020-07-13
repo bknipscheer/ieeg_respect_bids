@@ -76,7 +76,6 @@ if isempty(eventsannots.s_start)
     samp_end        = 'n/a';
     stim_type       = 'n/a';
     site_name       = 'n/a';
-    site_channum    = 'n/a';
     stim_cur        = 'n/a';
     notes           = 'n/a';
     freq            = 'n/a';
@@ -92,18 +91,18 @@ else
     samp_end        = eventsannots.samp_end;
     stim_type       = eventsannots.stim_type;
     site_name       = eventsannots.site_name;
-    site_channum    = eventsannots.site_channum;
     stim_cur        = eventsannots.stim_cur;
     notes           = eventsannots.notes;
     freq            = eventsannots.freq;
+    pulsewidth      = eventsannots.pulsewidth;
     
 end
 
 % make table
-annotation_tsv  = table(s_start,duration, type, sub_type, ch_name_on, ch_name_off,s_end, samp_start, samp_end, stim_type, site_name, stim_cur, freq, notes,  ...
-    'VariableNames',{'onset', 'duration','trial_type', 'sub_type','electrodes_involved_onset','electrodes_involved_offset','offset','sample_start','sample_end','electrical_stimulation_type','electrical_stimulation_site','electrical_stimulation_current','electrical_stimulation_frequency','notes' });
+annotation_tsv  = table(s_start,duration, type, sub_type, ch_name_on, ch_name_off,s_end, samp_start, samp_end, stim_type, site_name, stim_cur, freq, pulsewidth, notes,  ...
+    'VariableNames',{'onset', 'duration','trial_type', 'sub_type','electrodes_involved_onset','electrodes_involved_offset','offset','sample_start','sample_end','electrical_stimulation_type','electrical_stimulation_site','electrical_stimulation_current','electrical_stimulation_frequency','electrical_stimulation_pulsewidth','notes' });
 
-% write table
+%% write table
 if ~isempty(annotation_tsv)
     for i=1:size(cfg(1).ieeg_dir,2)
         

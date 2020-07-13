@@ -39,7 +39,7 @@ for i=1:size(cfg,2)
         % set RESPect name and session number and sex
         name{partnum,1}   = deblank(header.name);
         session(partnum,1) = sesnum;
-        sex{partnum,1} = metadata.sex;
+        sex{partnum,1} = metadata.gender;
         
         % set age of RESPect patient (comparing with current participants-table)
         if pat_exist == 1

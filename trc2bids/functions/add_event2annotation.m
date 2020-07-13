@@ -2,10 +2,10 @@ function [annots_new, eventsannots ] = add_event2annotation(event,evname,eventsa
 
 fs = header.Rate_Min;
 
-if size(eventsannots.type,2) == 0
+if size(eventsannots.type,1) == 0
     cc = 1;
 else
-    cc = size(eventsannots.type,2)+1;
+    cc = size(eventsannots.type,1)+1;
 end
 
 if(~isempty(event))
@@ -20,9 +20,9 @@ if(~isempty(event))
         eventsannots.s_end{cc,1}   = event{i}.pos(end)/fs; % time in seconds 
         eventsannots.samp_end{cc,1} = num2str(event{i}.pos(end))          ;
         eventsannots.duration{cc,1} = eventsannots.s_end{cc} - eventsannots.s_start{cc};
+        eventsannots.pulsewidth{cc,1} = 'n/a';
         eventsannots.stim_type{cc,1} = 'n/a';
         eventsannots.site_name{cc,1} = 'n/a';
-        eventsannots.site_channum{cc,1} = 'n/a';
         eventsannots.stim_cur{cc,1} = 'n/a';
         eventsannots.freq{cc,1} = 'n/a';
        

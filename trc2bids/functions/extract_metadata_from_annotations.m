@@ -82,7 +82,7 @@ try
     %% ---------- INCLUDED ---------- 
     included_idx=cellfun(@(x) contains(x,{'Included'}),annots(:,2));
     metadata.ch2use_included= false(size(ch));
-    if(sum(included_idx))
+    if (sum(included_idx))
         metadata.ch2use_included=single_annotation(annots,'Included',ch);
         fprintf('File had Included-annotation\n')
         metadata.incl_exist = 1;

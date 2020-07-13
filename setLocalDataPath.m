@@ -33,7 +33,21 @@ elseif ~isempty(varargin)
 
     % add path to data
     if isstruct(varargin{1})
-        localDataPath = personalDataPath(varargin{1});
+        if any(contains(fieldnames(varargin{1}),'mode'))
+            if strcmp(varargin{1}.mode,'anonymization')
+                        localDataPath = personalDataPath_anon(varargin{1});
+
+            elseif strcmp(varargin{1}.mode,'bidsconversion')
+                        localDataPath = personalDataPath_bidsconvert(varargin{1});
+
+            elseif strcmp(varargin{1}.mode,'electrodeposition')
+                        localDataPath = personalDataPath_elecpos(varargin{1});
+            end
+            
+        else
+           error('No mode in cfg, make sure to add mode [bidsconversion/anonymization/electrodeposition] to cfg') 
+        end
+        
     else
         if varargin{1}==1 && exist('personalDataPath','file')
             

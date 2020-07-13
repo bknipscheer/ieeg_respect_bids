@@ -43,7 +43,11 @@ for i=2:numel(C)
             ch_subset_str=parse_ch_subset(curr_str,chs);
             ch2use_temp = zeros(size(chs));
             for chan = 1:size(ch_subset_str,1)
-                ch2use_temp(:,chan) = strcmpi(chs,ch_subset_str{chan});
+                if sum(strcmpi(chs,ch_subset_str{chan}))>1
+                    ch2use_temp(:,chan) = strcmp(chs,ch_subset_str{chan});
+                else
+                    ch2use_temp(:,chan) = strcmpi(chs,ch_subset_str{chan});
+                end
             end
         else % ChannelName
              ch2use_temp = strcmpi(chs,curr_str);

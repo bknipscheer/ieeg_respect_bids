@@ -2,7 +2,15 @@
 % author Dorien van Blooijs
 % date: 2019
 
-config_anonymization
+clear 
+
+%% patient characteristics
+
+cfg.sub_labels = {['sub-' input('Patient number (RESPXXXX)/(REC2StimXX)/(PRIOSXX): ','s')]};
+cfg.mode = 'anonymization';
+
+%% set paths
+cfg = setLocalDataPath(cfg);
 
 %% choose the eeg-file and anonymize this file/these files
 files = dir(cfg.proj_dirinput);
