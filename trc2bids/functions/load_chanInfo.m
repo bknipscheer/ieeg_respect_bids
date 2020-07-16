@@ -36,10 +36,10 @@ for i=1:size(ch,1)
     end
     
     if sum(cellfun(@(x) strcmpi(x,test1),elec_name)) >0
-        if sum(cellfun(@(x) strcmpi(x,test1),elec_name)) ==1
+        if sum(cellfun(@(x) strcmpi(x,test1),elec_name)) ==1 % if electrode name is once in electrodes list, ignore case
             idx = cellfun(@(x) strcmpi(x,test1),elec_name);
-        elseif sum(cellfun(@(x) strcmp(x,test1),elec_name)) == 1
-            idx = cellfun(@(x) strcmpi(x,test1),elec_name);
+        elseif sum(cellfun(@(x) strcmp(x,test1),elec_name)) == 1 % if electrode name is twice in electrodes list, do not ignore case
+            idx = cellfun(@(x) strcmp(x,test1),elec_name);
         end
         
         elec_incl(i)        = ~strcmp(cc_elecs.group{idx},'other');
@@ -61,12 +61,12 @@ for i=1:size(ch,1)
         end
         
     elseif sum(cellfun(@(x) strcmpi(x,test2),elec_name)) >0
-        if sum(cellfun(@(x) strcmpi(x,test2),elec_name)) ==1
+        if sum(cellfun(@(x) strcmpi(x,test2),elec_name)) ==1 % if electrode name is once in electrodes list, ignore case
             idx = cellfun(@(x) strcmpi(x,test2),elec_name);
-        elseif sum(cellfun(@(x) strcmp(x,test2),elec_name)) == 1
+        elseif sum(cellfun(@(x) strcmp(x,test2),elec_name)) == 1 % if electrode name is twice in electrodes list, do not ignore case
             idx = cellfun(@(x) strcmp(x,test2),elec_name);
         end
-
+        
         elec_incl(i)        = ~strcmp(cc_elecs.group{idx},'other');
         elec_soz(i)         = strcmp(cc_elecs.soz{idx},'yes');
         elec_silicon(i)     = strcmp(cc_elecs.silicon{idx},'yes');
