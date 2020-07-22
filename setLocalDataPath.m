@@ -35,7 +35,7 @@ elseif ~isempty(varargin)
     if isstruct(varargin{1})
         if any(contains(fieldnames(varargin{1}),'mode'))
             if strcmp(varargin{1}.mode,'anonymization')
-                        localDataPath = personalDataPath_anon(varargin{1});
+                        localDataPath = personalDataPath_anonymization(varargin{1});
 
             elseif strcmp(varargin{1}.mode,'bidsconversion')
                         localDataPath = personalDataPath_bidsconvert(varargin{1});
