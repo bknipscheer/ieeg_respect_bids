@@ -49,6 +49,12 @@ for stim = 1:size(metadata.stimulation,1)
     elseif contains(lower(evname),'esm')
         default_freq = 50;
         default_pulsewidth = 1050/1000;
+    elseif contains(lower(evname),'chocs1')
+        default_freq = 1;
+        default_pulsewidth = 1.025/1000; %1025 usec
+    elseif contains(lower(evname),'chocs2')
+        default_freq = 1;
+        default_pulsewidth = 2.025/1000; %2025 usec
     end
     
     % note description: notification when stimcurr is unknown
@@ -111,12 +117,12 @@ for stim = 1:size(metadata.stimulation,1)
         % if no trigger is found in the entire data dile
         if sum(cellfun(@(x) contains(x,{'No trigger'}),annots_new(:,2)))>0 && isempty(find(ismember(stimtriggers,stim_start:stim_stop),1))
             locs = stim_start + findtrigger(data, stim_num,header.Rate_Min, stim_start,stim_stop);
-        
+            
         elseif any(ismember(vertcat(annots_new{contains(annots_new(:,2),'No trigger'),1}),stim_start:stim_stop)) % if No triggers is part of periof of stimulus pair
-            locs = stim_start + findtrigger(data, stim_num,header.Rate_Min, stim_start,stim_stop);            
+            locs = stim_start + findtrigger(data, stim_num,header.Rate_Min, stim_start,stim_stop);
             
         elseif ~isempty(find(ismember(stimtriggers,stim_start:stim_stop),1)) % when triggers are present
-            locs = trigger.pos(ismember(trigger.pos,stim_start:stim_stop) & trigger.val>1000);         
+            locs = trigger.pos(ismember(trigger.pos,stim_start:stim_stop) & trigger.val>1000);
             
         else
             
@@ -252,10 +258,10 @@ for stim = 1:size(metadata.stimulation,1)
         
         if any(idx_trigger)
             
-           stim_duration = (trigger.pos(idx_trigger)-stim_start)/header.Rate_Min; % in seconds
+            stim_duration = (trigger.pos(idx_trigger)-stim_start)/header.Rate_Min; % in seconds
         else
             stim_duration = cell(size(stim_locs,1),1);
-            [stim_duration{:}] = deal(stim_pulsewidth{1});            
+            [stim_duration{:}] = deal(stim_pulsewidth{1});
         end
         
         

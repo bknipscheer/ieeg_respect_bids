@@ -27,27 +27,27 @@ for i=numannots
 
     if ~isempty(regexp(lower(annots_new{i,2}),'µsec', 'once'))
         annot_pulsdur(countpuls,1) = annots_new{i,1};
-        annot_pulsdur(countpuls,2) = str2double(cell2mat(extractBetween(regexp(lower(annots_new{i,2}),' [0-9]+µsec','match'),' ','µsec')))/1000000; % from usec to sec 
+        
+        if ~isnan(str2double(cell2mat(extractBetween(regexp(lower(annots_new{i,2}),' [0-9]+µsec','match'),' ','µsec'))))
+            annot_pulsdur(countpuls,2) = str2double(cell2mat(extractBetween(regexp(lower(annots_new{i,2}),' [0-9]+µsec','match'),' ','µsec')))/1000000; % from usec to sec
+        elseif ~isnan(str2double(cell2mat(extractBetween(regexp(lower(annots_new{i,2}),'_[0-9]+usec','match'),'_','usec'))))
+            annot_pulsdur(countpuls,2) = str2double(cell2mat(extractBetween(regexp(lower(annots_new{i,2}),'_[0-9]+usec','match'),'_','usec')))/1000000; % from usec to sec
+        end
+        
         countpuls = countpuls +1;
     end
     
-     if ~isempty(regexp(lower(annots_new{i,2}),'usec', 'once'))
-        annot_pulsdur(countpuls,1) = annots_new{i,1};
-        annot_pulsdur(countpuls,2) = str2double(cell2mat(extractBetween(regexp(lower(annots_new{i,2}),'_[0-9]+usec','match'),'_','usec')))/1000000; % from usec to sec 
-        countpuls = countpuls +1;
-    end
-       
     if ~isempty(regexp(lower(annots_new{i,2}),'hz', 'once'))
         annot_freq(countfreq,1) = annots_new{i,1};
-        annot_freq(countfreq,2) = str2double(cell2mat(extractBetween(regexp(lower(annots_new{i,2}),' [0-9.]+hz','match'),' ','hz'))); 
+        if ~isnan(str2double(cell2mat(extractBetween(regexp(lower(annots_new{i,2}),' [0-9.]+hz','match'),' ','hz'))))
+            annot_freq(countfreq,2) = str2double(cell2mat(extractBetween(regexp(lower(annots_new{i,2}),' [0-9.]+hz','match'),' ','hz')));
+        elseif ~isnan(str2double(cell2mat(extractBetween(regexp(lower(annots_new{i,2}),'_[0-9.]+hz','match'),'_','hz'))))
+            annot_freq(countfreq,2) = str2double(cell2mat(extractBetween(regexp(lower(annots_new{i,2}),'_[0-9.]+hz','match'),'_','hz'))); 
+        end
         countfreq = countfreq +1;
     end
     
-     if ~isempty(regexp(lower(annots_new{i,2}),'hz', 'once'))
-        annot_freq(countfreq,1) = annots_new{i,1};
-        annot_freq(countfreq,2) = str2double(cell2mat(extractBetween(regexp(lower(annots_new{i,2}),'_[0-9.]+hz','match'),'_','hz'))); 
-        countfreq = countfreq +1;
-    end
+     
    
     if  ~isempty(regexp(lower(annots_new{i,2}),'_bi', 'once'))
         annot_bi_mono = [annot_bi_mono;annots_new{i,1}];
