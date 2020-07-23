@@ -2,10 +2,10 @@ function write_scans_tsv(cfg,metadata,annotation_tsv,fscans_name,fieeg_json_name
 
 f = replace(fieeg_json_name,'.json','');
 
-for i=1:size(cfg(1).ieeg_dir,2)
-    filename = fullfile(cfg(1).ieeg_dir{i},fscans_name);
+for j=1:size(cfg(1).ieeg_dir,2)
+    filename = fullfile(cfg(1).ieeg_dir{j},fscans_name);
     
-    files = dir(cfg(1).ieeg_dir{i});
+    files = dir(cfg(1).ieeg_dir{j});
     if contains([files(:).name],'scans')
         
         % read existing scans-file
@@ -37,13 +37,7 @@ for i=1:size(cfg(1).ieeg_dir,2)
         else
             sens = zeros(size(name,1),1);
         end
-        
-        if any(contains(scans_tsv.Properties.VariableNames,'slowesm')) % this was added later, so not allf iles have this
-            slowesm = scans_tsv.slowesm;
-        else
-            slowesm = zeros(size(name,1),1);
-        end
-        
+                
         if any(contains(scans_tsv.Properties.VariableNames,'sws_sel')) % this was added later, so not allf iles have this
             sws_sel = scans_tsv.sws_sel;
         else
@@ -73,6 +67,14 @@ for i=1:size(cfg(1).ieeg_dir,2)
         else
             rec2stim = zeros(size(name,1),1);
         end
+        
+         
+        if any(contains(scans_tsv.Properties.VariableNames,'chocs')) % this was added later, so not allf iles have this
+            chocs = scans_tsv.rec2stim;
+        else
+            chocs = zeros(size(name,1),1);
+        end
+        
         
     else
         scansnum = 1;
@@ -137,7 +139,7 @@ for i=1:size(cfg(1).ieeg_dir,2)
     spes(scansnum,1)                  = sum(contains(lower(annotation_tsv.sub_type),'spes'));
     rec2stim(scansnum,1)              = sum(strcmpi(annotation_tsv.sub_type,'rec2stim'));
     esm(scansnum,1)                   = sum(strcmpi(annotation_tsv.sub_type,'esm'));
-    slowesm(scansnum,1)               = sum(strcmpi(annotation_tsv.sub_type,'slowesm'));
+    chocs(scansnum,1)               = sum(contains(lower(annotation_tsv.sub_type),'chocs'));
     sleepwaketransition(scansnum,1)   = sum(strcmp(annotation_tsv.trial_type,'sleep-wake transition'));
     sws_sel(scansnum,1)               = sum(strcmp(annotation_tsv.trial_type,'sws selection'));
     rem_sel(scansnum,1)               = sum(strcmp(annotation_tsv.trial_type,'rem selection'));
@@ -152,10 +154,10 @@ for i=1:size(cfg(1).ieeg_dir,2)
     
     scans_tsv  = table(name, format, artefact, sleep_total, sleep_rem, sleep_nrem,...
         sleepwaketransition, seizure, seizureclin, seizuresubclin, motor, spes, rec2stim, ...
-        esm, slowesm, language, sens, sws_sel, rem_sel, iiaw_sel, EI_sel,...
+        esm, chocs, language, sens, sws_sel, rem_sel, iiaw_sel, EI_sel,...
         'VariableNames',{'name', 'format','artefact','sleep_total', 'sleep_rem',...
         'sleep_nrem','sleepwaketransition','seizure_total','seizure_clinical', ...
-        'seizure_subclinical','motor','spes','rec2stim','esm','slowesm', 'language','sens',...
+        'seizure_subclinical','motor','spes','rec2stim','esm','chocs', 'language','sens',...
         'sws_se','rem_sel','iiaw_sel','EI_sel'});
     
     if ~isempty(scans_tsv)
