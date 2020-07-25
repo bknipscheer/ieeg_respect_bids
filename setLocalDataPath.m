@@ -40,7 +40,7 @@ elseif ~isempty(varargin)
             elseif strcmp(varargin{1}.mode,'bidsconversion')
                         localDataPath = personalDataPath_bidsconvert(varargin{1});
 
-            elseif strcmp(varargin{1}.mode,'electrodeposition')
+            elseif contains(varargin{1}.mode,'electrodeposition')
                         localDataPath = personalDataPath_elecpos(varargin{1});
             end
             

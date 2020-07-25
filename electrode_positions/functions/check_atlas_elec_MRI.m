@@ -6,7 +6,11 @@
 
 function check_atlas_elec_MRI(cfg,tb_elecs)
 
-
+if contains(fieldnames(cfg),'transparency')
+   transparency = cfg.transparency;
+else
+    transparency = 1;
+end
 % pick a viewing angle:
 v_dirs = [90 0; 270 0]; %[90 0;90 -60;270 -60;0 0;270 0; 270 60]; %zij, onder, .., voor, zij, zijboven
 
@@ -18,8 +22,8 @@ g = gifti(dataGiiName);
 
 % surface labels
 if strcmp(cfg.atlas,'DKT')
-surface_labels_name = fullfile(cfg.freesurfer_directory,'label',...
-    [cfg.hemisphere 'h.aparc.DKTatlas.annot']);
+    surface_labels_name = fullfile(cfg.freesurfer_directory,'label',...
+        [cfg.hemisphere 'h.aparc.DKTatlas.annot']);
 elseif strcmp(cfg.atlas,'Destrieux')
     surface_labels_name = fullfile(cfg.freesurfer_directory,'label',...
         [cfg.hemisphere 'h.aparc.a2009s.annot']);
@@ -46,7 +50,7 @@ end
 log_elec_incl = ~strcmp(tb_elecs.group,'other');
 tb_elecs = tb_elecs(log_elec_incl,:);
 if iscell(tb_elecs.x)
-        elecmatrix = [cell2mat(tb_elecs.x) cell2mat(tb_elecs.y) cell2mat(tb_elecs.z)];
+    elecmatrix = [cell2mat(tb_elecs.x) cell2mat(tb_elecs.y) cell2mat(tb_elecs.z)];
 else
     elecmatrix = [tb_elecs.x tb_elecs.y tb_elecs.z];
 end
@@ -64,14 +68,20 @@ for k = 1:size(v_dirs,1) % loop across viewing angles
     if strcmp(cfg.view_atlas,'yes')
         ecog_RenderGiftiLabels(g,vert_label,cmap,colortable.struct_names)
     else
-        ecog_RenderGifti(g) % render
+        
+        ecog_RenderGifti(g,transparency) % render
     end
     ecog_ViewLight(v_d(1),v_d(2)) % change viewing angle
     
     if strcmp(cfg.view_elec,'yes')
-        % make sure electrodes pop out
-        a_offset = 0.1*max(abs(elecmatrix(:,1)))*[cosd(v_d(1)-90)*cosd(v_d(2)) sind(v_d(1)-90)*cosd(v_d(2)) sind(v_d(2))];
-        els = elecmatrix+repmat(a_offset,size(elecmatrix,1),1);
+        
+        if strcmp(cfg.elec_offset,'yes')
+            % make sure electrodes pop out
+            a_offset = 0.1*max(abs(elecmatrix(:,1)))*[cosd(v_d(1)-90)*cosd(v_d(2)) sind(v_d(1)-90)*cosd(v_d(2)) sind(v_d(2))];
+            els = elecmatrix+repmat(a_offset,size(elecmatrix,1),1);
+        else
+            els = elecmatrix;
+        end
         
         % add electrode numbers
         if strcmp(cfg.show_labels,'yes')

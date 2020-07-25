@@ -28,7 +28,7 @@
 clear 
 cfg(1).sub_labels = {['sub-' input('Patient number (RESPXXXX)/(REC2StimXX)/(PRIOSXX): ','s')]};
 cfg(1).no_fieldtrip = 'yes';
-cfg(1).mode = 'electrodeposition';
+cfg(1).mode = 'electrodeposition_preMRI';
 
 % set paths
 cfg = setLocalDataPath(cfg);
@@ -357,6 +357,7 @@ cfg(1).show_labels = 'yes';
 cfg(1).change_size = 'no';
 cfg(1).change_color = 'no';
 cfg(1).view_atlas ='yes';
+cfg(1).elec_offset = 'yes';
 % cfg(1).atlas = 'Destrieux'; % [DKT/Destrieux]
 cfg(1).atlas = 'DKT'; % [DKT/Destrieux]
 cfg(1).view_elec ='yes';
