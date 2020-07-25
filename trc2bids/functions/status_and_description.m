@@ -79,7 +79,7 @@ if(any(metadata.ch2use_bad))
 end
 
 if(any(metadata.ch2use_badhf))
-    if strcmp(metadata.ch2use_badhf.note,'NB BadHF annotated in avg')
+    if strcmp(metadata.ch2use_badhf_note,'NB BadHF annotated in avg')
         [ch_status_desc{metadata.ch2use_badhf}] = deal('noisy in high frequency bands >80Hz&<500 Hz(visual assessment). Please note, BadHF was annotated in avg!');
     else
         [ch_status_desc{metadata.ch2use_badhf}] = deal('noisy in high frequency bands >80Hz&<500 Hz(visual assessment)');

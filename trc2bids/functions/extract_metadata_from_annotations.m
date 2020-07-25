@@ -136,7 +136,9 @@ try
     if(sum(badhf_idx))
         metadata.ch2use_badhf=single_annotation(annots,'Bad_HF',ch);
         if any(contains(annots(:,2),'NB BadHF annotated in avg'))
-            metadata.ch2use_badhf.note = 'NB BadHF annotated in avg';
+            metadata.ch2use_badhf_note = 'NB BadHF annotated in avg';
+        else
+             metadata.ch2use_badhf_note = '';
         end
     end
     
@@ -254,6 +256,10 @@ try
     
     %% Look for artefacts cECoG
     metadata.artefacts=look_for_annotation_start_stop(annots,'Art_on','Art_off',ch,header);
+    
+    if any(contains(annots(:,2),'NB artefacts annotated in avg'))
+        metadata.artefacts_note = 'NB artefacts annotated in avg';
+    end
     
     %% Look for sleep data
     metadata.sleep=look_for_annotation_start_stop(annots,'Sl_on','Sl_off',ch,header);
