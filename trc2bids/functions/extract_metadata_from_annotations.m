@@ -119,8 +119,29 @@ try
      %% ---------- GENDER ----------
     gender_idx=cellfun(@(x) contains(x,{'Gender'}),annots(:,2));
     if(sum(gender_idx)~=1)
-        warning('Gender is missing')
-        metadata.gender = 'unknown';
+        % if "Gender" is not annotated in this file, check if it was previously annotated and is present in participants.tsv
+        files_DBlevel = dir(cfg(1).proj_diroutput); % look for files present in database folder 
+        if contains([files_DBlevel(:).name],'participants') 
+            filename = fullfile(cfg(1).proj_diroutput,'participants.tsv');
+            % read existing participants_tsv-file
+            participants_tsv = read_tsv(filename);
+            % look whether the name is already in the participants-table
+            if any(contains(participants_tsv.name,deblank(header.name))) 
+                % check if actual gender annotation is in there, and gender is not empty or 'unknown
+                if and(~isempty(participants_tsv.sex(find(contains(participants_tsv.name,deblank(header.name))))),~contains(participants_tsv.sex(find(contains(participants_tsv.name,deblank(header.name)))),{'unknown'})) 
+                metadata.gender=char(participants_tsv.sex(find(contains(participants_tsv.name,deblank(header.name))))); % copy gender 
+                else
+                warning('Gender is missing')
+                metadata.gender = 'unknown';
+                end
+            else % patient is not present in participants.tsv
+                warning('Gender is missing')
+                metadata.gender = 'unknown';
+            end
+        else % there is no participants.tsv
+            warning('Gender is missing')
+            metadata.gender = 'unknown';
+        end
     else
         str2parse=annots{gender_idx,2};
         C=strsplit(str2parse,';');

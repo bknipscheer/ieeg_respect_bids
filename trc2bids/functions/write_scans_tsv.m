@@ -70,7 +70,7 @@ for j=1:size(cfg(1).ieeg_dir,2)
         
          
         if any(contains(scans_tsv.Properties.VariableNames,'chocs')) % this was added later, so not allf iles have this
-            chocs = scans_tsv.rec2stim;
+            chocs = scans_tsv.chocs; 
         else
             chocs = zeros(size(name,1),1);
         end
