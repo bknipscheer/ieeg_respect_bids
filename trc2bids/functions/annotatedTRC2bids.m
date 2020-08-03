@@ -58,16 +58,16 @@ try
         error('TRC reading failed')  ;
     end
     
-    ch_label = deblank({header.elec.Name}');
-    sub_label = strcat('sub-',deblank(header.name));
+    ch_label = strtrim({header.elec.Name}');
+    sub_label = strcat('sub-',strtrim(header.name));
     
     [status,msg,metadata] = extract_metadata_from_annotations(header,annots,ch_label,trigger,sub_label,cfg);
     
     if(status==0)
         
-        ses_label     = strcat('ses-',deblank(metadata.ses_name),' ','');
-        run_label     = strcat('run-',deblank(metadata.run_name),header.hour,header.min,' ','');
-        task_label    = strcat('task-',deblank(metadata.task_name),' ','');
+        ses_label     = strcat('ses-',strtrim(metadata.ses_name),' ','');
+        run_label     = strcat('run-',strtrim(metadata.run_name),header.hour,header.min,' ','');
+        task_label    = strcat('task-',strtrim(metadata.task_name),' ','');
         
         % make directories
         sub_dir       = fullfile(proj_diroutput,sub_label);
