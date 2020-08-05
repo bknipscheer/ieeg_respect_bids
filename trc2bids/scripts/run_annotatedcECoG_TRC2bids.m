@@ -67,6 +67,9 @@ for i=1:size(runpat,2)
             
             runpat(i).status = 1;
             
+        else
+            runpat(i).status = 0;
+            
             
         end
     end
