@@ -84,17 +84,16 @@ for j=1:size(cfg(1).ieeg_dir,2)
     
     % sleep period
     id_sleep                          = strcmp(annotation_tsv.trial_type,'sleep');
-    durationsl_total = 0;
-    durationsl_rem = 0;
-    durationsl_nrem = 0;
     annotsleep = find(id_sleep==1);
     
+    % pre-allocation
+    durationsl_total = zeros(sum(id_sleep),1); durationsl_rem = zeros(sum(id_sleep),1); durationsl_nrem = zeros(sum(id_sleep),1);
     for i=1:sum(id_sleep)
-        durationsl_total(i) = annotation_tsv.duration{annotsleep(i)};
+        durationsl_total(i,1) = annotation_tsv.duration{annotsleep(i)};
         if strcmp(annotation_tsv.sub_type{annotsleep(i)},'REM')
-            durationsl_rem(i) = annotation_tsv.duration{annotsleep(i)};
+            durationsl_rem(i,1) = annotation_tsv.duration{annotsleep(i)};
         elseif strcmp(annotation_tsv.sub_type{annotsleep(i)},'nREM')
-            durationsl_nrem(i) = annotation_tsv.duration{annotsleep(i)};
+            durationsl_nrem(i,1) = annotation_tsv.duration{annotsleep(i)};
         end
     end
     
@@ -104,30 +103,30 @@ for j=1:size(cfg(1).ieeg_dir,2)
     
     % motor period
     id_motor                          = strcmp(annotation_tsv.trial_type,'motortask');
-    durationmt_total = 0;
     annotmt = find(id_motor==1);
     
+    durationmt_total = zeros(sum(id_motor),1);
     for i=1:sum(id_motor)
-        durationmt_total(i) = annotation_tsv.duration{annotmt(i)};
+        durationmt_total(i,1) = annotation_tsv.duration{annotmt(i)};
     end
     motor(scansnum,1)           = sum(durationmt_total);
     
     % language period
     id_lang                          = strcmp(annotation_tsv.trial_type,'languagetask');
-    durationlang_total = 0;
     annotlang = find(id_lang==1);
+    durationlang_total = zeros(sum(id_lang),1);
     
     for i=1:sum(id_lang)
-        durationlang_total(i) = annotation_tsv.duration{annotlang(i)};
+        durationlang_total(i,1) = annotation_tsv.duration{annotlang(i)};
     end
     language(scansnum,1)           = sum(durationlang_total);
     
     % sensing task period
     id_sens                          = strcmp(annotation_tsv.trial_type,'sensing task');
-    durationsens_total = 0;
+    durationsens_total = zeros(sum(id_sens),1);
     annotsens = find(id_sens==1);
     
-    for i=1:sum(id_lang)
+    for i=1:sum(id_sens)
         durationsens_total(i) = annotation_tsv.duration{annotsens(i)};
     end
     sens(scansnum,1)           = sum(durationsens_total);
@@ -139,12 +138,12 @@ for j=1:size(cfg(1).ieeg_dir,2)
     spes(scansnum,1)                  = sum(contains(lower(annotation_tsv.sub_type),'spes'));
     rec2stim(scansnum,1)              = sum(strcmpi(annotation_tsv.sub_type,'rec2stim'));
     esm(scansnum,1)                   = sum(strcmpi(annotation_tsv.sub_type,'esm'));
-    chocs(scansnum,1)               = sum(contains(lower(annotation_tsv.sub_type),'chocs'));
+    chocs(scansnum,1)                 = sum(contains(lower(annotation_tsv.sub_type),'chocs'));
     sleepwaketransition(scansnum,1)   = sum(strcmp(annotation_tsv.trial_type,'sleep-wake transition'));
     sws_sel(scansnum,1)               = sum(strcmp(annotation_tsv.trial_type,'sws selection'));
     rem_sel(scansnum,1)               = sum(strcmp(annotation_tsv.trial_type,'rem selection'));
-    iiaw_sel(scansnum,1)               = sum(strcmp(annotation_tsv.trial_type,'iiaw selection'));
-    EI_sel(scansnum,1)               = sum(strcmp(annotation_tsv.trial_type,'EI selection'));
+    iiaw_sel(scansnum,1)              = sum(strcmp(annotation_tsv.trial_type,'iiaw selection'));
+    EI_sel(scansnum,1)                = sum(strcmp(annotation_tsv.trial_type,'EI selection'));
     
     if metadata.incl_exist == 1
         format{scansnum,1}            = 'included';

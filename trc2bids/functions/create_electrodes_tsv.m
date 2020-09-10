@@ -31,7 +31,7 @@ e_size                                    = repmat({'n/a'},header.Num_Chan,1);
 material                                  = repmat({'n/a'},header.Num_Chan,1); 
 manufacturer                              = extract_manufacturer_info(metadata); 
 group                                     = extract_group_info(metadata);
-hemisphere                                = repmat({'n/a'},header.Num_Chan,1);
+hemisphere                                = extract_hemisphere_info(metadata);
 
 silicon                                   = repmat({'no'},header.Num_Chan,1); 
 soz                                       = repmat({'no'},header.Num_Chan,1); 
@@ -75,8 +75,6 @@ end
 if(any(metadata.ch2use_edge))
     [edge{metadata.ch2use_edge}]  = deal('yes');
 end
-
-
 
 if contains(lower(metadata.format_info),'seeg')
     if(any(metadata.ch2use_lesion))

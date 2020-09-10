@@ -22,6 +22,8 @@ for pat = 1:size(pats,1)
     if contains(pats(pat).name,'PAT')
         cfg(1).pathname = [fullfile(cfg(1).proj_dirinput,pats(pat).name),'/'];
         
+        runpat(pat).pat = pats(pat).name;
+
         files = dir(cfg(1).pathname);
         
         if size(files,1)<1
@@ -50,6 +52,47 @@ for pat = 1:size(pats,1)
             disp('All runs are done, but some still have errors. Fix them manually!')
         else
             disp('All runs are completed')
+        end
+    end
+end
+
+% check which patients do not run without errors
+if contains(fieldnames(runpat),'status')
+    runpat = rmfield(runpat, 'status');
+end
+
+for i=1:size(runpat,2)
+    
+    if ~isempty(runpat(i).runall)
+        
+        if any(vertcat(runpat(i).runall(:).status) == 1)
+            
+            runpat(i).status = 1;
+            
+        else
+            runpat(i).status = 0;
+            
+            
+        end
+    end
+end
+    
+sum([runpat(:).status])
+
+%% 1b) run files which gave errors again
+
+for pat=1:size(runpat,2)
+    
+    if runpat(pat).status == 1
+        
+        for i=1:size(runpat(pat).runall,2)
+            if runpat(pat).runall(i).status == 1
+                
+                cfg(1).filename = fullfile(cfg(1).proj_dirinput,runpat(pat).pat,runpat(pat).runall(i).file);
+                
+                fprintf('Running %s, writing EEG: %s to BIDS \n', runpat(pat).pat,runpat(pat).runall(i).file)
+                [runpat(pat).runall(i).status,runpat(pat).runall(i).msg,runpat(pat).runall(i).metadata,runpat(pat).runall(i).annots] = annotatedTRC2bids(cfg);
+            end
         end
     end
 end

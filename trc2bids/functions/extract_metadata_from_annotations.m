@@ -128,11 +128,11 @@ try
             % look whether the name is already in the participants-table
             if any(contains(participants_tsv.name,deblank(header.name))) 
                 % check if actual gender annotation is in there, and gender is not empty or 'unknown
-                if and(~isempty(participants_tsv.sex(find(contains(participants_tsv.name,deblank(header.name))))),~contains(participants_tsv.sex(find(contains(participants_tsv.name,deblank(header.name)))),{'unknown'})) 
-                metadata.gender=char(participants_tsv.sex(find(contains(participants_tsv.name,deblank(header.name))))); % copy gender 
+                if and(~isempty(participants_tsv.sex(contains(participants_tsv.name,deblank(header.name)))),~contains(participants_tsv.sex(contains(participants_tsv.name,deblank(header.name))),{'unknown'}))
+                    metadata.gender=char(participants_tsv.sex(contains(participants_tsv.name,deblank(header.name)))); % copy gender
                 else
-                warning('Gender is missing')
-                metadata.gender = 'unknown';
+                    warning('Gender is missing')
+                    metadata.gender = 'unknown';
                 end
             else % patient is not present in participants.tsv
                 warning('Gender is missing')
@@ -146,6 +146,44 @@ try
         str2parse=annots{gender_idx,2};
         C=strsplit(str2parse,';');
         metadata.gender=C{2};
+    end
+    
+    %% Hemisphere where electrodes are placed
+    hemisphere_idx = cellfun(@(x) contains(x,{'Hemisphere'}),annots(:,2));
+    if (sum(hemisphere_idx) < 1)
+        if exist('ieeg_json','var') % if ieeg_json is loaded in determining Format
+            if isfield(ieeg_json,'iEEGPlacementScheme') % if iEEGPlacementScheme is in ieeg_json
+                metadata.hemisphere = ieeg_json.iEEGPlacementScheme;
+            else
+                warning('Hemisphere where electrodes are implanted is not mentioned')
+                metadata.hemisphere='unknown';
+            end
+        else
+            warning('Hemisphere where electrodes are implanted is not mentioned')
+            metadata.hemisphere='unknown';
+        end
+    else
+        
+        if sum(hemisphere_idx) == 1
+            
+            if ~contains(annots{hemisphere_idx,2},'[') % if annotation is like Hemisphere;left or Hemisphere;right
+                str2parse=annots{hemisphere_idx,2};
+                C=strsplit(str2parse,{'; ',';'});
+                metadata.hemisphere=C{2};
+                if size(C,2) >2
+                    warning('Annotation in "Hemisphere" might be incorrect')
+                end
+            
+            else
+                metadata = look_for_hemisphere(metadata,hemisphere_idx,annots);
+            end
+        else
+            
+            metadata = look_for_hemisphere(metadata,hemisphere_idx,annots);
+            
+        end
+        
+        
     end
     
     %% Look for bad channels
@@ -318,28 +356,6 @@ try
     %% Look for EI selection
     metadata.EIselection=look_for_annotation_start_stop(annots,'EI_on','EI_off',ch,header);    
    
-    %% Hemisphere where electrodes are placed
-    hemisphere_idx = cellfun(@(x) contains(x,{'Hemisphere'}),annots(:,2));
-    if (sum(hemisphere_idx) ~= 1)
-        if exist('ieeg_json','var') % if ieeg_json is loaded in determining Format
-            if isfield(ieeg_json,'iEEGPlacementScheme') % if iEEGPlacementScheme is in ieeg_json
-                metadata.hemisphere = ieeg_json.iEEGPlacementScheme;
-            else
-                warning('Hemisphere where electrodes are implanted is not mentioned')
-                metadata.hemisphere='unknown';
-            end
-        else
-            warning('Hemisphere where electrodes are implanted is not mentioned')
-            metadata.hemisphere='unknown';
-        end
-    else
-        str2parse=annots{hemisphere_idx,2};
-        C=strsplit(str2parse,{'; ',';'});
-        metadata.hemisphere=C{2};
-        if size(C,2) >2
-            warning('Annotation in "Hemisphere" might be incorrect')
-        end
-    end
     
     %% add triggers
     if ~isempty(trigger)

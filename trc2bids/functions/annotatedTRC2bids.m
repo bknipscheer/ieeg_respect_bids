@@ -48,8 +48,8 @@ try
     msg = '';
     filename  = cfg(1).filename;
     
-    proj_diroutput = {cfg.proj_diroutput};
-    proj_diroutput = proj_diroutput(~cellfun(@isempty, proj_diroutput));
+    proj_diroutput_temp = {cfg.proj_diroutput};
+    proj_diroutput_temp = proj_diroutput_temp(~cellfun(@isempty, proj_diroutput_temp));
     
     % obtain information from the header of the trc-file
     [header,data,data_time,trigger,annots] = read_TRC_HDR_DATA_TRIGS_ANNOTS(filename);
@@ -68,6 +68,17 @@ try
         ses_label     = strcat('ses-',strtrim(metadata.ses_name),' ','');
         run_label     = strcat('run-',strtrim(metadata.run_name),header.hour,header.min,' ','');
         task_label    = strcat('task-',strtrim(metadata.task_name),' ','');
+        
+        if ~contains(task_label,'SPES') % DvB: saves SPES in CCEP repository, so this 
+            proj_diroutput{1} = proj_diroutput_temp{1};
+            cfg(2).proj_diroutput = [];
+        else
+            proj_diroutput = cell(size(proj_diroutput_temp));
+            for i=1:size(proj_diroutput_temp,2)
+                proj_diroutput{i} = proj_diroutput_temp{i};
+            end
+        end
+        
         
         % make directories
         sub_dir       = fullfile(proj_diroutput,sub_label);
@@ -138,15 +149,15 @@ try
                
         %% write dataset descriptor
         
-        for i=1:size(proj_diroutput,2)
-            create_datasetDesc(proj_diroutput{i},sub_label)
-        end
+%         for i=1:size(proj_diroutput,2)
+%             create_datasetDesc(proj_diroutput{i},sub_label)
+%         end
 
         %% write event descriptor
         
-        for i=1:size(proj_diroutput,2)
-            create_eventDesc(proj_diroutput{i})
-        end
+%         for i=1:size(proj_diroutput,2)
+%             create_eventDesc(proj_diroutput{i})
+%         end
         
     else
         %% errors in parsing the data

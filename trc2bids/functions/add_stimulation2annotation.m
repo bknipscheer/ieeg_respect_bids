@@ -55,6 +55,9 @@ for stim = 1:size(metadata.stimulation,1)
     elseif contains(lower(evname),'chocs2')
         default_freq = 1;
         default_pulsewidth = 2.025/1000; %2025 usec
+    elseif contains(lower(evname),'rec2stim')
+        default_freq = 0;
+        default_pulsewidth = 0;
     end
     
     % note description: notification when stimcurr is unknown
@@ -133,12 +136,6 @@ for stim = 1:size(metadata.stimulation,1)
         stim_locs = num2cell(locs');
         s_start = locs/header.Rate_Min;
         stim_s_start = num2cell(s_start');
-        
-        stim_s_end = cell(size(stim_locs,1),1);
-        [stim_s_end{:}] = deal('n/a');
-        
-        stim_samp_end = cell(size(stim_locs,1),1);
-        [stim_samp_end{:}] = deal('n/a');
         
         %% stim name (uses neg-annotation)
         
@@ -258,12 +255,27 @@ for stim = 1:size(metadata.stimulation,1)
         
         if any(idx_trigger)
             
-            stim_duration = (trigger.pos(idx_trigger)-stim_start)/header.Rate_Min; % in seconds
+            stim_duration{1} = (trigger.pos(idx_trigger)-stim_start)/header.Rate_Min; % in seconds
         else
             stim_duration = cell(size(stim_locs,1),1);
             [stim_duration{:}] = deal(stim_pulsewidth{1});
         end
         
+        %% offset of stimulation
+        
+        % in seconds
+        stim_s_end = cell(size(stim_locs,1),1);
+        %         [stim_s_end{:}] = deal('n/a');
+        for k=1:size(stim_locs,1)
+            stim_s_end{k} = stim_s_start{k} + stim_duration{k};
+        end
+        
+        % in samples
+        stim_samp_end = cell(size(stim_locs,1),1);
+%         [stim_samp_end{:}] = deal('n/a');
+        for k=1:size(stim_locs,1)
+            stim_samp_end{k} = stim_s_end{k} * header.Rate_Min;
+        end
         
         %% stimulus type (monophasic/biphasic)
         

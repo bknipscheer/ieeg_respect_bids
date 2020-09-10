@@ -22,7 +22,7 @@ function [electrodes_tableWithlabels, destrieux_labels, DKT_labels] = lookupAtla
 % g = gifti(fullfile(dataRootPath,'derivatives','surfaces',['sub-' subj],...
 %     ['sub-' subj '_T1w_pial.' hemi_cap '.surf.gii']));
 g = gifti(fullfile(cfg.surface_directory,...
-    [cfg.sub_labels{:}, '_', cfg.ses_label, '_T1w_pial.' cfg.hemisphere '.surf.gii']));
+    [cfg.sub_labels{:}, '_', cfg.ses_label, '_T1w_pial.' cfg.hemisphere{1} '.surf.gii']));
 
 % electrodes_tsv = [cfg.ieeg_directory,  '_electrodes.tsv'];
 
@@ -39,7 +39,7 @@ elecmatrix = [tb_elecs.x tb_elecs.y tb_elecs.z];
 % DESTRIEUX ATLAS
 % load Destrieux map
 surface_labels_Destrieux = fullfile(cfg.freesurfer_directory,'label',...
-    sprintf('%sh.aparc.a2009s.annot',cfg.hemisphere));
+    sprintf('%sh.aparc.a2009s.annot',cfg.hemisphere{1}));
 [~, vert_label_Destrieux, colortable_Destrieux] = read_annotation(surface_labels_Destrieux);
 
 % REORDER FREESURFER DESTRIEUX LABELS TO DESTRIEUX LABELS FROM Destrieux et al. NeuroImage2011
@@ -65,7 +65,7 @@ end
 % DKT ATLAS
 % load DKT map
 surface_labels_DKT = fullfile(cfg.freesurfer_directory,'label',...
-    sprintf('%sh.aparc.DKTatlas.annot',cfg.hemisphere)); % corresponds to DKT40 atlas
+    sprintf('%sh.aparc.DKTatlas.annot',cfg.hemisphere{1})); % corresponds to DKT40 atlas
 [~, vert_label_DKT, colortable_DKT] = read_annotation(surface_labels_DKT);
 
 % REORDER FREESURFER DKT LABELS TO DKT LABELS FROM Klein & Tourville Front. Neuroscience 2012
@@ -96,7 +96,7 @@ Wang_ROI_Names = {...
     'TO2' 'TO1' 'LO2' 'LO1' 'V3B' 'V3A' 'IPS0' 'IPS1' 'IPS2' 'IPS3' 'IPS4' ...
     'IPS5' 'SPL1' 'FEF'};
 surface_labels_name = fullfile(cfg.freesurfer_directory,'surf',...
-    sprintf('%sh.wang15_mplbl.mgz',cfg.hemisphere));
+    sprintf('%sh.wang15_mplbl.mgz',cfg.hemisphere{1}));
 if exist(surface_labels_name,'file')
     surface_labels = MRIread(surface_labels_name);
     vert_label_Wang = surface_labels.vol(:);
@@ -106,7 +106,7 @@ clear surface_labels_name
 %load Benson map
 Benson_Area_Names = {'V1','V2','V3','hV4','V01','V02','L01','L02','T01','T02','V3b','V3a'};
 surface_labels_name = fullfile(cfg.freesurfer_directory,'surf',...
-    sprintf('%sh.benson14_varea.mgz',cfg.hemisphere));
+    sprintf('%sh.benson14_varea.mgz',cfg.hemisphere{1}));
 if exist(surface_labels_name,'file')
     surface_labels_B = MRIread(surface_labels_name);
     vert_label_Benson = surface_labels_B.vol(:);
@@ -115,7 +115,7 @@ clear surface_labels_name
 
 % load Benson Eccen
 surface_labels_name = fullfile(cfg.freesurfer_directory,'surf',...
-    sprintf('%sh.benson14_eccen.mgz',cfg.hemisphere));
+    sprintf('%sh.benson14_eccen.mgz',cfg.hemisphere{1}));
 if exist(surface_labels_name,'file')
     surface_labels_B = MRIread(surface_labels_name);
     vert_eccen_label = surface_labels_B.vol(:);
@@ -124,7 +124,7 @@ end
 
 %load Benson Angle
 surface_labels_name = fullfile(cfg.freesurfer_directory,'surf',...
-    sprintf('%sh.benson14_angle.mgz',cfg.hemisphere));
+    sprintf('%sh.benson14_angle.mgz',cfg.hemisphere{1}));
 if exist(surface_labels_name,'file')
     surface_labels_B = MRIread(surface_labels_name);
     vert_angle_label_B = surface_labels_B.vol(:);
@@ -133,7 +133,7 @@ end
 
 % load Benson Sigma
 surface_labels_name = fullfile(cfg.freesurfer_directory,'surf',...
-    sprintf('%sh.benson14_sigma.mgz',cfg.hemisphere));
+    sprintf('%sh.benson14_sigma.mgz',cfg.hemisphere{1}));
 if exist(surface_labels_name,'file')
     surface_labels_B = MRIread(surface_labels_name);
     vert_sigma_label = surface_labels_B.vol(:);

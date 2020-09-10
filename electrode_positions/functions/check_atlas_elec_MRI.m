@@ -16,17 +16,17 @@ v_dirs = [90 0; 270 0]; %[90 0;90 -60;270 -60;0 0;270 0; 270 60]; %zij, onder, .
 
 % gifti file name:
 dataGiiName = fullfile(cfg.surface_directory,...
-    [cfg.sub_labels{:} '_' cfg.ses_label '_T1w_pial.' cfg.hemisphere '.surf.gii']);
+    [cfg.sub_labels{:} '_' cfg.ses_label '_T1w_pial.' cfg.hemisphere{1} '.surf.gii']);
 % load gifti:
 g = gifti(dataGiiName);
 
 % surface labels
 if strcmp(cfg.atlas,'DKT')
     surface_labels_name = fullfile(cfg.freesurfer_directory,'label',...
-        [cfg.hemisphere 'h.aparc.DKTatlas.annot']);
+        [cfg.hemisphere{1} 'h.aparc.DKTatlas.annot']);
 elseif strcmp(cfg.atlas,'Destrieux')
     surface_labels_name = fullfile(cfg.freesurfer_directory,'label',...
-        [cfg.hemisphere 'h.aparc.a2009s.annot']);
+        [cfg.hemisphere{1} 'h.aparc.a2009s.annot']);
 end
 % surface_labels = MRIread(surface_labels_name);
 [~, label, colortable] = read_annotation(surface_labels_name);

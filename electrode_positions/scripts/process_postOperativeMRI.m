@@ -144,7 +144,7 @@ fprintf('------ OPEN THE ELECTRODES.TSV \n-----')
 % open electrodes.tsv
 [filename, pathname] = uigetfile('*.tsv;*.tsv','Select electroces.tsv file',cfg(1).elec_input);
 tb_elecs = readtable(fullfile(pathname,filename),'FileType','text','Delimiter','\t');
-
+%%
 cfg(1).show_labels = 'yes';
 cfg(1).change_size = 'no';
 cfg(1).change_color = 'no';
