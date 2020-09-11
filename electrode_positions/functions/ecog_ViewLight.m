@@ -35,6 +35,8 @@ view_pt=[cosd(th-90)*cosd(phi) sind(th-90)*cosd(phi) sind(phi)]; % light positio
 a=get(gca,'Children');
 for k=1:length(a) % run through to find the light 
     if strcmp(a(k).Type,'light') %find the correct child (the one that is the light)
-        set(a(k),'Position',view_pt) % change light position
+        if a(k).Position(1) == view_pt(1) %% CHECK WITH 1 HEMISPHERE WHETHER LIGHTING IS STILL OKAY!
+            set(a(k),'Position',view_pt) % change light position
+        end
     end
 end

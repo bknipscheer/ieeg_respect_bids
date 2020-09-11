@@ -6,38 +6,43 @@
 
 function check_atlas_elec_MRI(cfg,tb_elecs)
 
+
 if contains(fieldnames(cfg),'transparency')
-   transparency = cfg.transparency;
+    transparency = cfg.transparency;
 else
     transparency = 1;
 end
+
 % pick a viewing angle:
 v_dirs = [90 0; 270 0]; %[90 0;90 -60;270 -60;0 0;270 0; 270 60]; %zij, onder, .., voor, zij, zijboven
 
-% gifti file name:
-dataGiiName = fullfile(cfg.surface_directory,...
-    [cfg.sub_labels{:} '_' cfg.ses_label '_T1w_pial.' cfg.hemisphere{1} '.surf.gii']);
-% load gifti:
-g = gifti(dataGiiName);
-
-% surface labels
-if strcmp(cfg.atlas,'DKT')
-    surface_labels_name = fullfile(cfg.freesurfer_directory,'label',...
-        [cfg.hemisphere{1} 'h.aparc.DKTatlas.annot']);
-elseif strcmp(cfg.atlas,'Destrieux')
-    surface_labels_name = fullfile(cfg.freesurfer_directory,'label',...
-        [cfg.hemisphere{1} 'h.aparc.a2009s.annot']);
+for i=1:size(cfg.hemisphere,2)
+    
+    % gifti file name:
+    dataGiiName = fullfile(cfg.surface_directory,...
+        [cfg.sub_labels{:} '_' cfg.ses_label '_T1w_pial.' cfg.hemisphere{i} '.surf.gii']);
+    % load gifti:
+    g.(cfg.hemisphere{i}) = gifti(dataGiiName);
+    
+    % surface labels
+    if strcmp(cfg.atlas,'DKT')
+        surface_labels_name = fullfile(cfg.freesurfer_directory,'label',...
+            [cfg.hemisphere{i} 'h.aparc.DKTatlas.annot']);
+    elseif strcmp(cfg.atlas,'Destrieux')
+        surface_labels_name = fullfile(cfg.freesurfer_directory,'label',...
+            [cfg.hemisphere{i} 'h.aparc.a2009s.annot']);
+    end
+    % surface_labels = MRIread(surface_labels_name);
+    [~, label, colortable] = read_annotation(surface_labels_name);
+    vert_label.(cfg.hemisphere{i}) = label; % these labels are strange and do not go from 1:76, but need to be mapped to the colortable
+    % mapping labels to colortable
+    for kk = 1:size(colortable.table,1) % 76 are labels
+        vert_label.(cfg.hemisphere{i})(label==colortable.table(kk,5)) = kk;
+    end
+    
+    % make a colormap for the labels
+    cmap = colortable.table(:,1:3)./256;
 end
-% surface_labels = MRIread(surface_labels_name);
-[~, label, colortable] = read_annotation(surface_labels_name);
-vert_label = label; % these labels are strange and do not go from 1:76, but need to be mapped to the colortable
-% mapping labels to colortable
-for kk = 1:size(colortable.table,1) % 76 are labels
-    vert_label(label==colortable.table(kk,5)) = kk;
-end
-
-% make a colormap for the labels
-cmap = colortable.table(:,1:3)./256;
 
 % electrode locations name:
 if isempty(tb_elecs)
@@ -55,8 +60,6 @@ else
     elecmatrix = [tb_elecs.x tb_elecs.y tb_elecs.z];
 end
 
-
-
 %% figure with rendering for different viewing angles
 for k = 1:size(v_dirs,1) % loop across viewing angles
     v_d = v_dirs(k,:);
@@ -65,11 +68,19 @@ for k = 1:size(v_dirs,1) % loop across viewing angles
     
     subplot('position', [0.05 0.25 0.9 0.7])
     
-    if strcmp(cfg.view_atlas,'yes')
-        ecog_RenderGiftiLabels(g,vert_label,cmap,colortable.struct_names)
-    else
+    for i=1:size(cfg.hemisphere,2)
         
-        ecog_RenderGifti(g,transparency) % render
+        if i == size(cfg.hemisphere,2)
+            setLight = 1;
+        else
+            setLight = 0;
+        end
+        
+        if strcmp(cfg.view_atlas,'yes')
+            ecog_RenderGiftiLabels(g.(cfg.hemisphere{i}),vert_label.(cfg.hemisphere{i}),cmap,colortable.struct_names,setLight)
+        else
+            ecog_RenderGifti(g.(cfg.hemisphere{i}),transparency,setLight) % render
+        end
     end
     ecog_ViewLight(v_d(1),v_d(2)) % change viewing angle
     

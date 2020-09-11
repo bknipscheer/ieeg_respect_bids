@@ -110,15 +110,17 @@ clc
 fprintf('\n ----- OPEN %smri ----- \n ----- CLICK WITH RIGHT MOUSE AND OPEN LINUX TERMINAL ----- \n ----- RUN LINE BELOW IN LINUX TERMINAL ----- \nmri_convert ribbon.mgz t1_class.nii\n',cfg(1).freesurfer_directory)
 
 %% STEP 6: Create the hull - matlab
-settings_hull = [13,... % setting for smoothing: default 13
-    0.3]; % setting for threshold: default 0.3
-k = get_mask_V3(cfg(1).sub_labels{:},... % subject name
-    [cfg(1).freesurfer_directory,'mri/t1_class.nii'],... % freesurfer class file
-    cfg(1).anat_directory,... % where you want to safe the file
-    cfg(1).hemisphere{1},... % 'l' for left 'r' for right --> only use the hemisphere where electrodes are located
-    settings_hull(1),...% setting for smoothing
-    settings_hull(2)); % settings for  threshold
-% the hull is saved as sub-RESPXXXX_surface1_13_03.img
+for i=1:size(cfg(1).hemisphere,2)
+    settings_hull = [13,... % setting for smoothing: default 13
+        0.3]; % setting for threshold: default 0.3
+    k = get_mask_V3(cfg(1).sub_labels{:},... % subject name
+        [cfg(1).freesurfer_directory,'mri/t1_class.nii'],... % freesurfer class file
+        cfg(1).anat_directory,... % where you want to safe the file
+        cfg(1).hemisphere{i},... % 'l' for left 'r' for right --> only use the hemisphere where electrodes are located
+        settings_hull(1),...% setting for smoothing
+        settings_hull(2)); % settings for  threshold
+    % the hull is saved as sub-RESPXXXX_surface1_13_03.img
+end
 
 %% STEP 7: check hull - RUN IN Linux TERMINAL
 % type 'mricron'
@@ -254,8 +256,8 @@ elseif contains(json.iEEGElectrodeGroups,'ecog','IgnoreCase',1) || contains(json
                     settings(2),... % 1 for grid or 2xN strip, 2 for 1xN strip
                     num_elecs,... % matrix indices (rows) in elecmatrix, e.g. 1:64 is for grid C1-C64
                     [cfg(1).ieeg_directory, cfg(1).sub_labels{:},'_',cfg(1).ses_label,'_electrodes_temp.mat'],... % file that contains elecmatrix
-                    [cfg(1).anat_directory, cfg(1).sub_labels{:},'_surface',num2str(k),'_',num2str(settings_hull(1)),'_0',num2str(settings_hull(2)*10),'.img'],... % hull we just created
-                    [cfg(1).anat_directory, cfg(1).sub_labels{:},'_surface',num2str(k),'_',num2str(settings_hull(1)),'_0',num2str(settings_hull(2)*10),'.img'],... % hull we just created instead of T1 file
+                    [cfg(1).anat_directory, cfg(1).sub_labels{:},'_',cfg(1).hemisphere{1},'_surface',num2str(k),'_',num2str(settings_hull(1)),'_0',num2str(settings_hull(2)*10),'.img'],... % hull we just created
+                    [cfg(1).anat_directory, cfg(1).sub_labels{:},'_',cfg(1).hemisphere{1},'_surface',num2str(k),'_',num2str(settings_hull(1)),'_0',num2str(settings_hull(2)*10),'.img'],... % hull we just created instead of T1 file
                     cfg(1).anat_directory);
                 %                      [cfg(1).anat_directory, cfg(1).sub_labels{:},'_',cfg(1).ses_label,'_proc-deface_T1w.nii'],... % T1 file (mr.img for same image space with electrode positions)
                 % saves automatically a matrix with projected electrode positions and an image
@@ -316,34 +318,38 @@ end
 % Right click in the dataBIDS/derivatives/freesurfer/sub-,./surf-folder and
 % start Linux terminal.
 % Copy the printed lines in the command window into the linux terminal:
-fprintf('\n ----- OPEN %ssurf/ ---- \n ---- CLICK WITH YOUR RIGHT MOUSE AND OPEN LINUX TERMINAL ----- \n ----- RUN LINE BELOW IN LINUX TERMINAL ----- \nmris_convert %sh.pial %sh.pial.gii\n',cfg(1).freesurfer_directory,cfg(1).hemisphere{1},cfg(1).hemisphere{1})
-
+for i=1:size(cfg(1).hemisphere,2)
+    fprintf('\n ----- OPEN %ssurf/ ---- \n ---- CLICK WITH YOUR RIGHT MOUSE AND OPEN LINUX TERMINAL ----- \n ----- RUN LINE BELOW IN LINUX TERMINAL ----- \nmris_convert %sh.pial %sh.pial.gii\n',cfg(1).freesurfer_directory,cfg(1).hemisphere{i},cfg(1).hemisphere{i})
+end
 %% STEP 14: Convert the .gii coordinates to the MRI native space - matlab
-% load the Freesurfer gifti (freesurfer coordinates)
-g = gifti(fullfile(cfg(1).freesurfer_directory,'surf',[cfg(1).hemisphere{1},'h.pial.gii']));
 
-% convert from freesurfer space to original space
-% the transformation matrix is in the /freesurfer/sub/mri/orig.mgz file:
-mri_orig = fullfile(cfg(1).freesurfer_directory,'mri','orig.mgz');
-orig = MRIread(mri_orig); % MRIread is a function from vistasoft
-Torig = orig.tkrvox2ras;
-Norig = orig.vox2ras;
-freeSurfer2T1 = Norig*inv(Torig);
-
-% convert freesurfer vertices to original T1 space
-vert_mat = double(([g.vertices ones(size(g.vertices,1),1)])');
-vert_mat = freeSurfer2T1*vert_mat;
-vert_mat(4,:) = [];
-vert_mat = vert_mat';
-g.vertices = vert_mat; clear vert_mat
-
-% save correct coordinates back as a gifti
-gifti_name = fullfile(cfg(1).surface_directory, ...
-    [cfg(1).sub_labels{:},'_',cfg(1).ses_label,'_T1w_pial.' cfg(1).hemisphere{1} '.surf.gii']);
-
-save(g,gifti_name,'Base64Binary')
-
-disp('gifti converted to original space')
+for i=1:size(cfg(1).hemisphere,2)
+    % load the Freesurfer gifti (freesurfer coordinates)
+    g = gifti(fullfile(cfg(1).freesurfer_directory,'surf',[cfg(1).hemisphere{i},'h.pial.gii']));
+    
+    % convert from freesurfer space to original space
+    % the transformation matrix is in the /freesurfer/sub/mri/orig.mgz file:
+    mri_orig = fullfile(cfg(1).freesurfer_directory,'mri','orig.mgz');
+    orig = MRIread(mri_orig); % MRIread is a function from vistasoft
+    Torig = orig.tkrvox2ras;
+    Norig = orig.vox2ras;
+    freeSurfer2T1 = Norig*inv(Torig); %#ok<MINV>
+    
+    % convert freesurfer vertices to original T1 space
+    vert_mat = double(([g.vertices ones(size(g.vertices,1),1)])');
+    vert_mat = freeSurfer2T1*vert_mat;
+    vert_mat(4,:) = [];
+    vert_mat = vert_mat';
+    g.vertices = vert_mat; clear vert_mat
+    
+    % save correct coordinates back as a gifti
+    gifti_name = fullfile(cfg(1).surface_directory, ...
+        [cfg(1).sub_labels{:},'_',cfg(1).ses_label,'_T1w_pial.' cfg(1).hemisphere{i} '.surf.gii']);
+    
+    save(g,gifti_name,'Base64Binary')
+    
+    fprintf('gifti %s converted to original space \n',cfg(1).hemisphere{i})
+end
 
 %% STEP 15: add labels of atlases to tsv-file - matlab
 
@@ -356,7 +362,7 @@ disp('Atlases added')
 cfg(1).show_labels = 'yes';
 cfg(1).change_size = 'no';
 cfg(1).change_color = 'no';
-cfg(1).view_atlas ='no';
+cfg(1).view_atlas ='yes';
 cfg(1).elec_offset = 'yes';
 % cfg(1).atlas = 'Destrieux'; % [DKT/Destrieux]
 cfg(1).atlas = 'DKT'; % [DKT/Destrieux]
@@ -394,11 +400,13 @@ ieeg_json_filenums = contains({D(:).name},'_ieeg.json');
 for i=1:size(D,1)
     if ieeg_json_filenums(i) == 1
         ieeg_json = read_json([D(i).folder '/' D(i).name] );
-        if strcmpi(cfg(1).hemisphere,'r')
-            ieeg_json.iEEGPlacementScheme = 'right';
-        elseif strcmpi(cfg(1).hemisphere,'l')
-            ieeg_json.iEEGPlacementScheme = 'left';
-        elseif strcmpi(cfg(1).hemisphere,'l,r') ||strcmpi(cfg(1).hemisphere,'r,l')
+        if size(cfg(1).hemisphere,2) == 1
+            if strcmpi(cfg(1).hemisphere,'r')
+                ieeg_json.iEEGPlacementScheme = 'right';
+            elseif strcmpi(cfg(1).hemisphere,'l')
+                ieeg_json.iEEGPlacementScheme = 'left';
+            end
+        elseif size(cfg(1).hemisphere,2) == 2
             ieeg_json.iEEGPlacementScheme = 'left,right';
         end
         write_json([D(i).folder '/' D(i).name], ieeg_json)
@@ -438,21 +446,24 @@ if~isempty(cfg(2).proj_diroutput)
     for i=1:size(D,1)
         if ieeg_json_filenums(i) == 1
             ieeg_json = read_json([D(i).folder '/' D(i).name] );
-            if strcmpi(cfg(1).hemisphere,'r')
-                ieeg_json.iEEGPlacementScheme = 'right';
-            elseif strcmpi(cfg(1).hemisphere,'l')
-                ieeg_json.iEEGPlacementScheme = 'left';
-            elseif strcmpi(cfg(1).hemisphere,'l,r') ||strcmpi(cfg(1).hemisphere,'r,l')
+            if size(cfg(1).hemisphere,2) == 1
+                if strcmpi(cfg(1).hemisphere,'r')
+                    ieeg_json.iEEGPlacementScheme = 'right';
+                elseif strcmpi(cfg(1).hemisphere,'l')
+                    ieeg_json.iEEGPlacementScheme = 'left';
+                end
+            elseif size(cfg(1).hemisphere,2) == 2
                 ieeg_json.iEEGPlacementScheme = 'left,right';
             end
             write_json([D(i).folder '/' D(i).name], ieeg_json)
         end
     end
+    
 end
 
 
 %% FUNCTIONS
-close 
+close
 function json = read_json(filename)
 ft_info('reading %s\n', filename);
 if ft_hastoolbox('jsonlab', 3)
