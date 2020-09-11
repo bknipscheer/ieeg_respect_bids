@@ -1,4 +1,4 @@
-function tH = ecog_RenderGiftiLabels(g,vert_label,cmapInput,roiNames)
+function tH = ecog_RenderGiftiLabels(g,vert_label,cmapInput,roiNames,setLight)
 % function to render a gifti 
 % 
 % input:
@@ -35,7 +35,9 @@ material([.3 .9 .2 50 1]);
 axis off
 set(gcf,'Renderer', 'zbuffer')
 view(270, 0);
-set(l1,'Position',[-1 0 1])
+if setLight == 1
+    set(l1,'Position',[-1 0 1])
+end
 
 if ~isempty(roiNames)
     subplot(1,5,5),hold on

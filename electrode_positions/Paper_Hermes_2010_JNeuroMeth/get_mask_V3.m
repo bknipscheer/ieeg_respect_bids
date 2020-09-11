@@ -80,7 +80,7 @@ a=double(a);
 dataOut=brain_info;
 for k=1:100
     br_cutoff_str=num2str(br_cutoff);
-    outputnaam=strcat([outputdir subject '_surface' int2str(k) '_'...
+    outputnaam=strcat([outputdir subject '_' l_r '_surface' int2str(k) '_'...
         int2str(sm_lvl) '_' br_cutoff_str([1 3]) '.img']);
     if ~exist(outputnaam,'file')
         dataOut.fname=outputnaam;

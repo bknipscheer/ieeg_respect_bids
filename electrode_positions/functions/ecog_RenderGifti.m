@@ -1,4 +1,4 @@
-function tH = ecog_RenderGifti(g,transparency)
+function tH = ecog_RenderGifti(g,transparency,setLight)
 % function to render a gifti 
 % 
 % input:
@@ -21,4 +21,7 @@ alpha(transparency)
 axis off
 set(gcf,'Renderer', 'zbuffer')
 view(270, 0);
-set(l1,'Position',[-1 0 1])
+
+if setLight == 1
+    set(l1,'Position',[-1 0 1])
+end
