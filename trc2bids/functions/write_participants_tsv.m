@@ -13,7 +13,7 @@ for i=1:size(cfg,2)
         
         files = dir(cfg(i).proj_diroutput);
         pat_exist = [];
-        if contains([files(:).participant_id],'participants')
+        if contains([files(:).name],'participants')
             % read existing scans-file
             participants_tsv = read_tsv(filename);
             
