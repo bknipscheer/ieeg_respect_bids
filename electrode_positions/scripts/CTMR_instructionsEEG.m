@@ -62,14 +62,22 @@ fprintf('\n ----- RUN LINE BELOW IN LINUX TERMINAL, OPEN DEFACED MRI TO CHECK DE
 %% STEP 4: run freesurfer to segment brain add Destrieux atlases - RUN IN LINUX TERMINAL!
 clc
 
+mri_name = [cfg(1).anat_directory, cfg(1).sub_labels{:},'_',cfg(1).ses_label,'_proc-deface_T1w.nii'];
+
 % Copy defaced .nii to correct folder
+
 if exist(cfg(1).anat_directory,'dir')
     copyfile(fullfile(cfg(1).proj_diroutput,'sourcedata',cfg(1).sub_labels{:},cfg(1).ses_label,'anat',...
-        [cfg(1).sub_labels{:},'_',cfg(1).ses_label,'_proc-deface_T1w.nii']),[cfg(1).anat_directory,cfg(1).sub_labels{:},'_',cfg(1).ses_label,'_proc-deface_T1w.nii'])
+        [cfg(1).sub_labels{:},'_',cfg(1).ses_label,'_proc-deface_T1w.nii']),...
+        mri_name)
+    
 else
+    
     mkdir(cfg(1).anat_directory)
     copyfile(fullfile(cfg(1).proj_diroutput,'sourcedata',cfg(1).sub_labels{:},cfg(1).ses_label,'anat',...
-        [cfg(1).sub_labels{:},'_',cfg(1).ses_label,'_proc-deface_T1w.nii']),[cfg(1).anat_directory,cfg(1).sub_labels{:},'_',cfg(1).ses_label,'_proc-deface_T1w.nii'])
+        [cfg(1).sub_labels{:},'_',cfg(1).ses_label,'_proc-deface_T1w.nii']),...
+        mri_name)
+    
 end
 
 % Make a freesurfer folder
@@ -115,7 +123,7 @@ for i=1:size(cfg(1).hemisphere,2)
         0.3]; % setting for threshold: default 0.3
     k = get_mask_V3(cfg(1).sub_labels{:},... % subject name
         [cfg(1).freesurfer_directory,'mri/t1_class.nii'],... % freesurfer class file
-        cfg(1).anat_directory,... % where you want to safe the file
+        cfg(1).deriv_directory,... % where you want to safe the file
         cfg(1).hemisphere{i},... % 'l' for left 'r' for right --> only use the hemisphere where electrodes are located
         settings_hull(1),...% setting for smoothing
         settings_hull(2)); % settings for  threshold
@@ -136,7 +144,7 @@ fprintf('\n ----- RUN LINE BELOW IN LINUX TERMINAL, OPEN DEFACED MRI AND PUT HUL
 % you click all electrodes implanted!
 clc
 fprintf(' ----- OPEN THE CT-SCAN AND CLICK ON ALL ELECTRODES. YOU CAN CHECK WHETHER YOU HAVE ALL ELECTRODES BY CLICKING ON VIEW RESULT ----- \n')
-fprintf(' ----- SAVE WHEN FINISHED IN %s \n',cfg(1).anat_directory)
+fprintf(' ----- SAVE WHEN FINISHED IN %s \n',cfg(1).deriv_directory)
 
 ctmr
 % view result
@@ -160,7 +168,7 @@ end
 fprintf('------ OPEN THE CLICKED ELECTRODES YOU SAVED IN THE PREVIOUS STEP \n-----')
 
 % sort unprojected electrodes
-cfg(1).saveFile = sprintf('%s%s_%s_electrodes_temp.mat',cfg(1).ieeg_directory,cfg(1).sub_labels{:},cfg(1).ses_label);
+cfg(1).saveFile = sprintf('%s%s_%s_electrodes_temp.mat',cfg(1).deriv_directory,cfg(1).sub_labels{:},cfg(1).ses_label);
 sortElectrodes(tb_elecs,cfg(1)); % [electrode labels, folder to save]
 fprintf('Matched electrodes are saved in %s\n',cfg(1).saveFile)
 % loads img file with electrodes from previous step
@@ -179,7 +187,7 @@ tb_elecs = readtable(fullfile(pathname,filename),'FileType','text','Delimiter','
 % log_elec_incl = ~strcmp(tb_elecs.group,'other');
 % tb_elecs = tb_elecs(log_elec_incl,:);
 
-[filename, pathname] = uigetfile('*.mat','Select electrodes_temp.mat',cfg(1).elec_input);
+[filename, pathname] = uigetfile('*.mat','Select electrodes_temp.mat',cfg(1).deriv_directory);
 load(fullfile(pathname,filename));
 
 % only select letters from channelname
@@ -280,10 +288,9 @@ tb_elecs.z = elecmatrix_shift(:,3);
 
 %% STEP 11: save electrode positions, corrected for brain shift to electrodes.tsv - matlab
 
-saveFile = replace(cfg(1).saveFile,'_temp.mat','.tsv');
+saveFile = sprintf('%s%s_%s_electrodes.tsv',cfg(1).elec_input,cfg(1).sub_labels{:},cfg(1).ses_label);
 writetable(tb_elecs, saveFile, 'Delimiter', 'tab', 'FileType', 'text');
 fprintf('Electrode positions, corrected for brainshift, are saved in %s\n',saveFile)
-% TODO: change NaN to n/a!!
 
 %% STEP 12: Write electrode positions as numbers in a nifti - matlab
 % This is not necessary, only if you want to do some extra checks or so.
@@ -294,8 +301,8 @@ fprintf('Electrode positions, corrected for brainshift, are saved in %s\n',saveF
 [output,els,els_ind,outputStruct] = position2reslicedImage(elecmatrix_shift,[cfg(1).anat_directory, cfg(1).sub_labels{:},'_',cfg(1).ses_label,'_proc-deface_T1w.nii']);
 
 for filenummer=1:100
-    save([cfg(1).ieeg_directory cfg(1).sub_labels{:} '_' cfg(1).ses_label,'_electrodes_surface_loc_all' int2str(filenummer) '.mat'],'elecmatrix_shift');
-    outputStruct.fname=[cfg(1).anat_directory,cfg(1).sub_labels{:},'_',cfg(1).ses_label,'_electrodes_surface_all' int2str(filenummer) '.img' ];
+    save([cfg(1).deriv_directory cfg(1).sub_labels{:} '_' cfg(1).ses_label,'_electrodes_surface_loc_all' int2str(filenummer) '.mat'],'elecmatrix_shift');
+    outputStruct.fname=[cfg(1).deriv_directory,cfg(1).sub_labels{:},'_',cfg(1).ses_label,'_electrodes_surface_all' int2str(filenummer) '.img' ];
     if ~exist(outputStruct.fname,'file')>0
         fprintf('----- SAVING %s ------ \n', outputStruct.fname);
         % save the data
@@ -303,7 +310,6 @@ for filenummer=1:100
         break
     end
 end
-
 
 %% STEP 13: convert freesurfer file to .gii - RUN IN LINUX TERMINAL
 clc
@@ -321,6 +327,7 @@ end
 for i=1:size(cfg(1).hemisphere,2)
     fprintf('\n ----- OPEN %ssurf/ ---- \n ---- CLICK WITH YOUR RIGHT MOUSE AND OPEN LINUX TERMINAL ----- \n ----- RUN LINE BELOW IN LINUX TERMINAL ----- \nmris_convert %sh.pial %sh.pial.gii\n',cfg(1).freesurfer_directory,cfg(1).hemisphere{i},cfg(1).hemisphere{i})
 end
+
 %% STEP 14: Convert the .gii coordinates to the MRI native space - matlab
 
 for i=1:size(cfg(1).hemisphere,2)
@@ -358,6 +365,7 @@ end
 disp('Atlases added')
 
 %% STEP 16: CHECK ATLAS WITH ELECTRODE POSITIONS - matlab
+close all
 
 cfg(1).show_labels = 'yes';
 cfg(1).change_size = 'no';
@@ -369,6 +377,10 @@ cfg(1).atlas = 'DKT'; % [DKT/Destrieux]
 cfg(1).view_elec ='yes';
 
 check_atlas_elec_MRI(cfg(1),tb_elecs_atlases)
+
+%% REPLACE NAN WITH N/A
+
+tb_elecs_atlases = bids_tsv_nan2na(tb_elecs_atlases);
 
 %% STEP 17: save electrodes.tsv, make electrodes descriptor, write coordsystem and add hemisphere to existing ieeg_json files
 
@@ -383,6 +395,10 @@ writetable(tb_elecs_atlases, ...
 
 fprintf('Saved %s\n',fullfile(cfg(1).ieeg_directory, ...
     [cfg(1).sub_labels{:} '_' cfg(1).ses_label '_electrodes.tsv' ]))
+
+% 5. write T1w.json accompanying the .nii file
+
+create_json_mri(replace(mri_name,'nii','json'))
 
 % 6. create electrodes descriptor
 
@@ -429,6 +445,11 @@ if~isempty(cfg(2).proj_diroutput)
         'Filetype','text','Delimiter','\t');
     
     disp('Saved electrodes.tsv')
+    
+    % 5. write T1w.json accompanying the .nii file
+    
+    mri_name = [cfg(1).anat_directory, cfg(1).sub_labels{:},'_',cfg(1).ses_label,'_proc-deface_T1w.nii'];
+    create_json_mri(replace(mri_name,'nii','json'))   
     
     % 6. create electrodes descriptor
     

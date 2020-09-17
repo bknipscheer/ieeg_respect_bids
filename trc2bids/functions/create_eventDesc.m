@@ -18,7 +18,7 @@ edesc_json.notes                                = 'notes about the specific even
 
 if ~isempty(edesc_json)
     
-    filename = fullfile(proj_dir,'description_events.json');
+    filename = fullfile(proj_dir,'events.json');
     if isfile(filename)
         existing = read_json(filename);
     else

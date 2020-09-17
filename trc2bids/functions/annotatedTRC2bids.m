@@ -37,7 +37,7 @@
 %     You should have received a copy of the GNU General Public License
 %     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-function [status,msg,metadata,annots] = annotatedTRC2bids(cfg)
+function [status,msg,metadata,annots] = annotatedTRC2bids(cfg,filenum)
 
 try
     % check whether all required fields are in cfg
@@ -85,6 +85,7 @@ try
         ses_dir       = fullfile(proj_diroutput,sub_label,ses_label);
         ieeg_dir      = fullfile(proj_diroutput,sub_label,ses_label,'ieeg');
         ieeg_file     = strcat(sub_label,'_',ses_label,'_',task_label,'_',run_label);
+        cfg(1).ses_dir  = ses_dir;
         cfg(1).ieeg_dir = ieeg_dir;
         
         for i=1:size(sub_dir,2)
@@ -106,6 +107,20 @@ try
                 delete(fullfile(ieeg_dir{i},[ieeg_file,'*.vmrk'])) ;
                 delete(fullfile(ieeg_dir{i},[ieeg_file,'*.TRC']))  ;
                 
+            end
+        end
+        
+        % delete scans.tsv if all files in a patient folder are run, 
+        % with the first file, scans.tsv can be deleted to run it again correctly
+        if cfg(1).runall == 1  && filenum == 1 
+            for i=1:size(ses_dir,2)
+                scans_files = dir(ses_dir{i});
+                
+                if contains([scans_files(:).name],extractBefore(ieeg_file,'_task'))
+                    
+                    delete(fullfile(ses_dir{i},[extractBefore(ieeg_file,'_task') '_scans.tsv']))  ;
+                    
+                end
             end
         end
         
@@ -149,15 +164,15 @@ try
                
         %% write dataset descriptor
         
-%         for i=1:size(proj_diroutput,2)
-%             create_datasetDesc(proj_diroutput{i},sub_label)
-%         end
+        for i=1:size(proj_diroutput,2)
+            create_datasetDesc(proj_diroutput{i},sub_label)
+        end
 
         %% write event descriptor
         
-%         for i=1:size(proj_diroutput,2)
-%             create_eventDesc(proj_diroutput{i})
-%         end
+        for i=1:size(proj_diroutput,2)
+            create_eventDesc(proj_diroutput{i})
+        end
         
     else
         %% errors in parsing the data

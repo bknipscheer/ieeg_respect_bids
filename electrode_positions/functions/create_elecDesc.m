@@ -56,7 +56,7 @@ elecdesc_json.Benson_sigma          = 'Electrode location in a visual cortex reg
 
 if ~isempty(elecdesc_json)
     
-    filename = fullfile(proj_dir,'description_electrodes.json');
+    filename = fullfile(proj_dir,'electrodes.json');
     if isfile(filename)
         existing = read_json(filename);
     else

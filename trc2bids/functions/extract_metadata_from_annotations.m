@@ -118,7 +118,7 @@ try
     
      %% ---------- GENDER ----------
     gender_idx=cellfun(@(x) contains(x,{'Gender'}),annots(:,2));
-    if(sum(gender_idx)~=1)
+    if(sum(gender_idx)==0)
         % if "Gender" is not annotated in this file, check if it was previously annotated and is present in participants.tsv
         files_DBlevel = dir(cfg(1).proj_diroutput); % look for files present in database folder 
         if contains([files_DBlevel(:).name],'participants') 

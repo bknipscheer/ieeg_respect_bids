@@ -2,10 +2,10 @@ function write_scans_tsv(cfg,metadata,annotation_tsv,fscans_name,fieeg_json_name
 
 f = replace(fieeg_json_name,'.json','');
 
-for j=1:size(cfg(1).ieeg_dir,2)
-    filename = fullfile(cfg(1).ieeg_dir{j},fscans_name);
+for j=1:size(cfg(1).ses_dir,2)
+    filename = fullfile(cfg(1).ses_dir{j},fscans_name);
     
-    files = dir(cfg(1).ieeg_dir{j});
+    files = dir(cfg(1).ses_dir{j});
     if contains([files(:).name],'scans')
         
         % read existing scans-file

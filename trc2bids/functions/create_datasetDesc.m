@@ -6,10 +6,10 @@ if contains(sub_label,'RESP')
     ddesc_json.Name               = 'RESPect' ;
     ddesc_json.BIDSVersion        = 'BEP010';
     ddesc_json.License            = 'Not licenced yet';
-    ddesc_json.Authors            = {'van Blooijs D., Demuru M., Zweiphenning W.J.E.M, Leijten F.S.S., Zijlmans M.'};
+    ddesc_json.Authors            = {'van Blooijs D.', 'Demuru M.', 'Zweiphenning W', 'Leijten F', 'Zijlmans M.'};
     ddesc_json.Acknowledgements   = 'Huiskamp G.J.M.';
-    ddesc_json.HowToAcknowledge   = 'possible paper to quote' ;
-    ddesc_json.Funding            = 'Epi-Sign Project, Alexandre Suerman Stipendium 2015, and Epilepsiefonds #17-07' ;
+    ddesc_json.HowToAcknowledge   = 'Demuru M., van Blooijs D., Zweiphenning W. et al 2020, A practical workflow for organizing clinical intracranial EEG data in the intraoperative and long term monitoring settings in the Brain Imaging Data Structure' ;
+    ddesc_json.Funding            = {'Epi-Sign Project', 'Alexandre Suerman Stipendium 2015', 'Epilepsiefonds #17-07'} ;
     ddesc_json.ReferencesAndLinks = {'articles and/or links'};
     ddesc_json.DatasetDOI         = 'DOI of the dataset if online';
     
@@ -17,10 +17,10 @@ elseif contains(sub_label,'PRIOS')
     ddesc_json.Name               = 'PRIOS' ;
     ddesc_json.BIDSVersion        = 'BEP010';
     ddesc_json.License            = 'Not licenced yet';
-    ddesc_json.Authors            = {'Blok S., van Blooijs D., Huiskamp G.J.M., Leijten F.S.S.'};
+    ddesc_json.Authors            = {'Blok S.', 'van Blooijs D.', 'Huiskamp G.J.M.', 'Leijten F.S.S.'};
     ddesc_json.Acknowledgements   = 'persons to acknowledge';
-    ddesc_json.HowToAcknowledge   = 'possible paper to quote' ;
-    ddesc_json.Funding            = 'Epilepsiefonds #17-07' ;
+    ddesc_json.HowToAcknowledge   = 'Demuru M., van Blooijs D., Zweiphenning W. et al 2020, A practical workflow for organizing clinical intracranial EEG data in the intraoperative and long term monitoring settings in the Brain Imaging Data Structure' ;
+    ddesc_json.Funding            = {'Epilepsiefonds #17-07'} ;
     ddesc_json.ReferencesAndLinks = {'articles and/or links'};
     ddesc_json.DatasetDOI         = 'DOI of the dataset if online';
     
@@ -28,10 +28,10 @@ elseif contains(sub_label,'REC2Stim')
     ddesc_json.Name               = 'REC2Stim' ;
     ddesc_json.BIDSVersion        = 'BEP010';
     ddesc_json.License            = 'Not licenced yet';
-    ddesc_json.Authors            = {'van Blooijs D., Aarnoutse E.J., Ramsey N.F., Huiskamp G.J.M., Leijten F.S.S.'};
+    ddesc_json.Authors            = {'van Blooijs D.', 'Aarnoutse E.J.', 'Ramsey N.F.', 'Huiskamp G.J.M.', 'Leijten F.S.S.'};
     ddesc_json.Acknowledgements   = 'persons to acknowledge';
-    ddesc_json.HowToAcknowledge   = 'possible paper to quote' ;
-    ddesc_json.Funding            = 'Epilepsiefonds #17-07' ;
+    ddesc_json.HowToAcknowledge   = 'Demuru M., van Blooijs D., Zweiphenning W. et al 2020, A practical workflow for organizing clinical intracranial EEG data in the intraoperative and long term monitoring settings in the Brain Imaging Data Structure' ;
+    ddesc_json.Funding            = {'Epilepsiefonds #17-07'} ;
     ddesc_json.ReferencesAndLinks = {'articles and/or links'};
     ddesc_json.DatasetDOI         = 'DOI of the dataset if online';
 end

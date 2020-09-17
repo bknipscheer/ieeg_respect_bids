@@ -13,22 +13,22 @@ for i=1:size(cfg,2)
         
         files = dir(cfg(i).proj_diroutput);
         pat_exist = [];
-        if contains([files(:).name],'participants')
+        if contains([files(:).participant_id],'participants')
             % read existing scans-file
             participants_tsv = read_tsv(filename);
             
-            if any(contains(participants_tsv.name,deblank(header.name))) % look whether the name is already in the participants-table
-                if ~isempty(find(contains(participants_tsv.name,deblank(header.name)) ==1 & participants_tsv.session==sesnum, 1)) % patient and session is already in participants-table
-                    partnum = find(contains(participants_tsv.name,deblank(header.name)) ==1 & participants_tsv.session==sesnum); %find patient number and session number
+            if any(contains(participants_tsv.participant_id,deblank(header.name))) % look whether the name is already in the participants-table
+                if ~isempty(find(contains(participants_tsv.participant_id,deblank(header.name)) ==1 & participants_tsv.session==sesnum, 1)) % patient and session is already in participants-table
+                    partnum = find(contains(participants_tsv.participant_id,deblank(header.name)) ==1 & participants_tsv.session==sesnum); %find patient number and session number
                     pat_exist = 1;
-                elseif isempty(find(contains(participants_tsv.name,deblank(header.name)) ==1 & participants_tsv.session==sesnum, 1)) % this session is not yet in participants-table
+                elseif isempty(find(contains(participants_tsv.participant_id,deblank(header.name)) ==1 & participants_tsv.session==sesnum, 1)) % this session is not yet in participants-table
                      partnum = size(participants_tsv,1)+1;
                 end
             else % if participant is not yet in the table, the number is the last one plus one
                 partnum = size(participants_tsv,1)+1;
             end
             
-            name = participants_tsv.name;
+            participant_id = participants_tsv.participant_id;
             age = participants_tsv.age;
             session = participants_tsv.session;
             sex = participants_tsv.sex;
@@ -37,7 +37,7 @@ for i=1:size(cfg,2)
         end
         
         % set RESPect name and session number and sex
-        name{partnum,1}   = deblank(header.name);
+        participant_id{partnum,1}   = deblank(header.name);
         session(partnum,1) = sesnum;
         sex{partnum,1} = metadata.gender;
         
@@ -62,22 +62,22 @@ for i=1:size(cfg,2)
         end
         
         % extract RESPect numbers from RESPect names
-        numname = zeros(size(name));
-        for n=1:size(name,1)
-            numname(n) = str2double(name{n}(5:end));
+        numname = zeros(size(participant_id));
+        for n=1:size(participant_id,1)
+            numname(n) = str2double(participant_id{n}(5:end));
         end
         
         % sorts table based on RESPect number and session number
         [~,I] = sortrows([numname,session]);
         
-        name_sort = name(I);
+        participant_id_sort = participant_id(I);
         age_sort = age(I);
         sex_sort = sex(I);
         session_sort = session(I);
         
         % makes a table from name, session and age
-        participants_tsv  = table(name_sort, session_sort, age_sort, sex_sort, ...
-            'VariableNames',{'name','session', 'age', 'sex'});
+        participants_tsv  = table(participant_id_sort, session_sort, age_sort, sex_sort, ...
+            'VariableNames',{'participant_id','session', 'age', 'sex'});
         
         % save participants.tsv
         if ~isempty(participants_tsv)
