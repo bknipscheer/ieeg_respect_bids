@@ -9,12 +9,19 @@ end_art=find(contains(annots(:,2),str_stop));
 % described in one Sz_on or one Sz_off, this part deals with this
 if strcmp(str_start,'Sz_on')
     
-    sz_cont = find(contains(annots(:,2),'Sz_cont'), 1);
+    sz_cont = find(contains(annots(:,2),'Sz_cont'));
     if ~isempty(sz_cont)
+        if length(sz_cont) == 1 % Sz_cont is annotated once in file (beginning or end)
         if annots{sz_cont,1} < 10*fs % Sz_cont is annotated at beginning of file, sz_cont should be added in start_art
                 start_art = sort([start_art; sz_cont]);
         else
             end_art = sort([end_art; sz_cont]);
+        end
+        elseif length(sz_cont) == 2 % Sz_cont is annotated twice in file (beginning and end)
+            start_art = sort([start_art; sz_cont(1)]);
+            end_art = sort([end_art; sz_cont(2)]);
+        else 
+            error('Sz_cont is annotated more than two times, this is not possible, please check!')
         end
     end
         
