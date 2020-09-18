@@ -174,6 +174,16 @@ try
             create_eventDesc(proj_diroutput{i})
         end
         
+        %% write scans descriptor
+        for i=1:size(proj_diroutput,2)
+            create_scansDesc(proj_diroutput{i})
+        end
+        
+        %% write participants descriptor
+        for i=1:size(proj_diroutput,2)
+            create_participantsDesc(proj_diroutput{i})
+        end
+        
     else
         %% errors in parsing the data
         error(msg)
