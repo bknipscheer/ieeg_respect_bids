@@ -4,7 +4,7 @@
 % ch     - channel labels of all channels in the trc file
 
 
-function [status,msg,metadata]=extract_metadata_from_annotations(header,annots,ch,trigger,patName,cfg) 
+function [status,msg,metadata]=extract_metadata_from_annotations(header,annots,ch,trigger,patName,cfg)
 try
     status=0;
     metadata=[];
@@ -50,7 +50,7 @@ try
     str2parse=annots{task_idx,2};
     C=strsplit(str2parse,';');
     metadata.task_name=strtrim(C{2});
-      
+    
     if contains(metadata.task_name,'SPES')
         % Stimcurr unknown (in SPES)
         stimcur_idx=cellfun(@(x) contains(x,{'Stimcurr'}),annots(:,2));
@@ -79,20 +79,20 @@ try
         metadata = look_for_format(metadata,format_idx,annots);
     end
     
-    %% ---------- INCLUDED ---------- 
+    %% ---------- INCLUDED ----------
     included_idx=cellfun(@(x) contains(x,{'Included'}),annots(:,2));
     metadata.ch2use_included= false(size(ch));
     if (sum(included_idx))
         metadata.ch2use_included=single_annotation(annots,'Included',ch);
         fprintf('File had Included-annotation\n')
         metadata.incl_exist = 1;
-
+        
     else % if "Included" is not annotated in the ECoG, there should be a previous ECoG with annoted "Included"
         metadata.incl_exist = 0;
         
         files = dir(fullfile(cfg(2).proj_dirinput,patName,['ses-',metadata.ses_name],'ieeg',[patName, '_ses-',metadata.ses_name,'_electrodes.tsv']));
         if ~isempty(files)
-
+            
             metadata = load_chanInfo(cfg,metadata,files);
             
         else
@@ -101,7 +101,7 @@ try
         
     end
     
-    %% ---------- ELECTRODE MODEL ---------- 
+    %% ---------- ELECTRODE MODEL ----------
     elecmodel_idx=cellfun(@(x) contains(x,{'Elec_model'}),annots(:,2));
     if(sum(elecmodel_idx)<1)
         file = dir(fullfile(cfg(2).proj_dirinput,patName,['ses-',metadata.ses_name],'ieeg','*ieeg.json'));
@@ -110,36 +110,19 @@ try
             metadata.electrode_manufacturer = ieeg_json.ElectrodeManufacturer;
         else
             warning('Missing Electrode_manufacturer annotation, and no other json from other ECoG with electrode_manufacturer annotation found')
-            metadata.electrode_manufacturer = 'supposed to be AdTech, but needs to be checked'; 
+            metadata.electrode_manufacturer = 'supposed to be AdTech, but needs to be checked';
         end
     else
         metadata = look_for_electrode_manufacturer(metadata,elecmodel_idx,annots);
     end
     
-     %% ---------- GENDER ----------
+    %% ---------- GENDER ----------
     gender_idx=cellfun(@(x) contains(x,{'Gender'}),annots(:,2));
     if(sum(gender_idx)==0)
-        % if "Gender" is not annotated in this file, check if it was previously annotated and is present in participants.tsv
-        files_DBlevel = dir(cfg(1).proj_diroutput); % look for files present in database folder 
-        if contains([files_DBlevel(:).name],'participants') 
-            filename = fullfile(cfg(1).proj_diroutput,'participants.tsv');
-            % read existing participants_tsv-file
-            participants_tsv = read_tsv(filename);
-            % look whether the name is already in the participants-table
-            if any(contains(participants_tsv.name,deblank(header.name))) 
-                % check if actual gender annotation is in there, and gender is not empty or 'unknown
-                if and(~isempty(participants_tsv.sex(contains(participants_tsv.name,deblank(header.name)))),~contains(participants_tsv.sex(contains(participants_tsv.name,deblank(header.name))),{'unknown'}))
-                    metadata.gender=char(participants_tsv.sex(contains(participants_tsv.name,deblank(header.name)))); % copy gender
-                else
-                    warning('Gender is missing')
-                    metadata.gender = 'unknown';
-                end
-            else % patient is not present in participants.tsv
-                warning('Gender is missing')
-                metadata.gender = 'unknown';
-            end
-        else % there is no participants.tsv
+        if metadata.incl_exist == 1
             warning('Gender is missing')
+            metadata.gender = 'unknown';
+        else
             metadata.gender = 'unknown';
         end
     else
@@ -173,7 +156,7 @@ try
                 if size(C,2) >2
                     warning('Annotation in "Hemisphere" might be incorrect')
                 end
-            
+                
             else
                 metadata = look_for_hemisphere(metadata,hemisphere_idx,annots);
             end
@@ -197,7 +180,7 @@ try
         if any(contains(annots(:,2),'NB BadHF annotated in avg'))
             metadata.ch2use_badhf_note = 'NB BadHF annotated in avg';
         else
-             metadata.ch2use_badhf_note = '';
+            metadata.ch2use_badhf_note = '';
         end
     end
     
@@ -238,7 +221,7 @@ try
     end
     
     %% only in seeg channels
-    if contains(metadata.format_info,'seeg') 
+    if contains(metadata.format_info,'seeg')
         
         % look for screw channels - only in seeg
         screw_idx = cellfun(@(x) contains(x,{'Screw'}),annots(:,2));
@@ -255,7 +238,7 @@ try
         if(sum(wm_idx))
             metadata.ch2use_wm=single_annotation(annots,'WM',ch);
         elseif metadata.incl_exist == 0
-            % done in load_chanInfo            
+            % done in load_chanInfo
         end
         
         % look for gray matter channels - only in seeg
@@ -264,7 +247,7 @@ try
         if(sum(gm_idx))
             metadata.ch2use_gm=single_annotation(annots,'GM',ch);
         elseif metadata.incl_exist == 0
-            % done in load_chanInfo            
+            % done in load_chanInfo
         end
         
         % look for CSF channels - only in seeg
@@ -273,7 +256,7 @@ try
         if(sum(csf_idx))
             metadata.ch2use_csf=single_annotation(annots,'CSF',ch);
         elseif metadata.incl_exist == 0
-            % done in load_chanInfo            
+            % done in load_chanInfo
         end
         
         % look for amygdala channels - only in seeg
@@ -282,7 +265,7 @@ try
         if(sum(amyg_idx))
             metadata.ch2use_amyg=single_annotation(annots,'Amyg',ch);
         elseif metadata.incl_exist == 0
-            % done in load_chanInfo            
+            % done in load_chanInfo
         end
         
         % look for hippocampal channels - only in seeg
@@ -291,7 +274,7 @@ try
         if(sum(hipp_idx))
             metadata.ch2use_hipp=single_annotation(annots,'Hipp',ch);
         elseif metadata.incl_exist == 0
-            % done in load_chanInfo            
+            % done in load_chanInfo
         end
         
         % look for lesion channels - only in seeg
@@ -300,7 +283,7 @@ try
         if(sum(lesion_idx))
             metadata.ch2use_lesion=single_annotation(annots,'Lesion',ch);
         elseif metadata.incl_exist == 0
-            % done in load_chanInfo            
+            % done in load_chanInfo
         end
         
         % look for gliosis channels - only in seeg
@@ -309,7 +292,7 @@ try
         if(sum(gliosis_idx))
             metadata.ch2use_lesion=single_annotation(annots,'Glio',ch);
         elseif metadata.incl_exist == 0
-            % done in load_chanInfo            
+            % done in load_chanInfo
         end
     end
     
@@ -334,7 +317,7 @@ try
     
     %% Look for period of stimulation (SPES,ESM,CHOCS,TRENI,REC2Stim)
     metadata.stimulation=look_for_annotation_start_stop(annots,'Stim_on','Stim_off',ch,header);
-       
+    
     %% Look for period of motor task
     metadata.motortask=look_for_annotation_start_stop(annots,'Motor_on','Motor_off',ch,header);
     
@@ -344,18 +327,18 @@ try
     %% Look for period of language task
     metadata.langtask=look_for_annotation_start_stop(annots,'Language_on','Language_off',ch,header);
     
-     %% Look for SWS selection - slow wave sleep
+    %% Look for SWS selection - slow wave sleep
     metadata.SWSselection=look_for_annotation_start_stop(annots,'SWS10_on','SWS10_off',ch,header);
-   
-     %% Look for REM selection - rapid eye movement
+    
+    %% Look for REM selection - rapid eye movement
     metadata.REMselection=look_for_annotation_start_stop(annots,'REM10_on','REM10_off',ch,header);
     
-     %% Look for IIAW selection - inter ictal awake
+    %% Look for IIAW selection - inter ictal awake
     metadata.IIAWselection=look_for_annotation_start_stop(annots,'IIAW10_on','IIAW10_off',ch,header);
     
     %% Look for EI selection
-    metadata.EIselection=look_for_annotation_start_stop(annots,'EI_on','EI_off',ch,header);    
-   
+    metadata.EIselection=look_for_annotation_start_stop(annots,'EI_on','EI_off',ch,header);
+    
     
     %% add triggers
     if ~isempty(trigger)
