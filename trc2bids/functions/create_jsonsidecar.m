@@ -97,11 +97,11 @@ ieeg_json.iEEGGround                    = 'top of forehead or mastoid';
 ieeg_json.iEEGPlacementScheme           = metadata.hemisphere;
 ieeg_json.iEEGElectrodeGroups           = metadata.format_info;
 if ~isempty(metadata.stimulation)
-    ieeg_json.ElectricalStimulation     = true;
+    ieeg_json.ElectricalStimulation     = logical(1);
     ieeg_json.ElectricalStimulationParameters = 'See for more detail the events.tsv';
     
 else
-    ieeg_json.ElectricalStimulation     = false;
+    ieeg_json.ElectricalStimulation     = logical(0);
     ieeg_json.ElectricalStimulationParameters = 'n/a';
 end
 
