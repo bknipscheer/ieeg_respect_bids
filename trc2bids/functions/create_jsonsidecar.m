@@ -110,13 +110,7 @@ end
 for i=1:size(cfg(1).ieeg_dir,2)
     filename = fullfile(cfg(1).ieeg_dir{i},fieeg_json_name);
     
-    if ~isempty(filename)
-        if isfile(filename)
-            existing = read_json(filename);
-        else
-            existing = [];
-        end
-        write_json(filename, mergeconfig(existing, ieeg_json))
-    end
+    
+    write_json(filename, ieeg_json)
     
 end

@@ -153,13 +153,16 @@ if ~isempty(electrodes_tsv)
             if ~isequal(struct1,struct2)
                 fprintf('%s exists!\n',filename)
                 n=1;
-                while isfile(filename)
-                    nameminelec = strsplit(filename,'electrodes');
-                    filename = [nameminelec{1} 'electrodes_' num2str(n) '.tsv'];
-                    n=n+1;
-                end
+%                 while isfile(filename)
+%                     nameminelec = strsplit(filename,'electrodes');
+%                     filename = [nameminelec{1} 'electrodes_' num2str(n) '.tsv'];
+%                     n=n+1;
+%                 end
             end
         end
+        
+        electrodes_tsv = bids_tsv_nan2na(electrodes_tsv);
+
         write_tsv(filename, electrodes_tsv);
     end
 end
