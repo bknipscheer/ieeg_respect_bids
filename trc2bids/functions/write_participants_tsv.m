@@ -37,7 +37,7 @@ for i=1:size(cfg,2)
         end
         
         % set RESPect name and session number and sex
-        participant_id{partnum,1}   = deblank(header.name);
+        participant_id{partnum,1}   = ['sub-' deblank(header.name)];
         session(partnum,1) = sesnum;
         
         if strcmpi(metadata.gender,'male') || strcmpi(metadata.gender,'female')

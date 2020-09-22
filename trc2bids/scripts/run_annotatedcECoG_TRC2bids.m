@@ -78,7 +78,7 @@ end
 files = dir(cfg(1).pathname);
 eegfiles = {files(contains({files(:).name},'EEG')==1).name};
 string = [repmat('%s, ',1,size(eegfiles,2)-1),'%s'];
-cfg.runall = 0;
+cfg(1).runall = 0;
 
 if size(files,1) <1
     error('Pathname does not contain any files')

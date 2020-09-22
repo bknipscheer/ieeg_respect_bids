@@ -1,6 +1,6 @@
 function write_scans_tsv(cfg,metadata,annotation_tsv,fscans_name,fieeg_json_name)
 
-f = replace(fieeg_json_name,'.json','');
+f = replace(fieeg_json_name,'.json','.eeg');
 
 for j=1:size(cfg(1).ses_dir,2)
     file_name = fullfile(cfg(1).ses_dir{j},fscans_name);
@@ -17,7 +17,8 @@ for j=1:size(cfg(1).ses_dir,2)
             scansnum = size(scans_tsv,1)+1;
         end
         
-        filename                    = scans_tsv.filename;
+        filename                = scans_tsv.filename;
+        acq_time                = scans_tsv.acq_time;
         artefact                = scans_tsv.artefact;
         sleep_total             = scans_tsv.sleep_total;
         sleep_rem               = scans_tsv.sleep_rem;
@@ -31,56 +32,23 @@ for j=1:size(cfg(1).ses_dir,2)
         language                = scans_tsv.language;
         sleepwaketransition     = scans_tsv.sleepwaketransition;
         format                  = scans_tsv.format;
-        
-        if any(contains(scans_tsv.Properties.VariableNames,'sens')) % this was added later, so not allf iles have this
-            sens                    = scans_tsv.sens;
-        else
-            sens = zeros(size(filename,1),1);
-        end
-                
-        if any(contains(scans_tsv.Properties.VariableNames,'sws_sel')) % this was added later, so not allf iles have this
-            sws_sel = scans_tsv.sws_sel;
-        else
-            sws_sel = zeros(size(filename,1),1);
-        end
-        
-        if any(contains(scans_tsv.Properties.VariableNames,'rem_sel')) % this was added later, so not allf iles have this
-            rem_sel = scans_tsv.rem_sel;
-        else
-            rem_sel = zeros(size(filename,1),1);
-        end
-        
-        if any(contains(scans_tsv.Properties.VariableNames,'iiaw_sel')) % this was added later, so not allf iles have this
-            iiaw_sel = scans_tsv.iiaw_sel;
-        else
-            iiaw_sel = zeros(size(filename,1),1);
-        end
-        
-        if any(contains(scans_tsv.Properties.VariableNames,'EI_sel')) % this was added later, so not allf iles have this
-            EI_sel = scans_tsv.EI_sel;
-        else
-            EI_sel = zeros(size(filename,1),1);
-        end
-        
-        if any(contains(scans_tsv.Properties.VariableNames,'rec2stim')) % this was added later, so not allf iles have this
-            rec2stim = scans_tsv.rec2stim;
-        else
-            rec2stim = zeros(size(filename,1),1);
-        end
-        
-         
-        if any(contains(scans_tsv.Properties.VariableNames,'chocs')) % this was added later, so not allf iles have this
-            chocs = scans_tsv.chocs; 
-        else
-            chocs = zeros(size(filename,1),1);
-        end
-        
+        sens                    = scans_tsv.sens;
+        sws_sel                 = scans_tsv.sws_sel;
+        rem_sel                 = scans_tsv.rem_sel;
+        iiaw_sel                = scans_tsv.iiaw_sel;
+        EI_sel                  = scans_tsv.EI_sel;
+        rec2stim                = scans_tsv.rec2stim;
+        chocs                   = scans_tsv.chocs;
         
     else
         scansnum = 1;
     end
     
-    filename{scansnum,1}                  = f;
+    filename{scansnum,1}              = ['ieeg/' f]; 
+    
+    % acquisition time
+    acq_time{scansnum,1}              = datetime(1900,1,str2double(metadata.run_name),...
+        str2double(metadata.hour),str2double(metadata.min),str2double(metadata.sec),'Format','yyyy-MM-dd''T''HH:mm:ss'); 
     
     % sleep period
     id_sleep                          = strcmp(annotation_tsv.trial_type,'sleep');
@@ -151,13 +119,13 @@ for j=1:size(cfg(1).ses_dir,2)
         format{scansnum,1}            = 'not included';
     end
     
-    scans_tsv  = table(filename, format, artefact, sleep_total, sleep_rem, sleep_nrem,...
+    scans_tsv  = table(filename, acq_time, format, artefact, sleep_total, sleep_rem, sleep_nrem,...
         sleepwaketransition, seizure, seizureclin, seizuresubclin, motor, spes, rec2stim, ...
         esm, chocs, language, sens, sws_sel, rem_sel, iiaw_sel, EI_sel,...
-        'VariableNames',{'filename', 'format','artefact','sleep_total', 'sleep_rem',...
+        'VariableNames',{'filename', 'acq_time', 'format','artefact','sleep_total', 'sleep_rem',...
         'sleep_nrem','sleepwaketransition','seizure_total','seizure_clinical', ...
         'seizure_subclinical','motor','spes','rec2stim','esm','chocs', 'language','sens',...
-        'sws_se','rem_sel','iiaw_sel','EI_sel'});
+        'sws_sel','rem_sel','iiaw_sel','EI_sel'});
     
     if ~isempty(scans_tsv)
         

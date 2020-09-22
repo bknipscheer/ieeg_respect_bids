@@ -39,12 +39,7 @@ end
 if ~isempty(ddesc_json)
     
     filename = fullfile(proj_dir,'dataset_description.json');
-    if isfile(filename)
-        existing = read_json(filename);
-    else
-        existing = [];
-    end
-    write_json(filename, mergeconfig(existing, ddesc_json))
+    write_json(filename, ddesc_json)
     %     json_options.indent = ' ';
     %     jsonwrite(filename, mergeconfig(existing, ddesc_json), json_options)
 end

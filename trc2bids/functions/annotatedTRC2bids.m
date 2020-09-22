@@ -68,6 +68,7 @@ try
         ses_label     = strcat('ses-',strtrim(metadata.ses_name),' ','');
         run_label     = strcat('run-',strtrim(metadata.run_name),header.hour,header.min,' ','');
         task_label    = strcat('task-',strtrim(metadata.task_name),' ','');
+        metadata.hour = header.hour; metadata.min = header.min; metadata.sec = header.sec; % this is needed for acq_time in scans.tsv
         
         if ~contains(task_label,'SPES') % DvB: saves SPES in CCEP repository, so this 
             proj_diroutput{1} = proj_diroutput_temp{1};
@@ -78,7 +79,6 @@ try
                 proj_diroutput{i} = proj_diroutput_temp{i};
             end
         end
-        
         
         % make directories
         sub_dir       = fullfile(proj_diroutput,sub_label);

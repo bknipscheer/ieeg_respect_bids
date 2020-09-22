@@ -9,10 +9,5 @@ partdesc_json.sex               = 'gender of the patient (male/female/unknown)' 
 if ~isempty(partdesc_json)
     
     filename = fullfile(proj_dir,'participants.json');
-    if isfile(filename)
-        existing = read_json(filename);
-    else
-        existing = [];
-    end
-    write_json(filename, mergeconfig(existing, partdesc_json))
+    write_json(filename, partdesc_json)
 end

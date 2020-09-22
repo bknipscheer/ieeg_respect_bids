@@ -2,6 +2,7 @@
 function create_scansDesc(proj_dir)
 
 scansdesc_json.filename                 = 'name of the file' ;
+scansdesc_json.acq_time                 = 'acquisition time';
 scansdesc_json.format                   = '"included" means that Format annotation is included in the trc file, "not included" means that Format annotation was not included in the trc file. In at least 1 trc file, Format annotation must be present.' ;
 scansdesc_json.artefact                 = 'number of artefacts annotated' ;
 scansdesc_json.sleep_total              = 'period (s) of sleep. Sleep is not defined as rem or non-rem.' ;
@@ -18,7 +19,7 @@ scansdesc_json.esm                      = 'total period (s) with electrical stim
 scansdesc_json.chocs                    = 'total period (s) with CHOCs protocol (1Hz, biphasic: 1000 us, 15s, 1-3 mA and 2000 us, 30s 1-5mA) to evoke seizures and clinical symptoms';
 scansdesc_json.language                 = 'period (s) with language tasks';
 scansdesc_json.sens                     = 'period (s) with sensory tasks';
-scansdesc_json.sws_se                   = 'bla';
+scansdesc_json.sws_sel                  = 'bla';
 scansdesc_json.rem_sel                  = 'bla';
 scansdesc_json.iiaw_sel                 = 'bla';
 scansdesc_json.EI_sel                   = 'bla';
@@ -26,10 +27,5 @@ scansdesc_json.EI_sel                   = 'bla';
 if ~isempty(scansdesc_json)
     
     filename = fullfile(proj_dir,'scans.json');
-    if isfile(filename)
-        existing = read_json(filename);
-    else
-        existing = [];
-    end
-    write_json(filename, mergeconfig(existing, scansdesc_json))
+    write_json(filename, scansdesc_json)
 end
