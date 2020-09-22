@@ -19,10 +19,10 @@ scansdesc_json.esm                      = 'total period (s) with electrical stim
 scansdesc_json.chocs                    = 'total period (s) with CHOCs protocol (1Hz, biphasic: 1000 us, 15s, 1-3 mA and 2000 us, 30s 1-5mA) to evoke seizures and clinical symptoms';
 scansdesc_json.language                 = 'period (s) with language tasks';
 scansdesc_json.sens                     = 'period (s) with sensory tasks';
-scansdesc_json.sws_sel                  = 'bla';
-scansdesc_json.rem_sel                  = 'bla';
-scansdesc_json.iiaw_sel                 = 'bla';
-scansdesc_json.EI_sel                   = 'bla';
+scansdesc_json.sws_sel                  = 'selection of 10 minutes of slow wave sleep, if possible at the beginning of the night';
+scansdesc_json.rem_sel                  = 'selection of 10 minutes with as much phasic rem sleep as possible';
+scansdesc_json.iiaw_sel                 = 'selection of 10 minutes awake resting state data';
+scansdesc_json.EI_sel                   = 'selection of 15 seconds around seizure onset (if artefacts allow: 5 second before, and 10 seconds after seizure onset)';
 
 if ~isempty(scansdesc_json)
     
