@@ -79,7 +79,14 @@ if header.min <10
 else
     header.min = num2str(header.min);
 end
-    
+
+header.sec = fread(fid,1,'char');
+if header.sec <10
+    header.sec = ['0' num2str(header.sec)];
+else
+    header.sec = num2str(header.sec);
+end   
+
 % acquisition type
 % fseek(fid,134,-1);
 % header.headbox = fread(fid,1,'ushort')
