@@ -45,7 +45,7 @@ fprintf('\n ----- RENAME T1WEIGHTED MRI TO: ----- \n %s_%s_T1w.nii\n',...
 
 % Right click in the folder with the original MRI and start Linux terminal.
 % Copy the printed lines in the command window to deface the MRI in the linux terminal:
-fprintf('\n ----- OPEN %ssourcedata/%s/%s/anat/  ----- \n ----- CLICK WITH RIGHT MOUSE AND OPEN LINUX TERMINAL -----\n ----- RUN LINE BELOW IN LINUX TERMINAL ----- \n mri_deface %s_%s_T1w.nii %s  %s %s_%s_proc-deface_T1w.nii\n',...
+fprintf('\n ----- OPEN %ssourcedata/%s/%s/anat/  ----- \n ----- CLICK WITH RIGHT MOUSE AND OPEN LINUX TERMINAL -----\n ----- RUN LINE BELOW IN LINUX TERMINAL ----- \n mri_deface %s_%s_T1w.nii %s  %s %s_%s_rec-deface_T1w.nii\n',...
     cfg(1).proj_diroutput,...
     cfg(1).sub_labels{:},...
     cfg(1).ses_label,...
@@ -62,20 +62,20 @@ fprintf('\n ----- RUN LINE BELOW IN LINUX TERMINAL, OPEN DEFACED MRI TO CHECK DE
 %% STEP 4: run freesurfer to segment brain add Destrieux atlases - RUN IN LINUX TERMINAL!
 clc
 
-mri_name = [cfg(1).anat_directory, cfg(1).sub_labels{:},'_',cfg(1).ses_label,'_proc-deface_T1w.nii'];
+mri_name = [cfg(1).anat_directory, cfg(1).sub_labels{:},'_',cfg(1).ses_label,'_rec-deface_T1w.nii'];
 
 % Copy defaced .nii to correct folder
 
 if exist(cfg(1).anat_directory,'dir')
     copyfile(fullfile(cfg(1).proj_diroutput,'sourcedata',cfg(1).sub_labels{:},cfg(1).ses_label,'anat',...
-        [cfg(1).sub_labels{:},'_',cfg(1).ses_label,'_proc-deface_T1w.nii']),...
+        [cfg(1).sub_labels{:},'_',cfg(1).ses_label,'_rec-deface_T1w.nii']),...
         mri_name)
     
 else
     
     mkdir(cfg(1).anat_directory)
     copyfile(fullfile(cfg(1).proj_diroutput,'sourcedata',cfg(1).sub_labels{:},cfg(1).ses_label,'anat',...
-        [cfg(1).sub_labels{:},'_',cfg(1).ses_label,'_proc-deface_T1w.nii']),...
+        [cfg(1).sub_labels{:},'_',cfg(1).ses_label,'_rec-deface_T1w.nii']),...
         mri_name)
     
 end
@@ -95,7 +95,7 @@ fprintf('\n ----- OPEN %ssourcedata/%s/%s/anat/  ----- \n ----- CLICK WITH RIGHT
     cfg(1).ses_label,...
     cfg(1).freesurfer_directory)
 % Copy the printed lines in the command window to run Freesurfer in the linux terminal:
-fprintf('\n ----- RUN LINE BELOW IN LINUX TERMINAL ----- \nrecon-all -autorecon-all -s %s -i %s%s_%s_proc-deface_T1w.nii -cw256\n',...
+fprintf('\n ----- RUN LINE BELOW IN LINUX TERMINAL ----- \nrecon-all -autorecon-all -s %s -i %s%s_%s_rec-deface_T1w.nii -cw256\n',...
     cfg(1).sub_labels{:},...
     cfg(1).anat_directory,...
     cfg(1).sub_labels{:},...
@@ -267,7 +267,7 @@ elseif contains(json.iEEGElectrodeGroups,'ecog','IgnoreCase',1) || contains(json
                     [cfg(1).anat_directory, cfg(1).sub_labels{:},'_',cfg(1).hemisphere{1},'_surface',num2str(k),'_',num2str(settings_hull(1)),'_0',num2str(settings_hull(2)*10),'.img'],... % hull we just created
                     [cfg(1).anat_directory, cfg(1).sub_labels{:},'_',cfg(1).hemisphere{1},'_surface',num2str(k),'_',num2str(settings_hull(1)),'_0',num2str(settings_hull(2)*10),'.img'],... % hull we just created instead of T1 file
                     cfg(1).anat_directory);
-                %                      [cfg(1).anat_directory, cfg(1).sub_labels{:},'_',cfg(1).ses_label,'_proc-deface_T1w.nii'],... % T1 file (mr.img for same image space with electrode positions)
+                %                      [cfg(1).anat_directory, cfg(1).sub_labels{:},'_',cfg(1).ses_label,'_rec-deface_T1w.nii'],... % T1 file (mr.img for same image space with electrode positions)
                 % saves automatically a matrix with projected electrode positions and an image
                 % with projected electrodes
                 % saves as electrodes_onsurface_filenumber_inputnr2
@@ -298,7 +298,7 @@ fprintf('Electrode positions, corrected for brainshift, are saved in %s\n',saveF
 % to visualize in MRIcron: open the defaced MRI and add the surface_all.img
 % as overlay
 
-[output,els,els_ind,outputStruct] = position2reslicedImage(elecmatrix_shift,[cfg(1).anat_directory, cfg(1).sub_labels{:},'_',cfg(1).ses_label,'_proc-deface_T1w.nii']);
+[output,els,els_ind,outputStruct] = position2reslicedImage(elecmatrix_shift,[cfg(1).anat_directory, cfg(1).sub_labels{:},'_',cfg(1).ses_label,'_rec-deface_T1w.nii']);
 
 for filenummer=1:100
     save([cfg(1).deriv_directory cfg(1).sub_labels{:} '_' cfg(1).ses_label,'_electrodes_surface_loc_all' int2str(filenummer) '.mat'],'elecmatrix_shift');
@@ -448,7 +448,7 @@ if~isempty(cfg(2).proj_diroutput)
     
     % 5. write T1w.json accompanying the .nii file
     
-    mri_name = [cfg(1).anat_directory, cfg(1).sub_labels{:},'_',cfg(1).ses_label,'_proc-deface_T1w.nii'];
+    mri_name = [cfg(1).anat_directory, cfg(1).sub_labels{:},'_',cfg(1).ses_label,'_rec-deface_T1w.nii'];
     create_json_mri(replace(mri_name,'nii','json'))   
     
     % 6. create electrodes descriptor
