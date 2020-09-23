@@ -54,7 +54,7 @@ end
 
 % bad in high frequency band
 if(any(metadata.ch2use_badhf))    
-    [ch_status{(metadata.ch2use_badhf)}] = deal('bad_hf'); 
+    [ch_status{(metadata.ch2use_badhf)}] = deal('bad'); 
 end
 
 if(any(ch2use_silicon))

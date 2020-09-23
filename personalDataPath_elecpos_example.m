@@ -27,13 +27,38 @@ if ~isempty(varargin{1})
             end
             
             % for electrode positions
+            if strcmp(varargin{1}.mode,'electrodeposition_preMRI')
+               mri = 'T1w'; 
+            elseif strcmp(varargin{1}.mode,'electrodeposition_postMRI')
+               mri = 'T1w_post';
+            end
+            
             cfg(1).sub_labels = varargin{1}.sub_labels;
             cfg(1).ses_label = input('Session number (ses-X): ','s');
-            cfg(1).hemisphere = input('Hemisphere with implanted electrodes [l/r]: ','s');
-            cfg(1).freesurfer_directory = sprintf('%sderivatives/freesurfer/%s/%s/',cfg(1).proj_diroutput,cfg(1).sub_labels{:},cfg(1).ses_label);
+            
+            if exist(fullfile(cfg(1).proj_diroutput,cfg(1).sub_labels{:},cfg(1).ses_label,'ieeg',...
+                    [cfg(1).sub_labels{:},'_',cfg(1).ses_label,'_electrodes.tsv']),'file')
+                tb_elecs = readtable(fullfile(cfg(1).proj_diroutput,cfg(1).sub_labels{:},cfg(1).ses_label,'ieeg',...
+                    [cfg(1).sub_labels{:},'_',cfg(1).ses_label,'_electrodes.tsv']),'FileType','text','Delimiter','\t');
+                
+                if ~isempty(unique(tb_elecs.hemisphere(~strcmp(tb_elecs.hemisphere,'n/a'))))
+                    hemisphere = unique(tb_elecs.hemisphere(~strcmp(tb_elecs.hemisphere,'n/a')));
+                else
+                    hemisphere{1} = input('Hemisphere with implanted electrodes is not defined yet, so give an input yourself [l/r]: ','s');
+                end
+            else
+                hemisphere{1} = input('Hemisphere with implanted electrodes is not defined yet, so give an input yourself [l/r]: ','s');
+                
+            end
+            for i=1:size(hemisphere,1)
+                cfg(1).hemisphere{i} = lower(hemisphere{i}); %input('Hemisphere with implanted electrodes [l/r]: ','s');
+            end
+            
+            cfg(1).freesurfer_directory = sprintf('%sderivatives/freesurfer/%s/%s/',cfg(1).proj_diroutput,cfg(1).sub_labels{:},cfg(1).ses_label,mri);
             cfg(1).anat_directory = sprintf('%s%s/%s/anat/',cfg(1).proj_diroutput,cfg(1).sub_labels{:},cfg(1).ses_label);
+            cfg(1).deriv_directory = sprintf('%sderivatives/elecPosition/%s/%s/',cfg(1).proj_diroutput,cfg(1).sub_labels{:},cfg(1).ses_label
             cfg(1).ieeg_directory = sprintf('%s%s/%s/ieeg/',cfg(1).proj_diroutput,cfg(1).sub_labels{:},cfg(1).ses_label);
-            cfg(1).surface_directory = sprintf('%sderivatives/surfaces/%s/%s/',cfg(1).proj_diroutput,cfg(1).sub_labels{:},cfg(1).ses_label);
+            cfg(1).surface_directory = sprintf('%sderivatives/surfaces/%s/%s/',cfg(1).proj_diroutput,cfg(1).sub_labels{:},cfg(1).ses_label,mri);
             cfg(1).elec_input = sprintf('%s%s/%s/ieeg/',cfg(1).proj_diroutput,cfg(1).sub_labels{:},cfg(1).ses_label);
             cfg(1).path_talairach = '/folder/to/talairach_mixed_with_skull.gca';
             cfg(1).path_face = '/folder/to/face.gca';

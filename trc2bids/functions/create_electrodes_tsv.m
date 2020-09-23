@@ -13,10 +13,10 @@ temp.electrodes.group            = ft_getopt(temp.electrodes, 'group'           
 temp.electrodes.hemisphere       = ft_getopt(temp.electrodes, 'hemisphere'         , nan);
 temp.electrodes.silicon          = ft_getopt(temp.electrodes, 'silicon'            , nan);
 temp.electrodes.soz              = ft_getopt(temp.electrodes, 'soz'                , nan);
-temp.electrodes.ra               = ft_getopt(temp.electrodes, 'ra'                 , nan);
+temp.electrodes.resected         = ft_getopt(temp.electrodes, 'resected'           , nan);
 temp.electrodes.edge             = ft_getopt(temp.electrodes, 'edge'               , nan);
 
-fn = {'name' 'x' 'y' 'z' 'size' 'material' 'manufacturer' 'group' 'hemisphere' 'silicon' 'soz' 'ra' 'edge'};
+fn = {'name' 'x' 'y' 'z' 'size' 'material' 'manufacturer' 'group' 'hemisphere' 'silicon' 'soz' 'resected' 'edge'};
 for i=1:numel(fn)
     if numel(temp.electrodes.(fn{i}))==1
         temp.electrodes.(fn{i}) = repmat(temp.electrodes.(fn{i}), header.Num_Chan, 1);
@@ -115,6 +115,8 @@ else
         'VariableNames',{'name', 'x', 'y', 'z', 'size', 'material', 'manufacturer','group','hemisphere', 'silicon' 'soz','resected','edge'})     ;
 end
 
+electrodes_tsv = bids_tsv_nan2na(electrodes_tsv);
+
 if ~isempty(electrodes_tsv)
     for i=1:size(cfg(1).ieeg_dir,2)
         filename = fullfile(cfg(1).ieeg_dir{i},felectrodes_name);
@@ -151,13 +153,16 @@ if ~isempty(electrodes_tsv)
             if ~isequal(struct1,struct2)
                 fprintf('%s exists!\n',filename)
                 n=1;
-                while isfile(filename)
-                    nameminelec = strsplit(filename,'electrodes');
-                    filename = [nameminelec{1} 'electrodes_' num2str(n) '.tsv'];
-                    n=n+1;
-                end
+%                 while isfile(filename)
+%                     nameminelec = strsplit(filename,'electrodes');
+%                     filename = [nameminelec{1} 'electrodes_' num2str(n) '.tsv'];
+%                     n=n+1;
+%                 end
             end
         end
+        
+        electrodes_tsv = bids_tsv_nan2na(electrodes_tsv);
+
         write_tsv(filename, electrodes_tsv);
     end
 end

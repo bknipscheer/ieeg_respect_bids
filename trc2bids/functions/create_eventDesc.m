@@ -18,11 +18,6 @@ edesc_json.notes                                = 'notes about the specific even
 
 if ~isempty(edesc_json)
     
-    filename = fullfile(proj_dir,'description_events.json');
-    if isfile(filename)
-        existing = read_json(filename);
-    else
-        existing = [];
-    end
-    write_json(filename, mergeconfig(existing, edesc_json))
+    filename = fullfile(proj_dir,'events.json');
+    write_json(filename, edesc_json)
 end

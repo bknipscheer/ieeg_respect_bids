@@ -13,10 +13,10 @@ electrodes_json_name = fullfile(cfg.ieeg_directory,...
 filename_T1w = fullfile(cfg.sub_labels{:},cfg.ses_label, 'anat', [cfg.sub_labels{:} '_' cfg.ses_label '_proc-deface_T1w.nii']);
 
 % assign information and methodology
+loc_json.IntendedFor = filename_T1w; 
 loc_json.iEEGCoordinateSystem  = 'Other';
 loc_json.iEEGCoordinateUnits  = 'mm';
 loc_json.iEEGCoordinateSystemDescription = 'The origin of the coordinate system is between the ears and the axis are in the RAS direction. The scaling is with respect to the individuals anatomical scan and no scaling or deformation have been applied to the individuals anatomical scan';
-loc_json.IntendedFor = filename_T1w; 
 loc_json.iEEGCoordinateProcessingDescription = 'Surface projection Hermes or Branco';
 loc_json.iEEGCoordinateProcessingReference = 'Hermes et al., 2010 JNeuroMeth , Branco et al., 2018 JNeuroMeth';
 
